@@ -3,12 +3,18 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { Toaster } from 'react-hot-toast'
 
+// Components
+import AppShell from './components/AppShell'
+
 // Auth Components
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import Dashboard from './pages/Dashboard'
 import PricingPage from './pages/PricingPage'
 import ProfilePage from './pages/ProfilePage'
+
+// Import glassmorphism styles
+import './styles/glassmorphism.css'
 
 // Loading component
 const LoadingScreen = () => (
@@ -42,21 +48,25 @@ const AuthRedirect = () => {
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* Public Routes */}
+      {/* Public Routes (No AppShell) */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/pricing" element={<PricingPage />} />
 
-      {/* Protected Routes */}
+      {/* Protected Routes (With AppShell) */}
       <Route path="/dashboard" element={
         <ProtectedRoute>
-          <Dashboard />
+          <AppShell>
+            <Dashboard />
+          </AppShell>
         </ProtectedRoute>
       } />
       
       <Route path="/profile" element={
         <ProtectedRoute>
-          <ProfilePage />
+          <AppShell>
+            <ProfilePage />
+          </AppShell>
         </ProtectedRoute>
       } />
 

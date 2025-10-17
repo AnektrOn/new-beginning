@@ -1,0 +1,200 @@
+/* Glassmorphism Design System - Accurate to Image */
+
+/* Background - Indoor living space */
+.bg-indoor-background {
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><filter id="blur"><feGaussianBlur stdDeviation="8"/></filter></defs><rect width="1200" height="800" fill="%23f5f3f0"/><rect x="0" y="0" width="400" height="800" fill="%23e8e4d8"/><rect x="400" y="200" width="200" height="400" fill="%23d4c4a8"/><rect x="600" y="100" width="300" height="600" fill="%23c9b99a"/><rect x="900" y="0" width="300" height="800" fill="%23b8a082"/></svg>');
+  background-size: cover;
+  background-position: center;
+}
+
+/* Base glass effect - Strong blur and transparency */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+/* Dark mode glass effect */
+.dark .glass-effect {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+}
+
+/* Header - 60% width, no search bar */
+.glass-header-browser {
+  @apply glass-effect;
+  @apply flex items-center justify-between px-4 py-3;
+  @apply text-gray-800 dark:text-gray-200;
+  border-radius: 150px;
+  height: 50px;
+  width: 60%;
+  margin: 0 auto;
+}
+
+.glass-icon-btn {
+  @apply p-2 rounded-lg;
+  @apply text-gray-600 dark:text-gray-300;
+  @apply hover:bg-white/20 dark:hover:bg-white/10;
+  @apply transition-all duration-200;
+  @apply backdrop-blur-sm;
+  @apply w-8 h-8;
+  @apply flex items-center justify-center;
+}
+
+.glass-url-bar {
+  @apply glass-effect;
+  @apply flex items-center space-x-3 px-4 py-2;
+  @apply rounded-lg;
+  @apply w-full;
+  @apply text-gray-700 dark:text-gray-300;
+  height: 36px;
+}
+
+/* Sidebar - Narrow vertical panel */
+.glass-sidebar-panel {
+  @apply glass-effect;
+  @apply flex flex-col items-center;
+  @apply h-full;
+  @apply text-gray-800 dark:text-gray-200;
+  border-radius: 150px;
+  padding: 0 12px;
+  width: 55px;
+}
+
+.glass-toggle-btn {
+  @apply flex flex-col items-center;
+  @apply p-2 rounded-lg;
+  @apply bg-orange-400/20;
+  @apply backdrop-blur-sm;
+}
+
+.glass-nav-btn {
+  @apply p-3 rounded-xl;
+  @apply text-gray-600 dark:text-gray-300;
+  @apply hover:bg-white/20 dark:hover:bg-white/10;
+  @apply transition-all duration-200;
+  @apply backdrop-blur-sm;
+  @apply w-12 h-12;
+  @apply flex items-center justify-center;
+}
+
+.glass-nav-btn-active {
+  @apply bg-orange-400/30;
+  @apply text-orange-600 dark:text-orange-400;
+  @apply shadow-lg;
+  @apply p-3 rounded-xl;
+  @apply w-12 h-12;
+  @apply flex items-center justify-center;
+}
+
+.glass-theme-toggle {
+  @apply flex flex-col items-center space-y-2;
+  @apply p-2 rounded-xl;
+  @apply bg-white/10;
+  @apply backdrop-blur-sm;
+}
+
+.glass-theme-btn {
+  @apply p-2 rounded-lg;
+  @apply text-gray-500 dark:text-gray-400;
+  @apply hover:bg-white/20 dark:hover:bg-white/10;
+  @apply transition-all duration-200;
+  @apply backdrop-blur-sm;
+  @apply w-8 h-8;
+  @apply flex items-center justify-center;
+}
+
+.glass-theme-btn-active {
+  @apply bg-orange-400/30;
+  @apply text-orange-500 dark:text-orange-400;
+}
+
+/* Main Content Panel - Large glass panel */
+.glass-main-panel {
+  @apply glass-effect;
+  @apply rounded-2xl;
+  @apply p-8;
+  @apply h-full;
+  @apply text-gray-800 dark:text-gray-200;
+  @apply overflow-auto;
+}
+
+/* Custom scrollbar for glass panels */
+.glass-main-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.glass-main-panel::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.glass-main-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.glass-main-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .glass-header-browser {
+    padding: 8px 12px;
+    height: 50px;
+  }
+  
+  .glass-sidebar-panel {
+    width: 80px;
+    padding: 0 8px;
+  }
+  
+  .glass-main-panel {
+    left: 88px;
+    padding: 16px;
+  }
+}
+
+/* Animation for smooth transitions */
+@keyframes glassFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-1px);
+  }
+}
+
+.glass-effect {
+  animation: glassFloat 8s ease-in-out infinite;
+}
+
+/* Focus states for accessibility */
+.glass-icon-btn:focus,
+.glass-nav-btn:focus,
+.glass-theme-btn:focus {
+  @apply outline-none;
+  @apply ring-2 ring-orange-500/50;
+  @apply ring-offset-2 ring-offset-transparent;
+}
+
+/* Enhanced glassmorphism for better visual depth */
+.glass-effect::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1));
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}

@@ -9,7 +9,8 @@ const ProfilePage = () => {
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || '',
     bio: profile?.bio || '',
-    avatar_url: profile?.avatar_url || ''
+    avatar_url: profile?.avatar_url || '',
+    background_image: profile?.background_image || ''
   })
 
   const handleSubmit = async (e) => {
@@ -148,6 +149,33 @@ const ProfilePage = () => {
                       className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       placeholder="https://example.com/avatar.jpg"
                     />
+                  </div>
+
+                  <div>
+                    <label htmlFor="background_image" className="block text-sm font-medium text-gray-700">
+                      Background Image URL
+                    </label>
+                    <input
+                      type="url"
+                      name="background_image"
+                      id="background_image"
+                      value={formData.background_image}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      placeholder="https://example.com/background.jpg"
+                    />
+                    <p className="mt-1 text-sm text-gray-500">
+                      This image will be used as your app background. Use a high-quality image for best results.
+                    </p>
+                    {formData.background_image && (
+                      <div className="mt-2">
+                        <p className="text-sm text-gray-600 mb-2">Preview:</p>
+                        <div 
+                          className="w-full h-32 rounded-lg bg-cover bg-center bg-no-repeat border"
+                          style={{ backgroundImage: `url(${formData.background_image})` }}
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex justify-end">
