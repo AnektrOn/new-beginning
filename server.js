@@ -168,6 +168,14 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
 
   try {
     switch (event.type) {
+      case 'checkout.session.completed':
+        const session = event.data.object
+        await handleCheckoutSessionCompleted(session)
+        break
+      case 'customer.subscription.created':
+        const createdSubscription = event.data.object
+        await handleSubscriptionCreated(createdSubscription)
+        break
       case 'customer.subscription.updated':
         const subscription = event.data.object
         await handleSubscriptionUpdate(subscription)
@@ -175,6 +183,14 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
       case 'customer.subscription.deleted':
         const deletedSubscription = event.data.object
         await handleSubscriptionDeleted(deletedSubscription)
+        break
+      case 'invoice.payment_succeeded':
+        const invoice = event.data.object
+        await handleInvoicePaymentSucceeded(invoice)
+        break
+      case 'invoice.payment_failed':
+        const failedInvoice = event.data.object
+        await handleInvoicePaymentFailed(failedInvoice)
         break
       default:
         console.log(`Unhandled event type ${event.type}`)
@@ -187,7 +203,71 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
   }
 })
 
-async function handleSubscriptionUpdate(subscription) {
+async function handleCheckoutSessionCompleted(session) {
+  console.log('Handling checkout.session.completed for session:', session.id)
+  
+  if (session.mode === 'subscription') {
+    const subscription = await stripe.subscriptions.retrieve(session.subscription)
+    const customerId = session.customer
+    const userId = session.metadata?.userId
+    const planType = session.metadata?.planType
+
+    console.log('Subscription checkout completed:', {
+      userId,
+      planType,
+      customerId,
+      subscriptionId: subscription.id
+    })
+
+    if (!userId) {
+      console.error('No userId in session metadata')
+      return
+    }
+
+    // Determine role based on plan type from metadata
+    let role = 'Student' // default
+    if (planType === 'teacher' || planType === 'Teacher') {
+      role = 'Teacher'
+    }
+
+    console.log('Updating profile with role:', role)
+
+    // Update profile with role and subscription info
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({
+        role: role,
+        subscription_status: subscription.status,
+        subscription_id: subscription.id,
+        stripe_customer_id: customerId,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId)
+
+    if (error) {
+      console.error('Error updating profile:', error)
+    } else {
+      console.log('Profile updated successfully:', data)
+    }
+
+    // Create or update subscription record
+    await supabase
+      .from('subscriptions')
+      .upsert({
+        user_id: userId,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscription.id,
+        plan_type: subscription.items.data[0]?.price.recurring?.interval || 'monthly',
+        status: subscription.status,
+        current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      })
+  }
+}
+
+async function handleSubscriptionCreated(subscription) {
+  console.log('Handling customer.subscription.created for subscription:', subscription.id)
+  
   const customerId = subscription.customer
   const { data: profile } = await supabase
     .from('profiles')
@@ -196,9 +276,55 @@ async function handleSubscriptionUpdate(subscription) {
     .single()
 
   if (profile) {
+    // Get the price ID to determine the plan type
+    const priceId = subscription.items.data[0]?.price.id
+    let role = 'Student' // default
+    
+    // Determine role based on price ID
+    if (priceId === 'price_1SBPN62MKT6HumxnBoQgAdd0') {
+      role = 'Teacher'
+    }
+
+    console.log('Subscription created, updating role to:', role)
+
     await supabase
       .from('profiles')
       .update({
+        role: role,
+        subscription_status: subscription.status,
+        subscription_id: subscription.id,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', profile.id)
+  }
+}
+
+async function handleSubscriptionUpdate(subscription) {
+  console.log('Handling customer.subscription.updated for subscription:', subscription.id)
+  
+  const customerId = subscription.customer
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('stripe_customer_id', customerId)
+    .single()
+
+  if (profile) {
+    // Get the price ID to determine if role should change
+    const priceId = subscription.items.data[0]?.price.id
+    let role = 'Student' // default
+    
+    // Determine role based on price ID
+    if (priceId === 'price_1SBPN62MKT6HumxnBoQgAdd0') {
+      role = 'Teacher'
+    }
+
+    console.log('Subscription updated, setting role to:', role)
+
+    await supabase
+      .from('profiles')
+      .update({
+        role: role,
         subscription_status: subscription.status,
         updated_at: new Date().toISOString()
       })
@@ -207,6 +333,8 @@ async function handleSubscriptionUpdate(subscription) {
 }
 
 async function handleSubscriptionDeleted(subscription) {
+  console.log('Handling customer.subscription.deleted for subscription:', subscription.id)
+  
   const customerId = subscription.customer
   const { data: profile } = await supabase
     .from('profiles')
@@ -215,12 +343,60 @@ async function handleSubscriptionDeleted(subscription) {
     .single()
 
   if (profile) {
+    console.log('Subscription cancelled, downgrading to Free')
+    
     await supabase
       .from('profiles')
       .update({
         role: 'Free',
         subscription_status: 'cancelled',
         subscription_id: null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', profile.id)
+  }
+}
+
+async function handleInvoicePaymentSucceeded(invoice) {
+  console.log('Handling invoice.payment_succeeded for invoice:', invoice.id)
+  
+  const customerId = invoice.customer
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('stripe_customer_id', customerId)
+    .single()
+
+  if (profile) {
+    console.log('Invoice payment succeeded, updating subscription status to active')
+    
+    await supabase
+      .from('profiles')
+      .update({
+        subscription_status: 'active',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', profile.id)
+  }
+}
+
+async function handleInvoicePaymentFailed(invoice) {
+  console.log('Handling invoice.payment_failed for invoice:', invoice.id)
+  
+  const customerId = invoice.customer
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('stripe_customer_id', customerId)
+    .single()
+
+  if (profile) {
+    console.log('Invoice payment failed, updating subscription status to past_due')
+    
+    await supabase
+      .from('profiles')
+      .update({
+        subscription_status: 'past_due',
         updated_at: new Date().toISOString()
       })
       .eq('id', profile.id)
