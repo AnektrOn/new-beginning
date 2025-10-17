@@ -12,6 +12,7 @@ import SignupPage from './pages/SignupPage'
 import Dashboard from './pages/Dashboard'
 import PricingPage from './pages/PricingPage'
 import ProfilePage from './pages/ProfilePage'
+import Mastery from './pages/Mastery'
 
 // Import glassmorphism styles
 import './styles/glassmorphism.css'
@@ -66,6 +67,14 @@ const AppRoutes = () => {
         <ProtectedRoute>
           <AppShell>
             <ProfilePage />
+          </AppShell>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/mastery/*" element={
+        <ProtectedRoute>
+          <AppShell>
+            <Mastery />
           </AppShell>
         </ProtectedRoute>
       } />

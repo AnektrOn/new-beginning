@@ -31,7 +31,7 @@
   border-radius: 150px;
   height: 50px;
   width: 60%;
-  margin: 0 auto;
+  margin: 16px auto;
 }
 
 .glass-icon-btn {
@@ -62,6 +62,7 @@
   border-radius: 150px;
   padding: 0 12px;
   width: 55px;
+  margin: 16px;
 }
 
 .glass-toggle-btn {
@@ -120,6 +121,7 @@
   @apply h-full;
   @apply text-gray-800 dark:text-gray-200;
   @apply overflow-auto;
+  margin: 16px;
 }
 
 /* Custom scrollbar for glass panels */
@@ -197,4 +199,164 @@
   mask-composite: exclude;
   -webkit-mask-composite: xor;
   pointer-events: none;
+}
+
+/* ==================== MASTERY COMPONENTS ==================== */
+
+/* Tab Navigation */
+.glass-tab-navigation {
+  @apply glass-effect;
+  @apply rounded-xl;
+  @apply p-2;
+  @apply mb-6;
+}
+
+.glass-tab-btn {
+  @apply px-4 py-2 rounded-lg;
+  @apply text-gray-600 dark:text-gray-300;
+  @apply hover:bg-white/20 dark:hover:bg-white/10;
+  @apply transition-all duration-200;
+  @apply backdrop-blur-sm;
+  @apply flex items-center;
+  @apply font-medium;
+}
+
+.glass-tab-btn-active {
+  @apply bg-white/30 dark:bg-white/20;
+  @apply text-blue-600 dark:text-blue-400;
+  @apply shadow-lg;
+}
+
+/* Tab Content */
+.glass-tab-content {
+  @apply min-h-96;
+}
+
+/* Cards */
+.glass-card {
+  @apply glass-effect;
+  @apply rounded-xl;
+  @apply p-6;
+  @apply text-gray-800 dark:text-gray-200;
+}
+
+/* Calendar Components */
+.glass-calendar-day {
+  @apply p-2 min-h-16;
+  @apply border border-white/20;
+  @apply rounded-lg;
+  @apply cursor-pointer;
+  @apply hover:bg-white/10;
+  @apply transition-all duration-200;
+  @apply flex flex-col;
+  @apply text-gray-800 dark:text-gray-200;
+}
+
+.glass-calendar-day-today {
+  @apply bg-orange-400/20;
+  @apply border-orange-400/30;
+}
+
+/* Event Items */
+.glass-event-item {
+  @apply glass-effect;
+  @apply rounded-lg;
+  @apply p-4;
+  @apply border border-white/20;
+  @apply hover:bg-white/10;
+  @apply transition-all duration-200;
+}
+
+.glass-completion-btn {
+  @apply p-1 rounded-full;
+  @apply hover:bg-white/20;
+  @apply transition-all duration-200;
+  @apply cursor-pointer;
+}
+
+.glass-delete-btn {
+  @apply p-2 rounded-lg;
+  @apply text-red-500;
+  @apply hover:bg-red-500/20;
+  @apply transition-all duration-200;
+  @apply cursor-pointer;
+}
+
+/* Habit Cards */
+.glass-habit-card {
+  @apply glass-effect;
+  @apply rounded-xl;
+  @apply p-6;
+  @apply border border-white/20;
+  @apply hover:bg-white/10;
+  @apply transition-all duration-200;
+}
+
+/* Toolbox Cards */
+.glass-toolbox-card {
+  @apply glass-effect;
+  @apply rounded-xl;
+  @apply p-6;
+  @apply border border-white/20;
+  @apply hover:bg-white/10;
+  @apply transition-all duration-200;
+}
+
+.glass-difficulty-badge {
+  @apply px-2 py-1 rounded-full;
+  @apply text-xs font-medium;
+  @apply bg-purple-500/20 text-purple-600 dark:text-purple-400;
+  @apply border border-purple-500/30;
+}
+
+/* Buttons */
+.glass-primary-btn {
+  @apply px-4 py-2 rounded-lg;
+  @apply bg-gradient-to-r from-blue-500 to-purple-600;
+  @apply text-white font-medium;
+  @apply hover:from-blue-600 hover:to-purple-700;
+  @apply transition-all duration-200;
+  @apply shadow-lg;
+  @apply flex items-center;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.glass-secondary-btn {
+  @apply px-4 py-2 rounded-lg;
+  @apply bg-white/20 dark:bg-white/10;
+  @apply text-gray-700 dark:text-gray-300;
+  @apply hover:bg-white/30 dark:hover:bg-white/20;
+  @apply transition-all duration-200;
+  @apply border border-white/30;
+  @apply flex items-center;
+}
+
+.glass-icon-btn {
+  @apply p-2 rounded-lg;
+  @apply text-gray-600 dark:text-gray-300;
+  @apply hover:bg-white/20 dark:hover:bg-white/10;
+  @apply transition-all duration-200;
+  @apply backdrop-blur-sm;
+  @apply w-8 h-8;
+  @apply flex items-center justify-center;
+}
+
+/* Inputs */
+.glass-input {
+  @apply w-full px-3 py-2 rounded-lg;
+  @apply bg-white/20 dark:bg-white/10;
+  @apply border border-white/30;
+  @apply text-gray-800 dark:text-gray-200;
+  @apply placeholder-gray-500 dark:placeholder-gray-400;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500/50;
+  @apply transition-all duration-200;
+}
+
+/* Modal */
+.glass-modal {
+  @apply glass-effect;
+  @apply rounded-xl;
+  @apply p-6;
+  @apply max-w-md w-full mx-4;
+  @apply text-gray-800 dark:text-gray-200;
 }

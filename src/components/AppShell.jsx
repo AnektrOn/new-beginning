@@ -15,7 +15,8 @@ import {
   ArrowLeft,
   ArrowRight,
   Type,
-  Users
+  Users,
+  Target
 } from 'lucide-react';
 
 const AppShell = () => {
@@ -30,6 +31,7 @@ const AppShell = () => {
 
   const sidebarItems = [
     { icon: Grid3X3, label: 'Dashboard', path: '/dashboard' },
+    { icon: Target, label: 'Mastery', path: '/mastery' },
     { icon: Calendar, label: 'Calendar', path: '/calendar' },
     { icon: Clock, label: 'Timer', path: '/timer' },
     { icon: User, label: 'Profile', path: '/profile' },
