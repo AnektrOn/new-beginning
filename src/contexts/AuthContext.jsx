@@ -28,13 +28,35 @@ export const AuthProvider = ({ children }) => {
         return
       }
 
+      // Check if profile already exists
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      if (existingProfile) {
+        console.log('Profile already exists:', existingProfile)
+        setProfile(existingProfile)
+        return
+      }
+
+      // Create new profile
       const { data, error } = await supabase
         .from('profiles')
         .insert({
           id: userId,
           email: user.email, // Required field - must not be null
           full_name: user.user_metadata?.full_name || 'User',
-          role: 'Free'
+          role: 'Free',
+          level: 1,
+          current_xp: 0,
+          total_xp_earned: 0,
+          daily_streak: 0,
+          rank: 'New Catalyst',
+          xp_to_next_level: 1,
+          level_progress_percentage: 0.00,
+          is_premium: false
         })
         .select()
         .single()
@@ -113,6 +135,9 @@ export const AuthProvider = ({ children }) => {
 
   const signUp = async (email, password, userData = {}) => {
     try {
+      console.log('Starting signup process for:', email)
+      
+      // Single signup attempt - let the database trigger handle profile creation
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -120,16 +145,23 @@ export const AuthProvider = ({ children }) => {
           data: userData
         }
       })
-
-      if (error) throw error
       
-      // Check if user was created and session is available
+      if (error) {
+        console.error('Signup failed:', error.message)
+        throw error
+      }
+      
+      console.log('Signup successful:', data)
+      
+      // Handle successful signup
       if (data.user && data.session) {
-        // Email confirmation is disabled - user is immediately signed in
+        // User is immediately signed in
+        console.log('User created and signed in immediately')
         toast.success('Account created successfully!')
         return { data, error: null }
       } else if (data.user && !data.session) {
-        // Email confirmation is enabled - user needs to verify email
+        // Email confirmation is required
+        console.log('User created, email confirmation required')
         toast.success('Account created! Please check your email to verify your account.')
         return { data, error: null }
       } else {
