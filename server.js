@@ -97,28 +97,54 @@ app.post('/api/create-checkout-session', async (req, res) => {
 app.get('/api/payment-success', async (req, res) => {
   try {
     const { session_id } = req.query
+    console.log('=== PAYMENT SUCCESS ENDPOINT CALLED ===')
+    console.log('Session ID:', session_id)
 
     const session = await stripe.checkout.sessions.retrieve(session_id)
+    console.log('Stripe session retrieved:', {
+      id: session.id,
+      userId: session.metadata?.userId,
+      planType: session.metadata?.planType,
+      subscriptionId: session.subscription
+    })
+
     const subscription = await stripe.subscriptions.retrieve(session.subscription)
+    console.log('Stripe subscription retrieved:', {
+      id: subscription.id,
+      priceId: subscription.items.data[0].price.id,
+      status: subscription.status
+    })
 
     // Determine role based on price
     let role = 'Free'
-    if (subscription.items.data[0].price.id === 'price_1RutXI2MKT6Humxnh0WBkhCp') {
+    const priceId = subscription.items.data[0].price.id
+    if (priceId === 'price_1RutXI2MKT6Humxnh0WBkhCp') {
       role = 'Student'
-    } else if (subscription.items.data[0].price.id === 'price_1SBPN62MKT6HumxnBoQgAdd0') {
+    } else if (priceId === 'price_1SBPN62MKT6HumxnBoQgAdd0') {
       role = 'Teacher'
     }
 
+    console.log('Determined role:', role, 'for price ID:', priceId)
+
     // Update user profile
-    await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .update({
         role: role,
         subscription_status: 'active',
         subscription_id: subscription.id,
+        stripe_customer_id: session.customer,
         updated_at: new Date().toISOString()
       })
       .eq('id', session.metadata.userId)
+
+    if (error) {
+      console.error('Supabase update error:', error)
+      throw error
+    }
+
+    console.log('Profile updated successfully:', data)
+    console.log('=== PAYMENT SUCCESS COMPLETE ===')
 
     res.json({ success: true, role })
   } catch (error) {

@@ -14,11 +14,32 @@ const Dashboard = () => {
     const sessionId = searchParams.get('session_id')
     
     if (payment === 'success' && sessionId && user) {
-      // Refresh profile to get updated subscription status
-      fetchProfile(user.id)
+      // Show alert to confirm payment success
+      alert('🎉 Payment completed! Processing your subscription...')
       
-      // Clean up URL
-      navigate('/dashboard', { replace: true })
+      console.log('Payment success detected:', { sessionId, userId: user.id })
+      
+      // Call payment success endpoint to update role
+      fetch(`http://localhost:3001/api/payment-success?session_id=${sessionId}`)
+        .then(response => response.json())
+        .then(data => {
+          console.log('Payment success response:', data)
+          alert(`✅ Subscription activated! Your role is now: ${data.role}`)
+          
+          // Refresh profile to get updated subscription status
+          fetchProfile(user.id)
+          
+          // Clean up URL
+          navigate('/dashboard', { replace: true })
+        })
+        .catch(error => {
+          console.error('Error processing payment success:', error)
+          alert('⚠️ Payment completed but there was an error updating your subscription. Please refresh the page.')
+          
+          // Still try to refresh profile
+          fetchProfile(user.id)
+          navigate('/dashboard', { replace: true })
+        })
     }
   }, [searchParams, user, fetchProfile, navigate])
 
