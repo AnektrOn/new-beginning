@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Target, CheckCircle, Star, Laptop, BookOpen, Dumbbell, Flame, Trash2 } from 'lucide-react';
 import masteryService from '../../services/masteryService';
 import { useAuth } from '../../contexts/AuthContext';
+import { handleAsyncOperation, handleError, clearError } from '../../utils/errorHandler';
 
 // Helper function to calculate current streak from completion dates
 const calculateCurrentStreak = (completedDates) => {
@@ -179,10 +180,7 @@ const HabitsTab = () => {
         setPersonalHabits(transformedHabits);
         setHabitsLibrary(libraryHabits || []);
       } catch (error) {
-        console.error('Error loading habits:', error);
-        setError(error.message);
-      } finally {
-        setLoading(false);
+        handleError(error, 'loading habits', setError, setLoading);
       }
     };
 

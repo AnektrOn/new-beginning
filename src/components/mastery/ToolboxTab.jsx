@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Wrench, Plus, Target, Trash2, CheckCircle, Clock, Star } from 'lucide-react';
 import masteryService from '../../services/masteryService';
 import { useAuth } from '../../contexts/AuthContext';
+import { handleError, clearError } from '../../utils/errorHandler';
 
 // Helper function to calculate current streak from completion dates
 const calculateCurrentStreak = (completedDates = []) => {
