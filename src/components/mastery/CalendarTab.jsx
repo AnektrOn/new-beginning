@@ -279,7 +279,11 @@ const CalendarTab = () => {
   };
 
   const toggleEventCompletion = async (eventId) => {
-    if (!user) return;
+    console.log('🎯 toggleEventCompletion called with:', eventId);
+    if (!user) {
+      console.log('❌ No user found');
+      return;
+    }
     
     // Parse the event ID to get habit info (format: habit-{habitId}-{date})
     if (eventId.startsWith('habit-')) {
@@ -289,10 +293,14 @@ const CalendarTab = () => {
       const habitId = withoutPrefix.substring(0, lastDashIndex);
       const dateString = withoutPrefix.substring(lastDashIndex + 1);
       
+      console.log('📅 Parsed habitId:', habitId, 'dateString:', dateString);
+      
       // Check if completion is allowed (current day + 2 days prior)
       const today = new Date();
       const targetDate = new Date(dateString);
       const daysDiff = Math.floor((today - targetDate) / (1000 * 60 * 60 * 24));
+      
+      console.log('📊 Days difference:', daysDiff);
       
       if (daysDiff > 2) {
         alert('You can only complete habits for today and up to 2 days prior.');
@@ -305,7 +313,9 @@ const CalendarTab = () => {
       }
       
       try {
+        console.log('🚀 Calling masteryService.completeHabit with:', user.id, habitId);
         const { data: completion, error } = await masteryService.completeHabit(user.id, habitId);
+        console.log('✅ Completion result:', completion, error);
         if (error) throw error;
 
         // Update the specific habit in our habits state (virtual calendar approach)
@@ -580,8 +590,11 @@ const CalendarTab = () => {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  console.log('🖱️ Completion button clicked for event:', event.id, 'isClickable:', event.isClickable);
                                   if (event.isClickable !== false) {
                                     toggleEventCompletion(event.id);
+                                  } else {
+                                    console.log('❌ Event not clickable');
                                   }
                                 }}
                                 className={`p-1 rounded text-xs ${
