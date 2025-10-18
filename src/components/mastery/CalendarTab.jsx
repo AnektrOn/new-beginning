@@ -273,12 +273,9 @@ const CalendarTab = () => {
   const toggleEventCompletion = async (eventId) => {
     if (!user) return;
     
-    const event = events.find(e => e.id === eventId);
-    if (!event) return;
-
-    if (event.source === 'habit') {
-      // Handle habit completion using real service
-      const habitId = event.habitId;
+    // Parse the event ID to get habit info (format: habit-{habitId}-{date})
+    if (eventId.startsWith('habit-')) {
+      const [, habitId, dateString] = eventId.split('-');
       
       try {
         const { data: completion, error } = await masteryService.completeHabit(user.id, habitId);
@@ -288,18 +285,17 @@ const CalendarTab = () => {
         setHabits(prevHabits => 
           prevHabits.map(habit => {
             if (habit.id === habitId) {
-              const todayString = new Date().toISOString().split('T')[0];
               const updatedCompletedDates = [...habit.completed_dates];
               
-              // Add today's completion if not already present
-              if (!updatedCompletedDates.includes(todayString)) {
-                updatedCompletedDates.push(todayString);
+              // Add completion date if not already present
+              if (!updatedCompletedDates.includes(dateString)) {
+                updatedCompletedDates.push(dateString);
               }
               
               return {
                 ...habit,
                 completed_dates: updatedCompletedDates,
-                completed_today: true,
+                completed_today: updatedCompletedDates.includes(new Date().toISOString().split('T')[0]),
                 streak: (habit.streak || 0) + 1
               };
             }
@@ -314,10 +310,13 @@ const CalendarTab = () => {
         setError(error.message);
       }
     } else {
-      // Handle regular events (for now, just toggle locally)
-      setEvents(events.map(e => 
-        e.id === eventId ? { ...e, completed: !e.completed } : e
-      ));
+      // Handle regular events (find in events array)
+      const event = events.find(e => e.id === eventId);
+      if (event) {
+        setEvents(events.map(e => 
+          e.id === eventId ? { ...e, completed: !e.completed } : e
+        ));
+      }
     }
   };
 
