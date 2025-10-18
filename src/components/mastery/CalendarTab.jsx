@@ -88,13 +88,6 @@ const CalendarTab = () => {
         startOfMonth.setDate(1);
         const endOfMonth = new Date();
         endOfMonth.setMonth(endOfMonth.getMonth() + 1, 0);
-        
-        const { data: calendarEvents, error: calendarError } = await masteryService.getCalendarEvents(
-          user.id,
-          startOfMonth.toISOString().split('T')[0],
-          endOfMonth.toISOString().split('T')[0]
-        );
-        if (calendarError) throw calendarError;
 
         // Transform user habits to include completion data
         const transformedHabits = await Promise.all(
@@ -131,9 +124,8 @@ const CalendarTab = () => {
         // Store habits for virtual calendar generation (no pre-generated events)
         setHabits(transformedHabits);
 
-        // Only add non-habit calendar events (habits will be generated virtually)
-        const nonHabitCalendarEvents = (calendarEvents || []).filter(event => event.source !== 'habit');
-        setEvents(nonHabitCalendarEvents);
+        // No events stored - all habit events generated virtually on-demand
+        setEvents([]);
       } catch (error) {
         console.error('Error loading habits and events:', error);
         setError(error.message);
