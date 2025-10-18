@@ -1,6 +1,6 @@
-import React, { useState, createContext, useContext } from 'react';
+import React, { useState, createContext, useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Calendar, Target, Wrench } from 'lucide-react';
+import { Calendar, Target, Wrench, Clock } from 'lucide-react';
 
 // Import components
 import CalendarTab from '../components/mastery/CalendarTab';
@@ -22,9 +22,34 @@ const Mastery = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   const triggerRefresh = () => {
     setRefreshKey(prev => prev + 1);
+  };
+
+  // Update current time every minute
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = () => {
+    const hours = currentTime.getHours();
+    const minutes = currentTime.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    const displayMinutes = minutes < 10 ? `0${minutes}` : minutes;
+    return `${displayHours}:${displayMinutes} ${ampm}`;
+  };
+
+  const formatDate = () => {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    return `${days[currentTime.getDay()]}, ${months[currentTime.getMonth()]} ${currentTime.getDate()}`;
   };
 
   const tabs = [
@@ -49,24 +74,39 @@ const Mastery = () => {
         </p>
       </div>
       
-      {/* Tab Navigation */}
-      <div className="glass-tab-navigation mb-8">
-        <nav className="flex space-x-1">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = location.pathname === tab.path || (tab.path === '/mastery/calendar' && location.pathname === '/mastery');
-            return (
-              <button
-                key={tab.id}
-                onClick={() => handleTabClick(tab.path)}
-                className={`glass-tab-btn ${isActive ? 'glass-tab-btn-active' : ''}`}
-              >
-                <Icon size={20} className="mr-2" />
-                {tab.label}
-              </button>
-            );
-          })}
-        </nav>
+      {/* Sticky Tab Header */}
+      <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 -mx-8 px-8 py-4 mb-8">
+        <div className="flex items-center justify-between max-w-7xl mx-auto">
+          {/* Current Time Display */}
+          <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
+            <Clock size={18} />
+            <div className="text-sm">
+              <div className="font-semibold">{formatTime()}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate()}</div>
+            </div>
+          </div>
+          
+          {/* Centered Tab Navigation */}
+          <nav className="flex space-x-1 glass-tab-navigation">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = location.pathname === tab.path || (tab.path === '/mastery/calendar' && location.pathname === '/mastery');
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabClick(tab.path)}
+                  className={`glass-tab-btn ${isActive ? 'glass-tab-btn-active' : ''}`}
+                >
+                  <Icon size={20} className="mr-2" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </nav>
+          
+          {/* Spacer for balance (same width as time display) */}
+          <div className="w-32"></div>
+        </div>
       </div>
       
       {/* Tab Content */}
