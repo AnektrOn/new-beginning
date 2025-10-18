@@ -1,105 +1,138 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Grid3X3, Clock, Edit3, Trash2, CheckCircle, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Grid3X3, Clock, Edit3, Trash2, CheckCircle, Target } from 'lucide-react';
 
 const CalendarTab = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState([]);
+  const [habits, setHabits] = useState([]);
   const [view, setView] = useState('month');
   const [selectedDay, setSelectedDay] = useState(new Date());
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [editingEvent, setEditingEvent] = useState(null);
-  const [newEvent, setNewEvent] = useState({
-    title: '',
-    date: '',
-    startTime: '',
-    endTime: '',
-    color: '#3b82f6',
-    description: ''
-  });
 
-  // Mock events data
-  useEffect(() => {
-    const mockEvents = [
-      {
-        id: 1,
-        title: 'Team Standup',
-        date: '2025-01-15',
-        startTime: '13:00',
-        endTime: '15:00',
-        color: '#3b82f6',
-        completed: false,
-        source: 'toolbox',
-        description: 'Daily team sync and progress review'
-      },
-      {
-        id: 2,
-        title: 'Project Review',
-        date: '2025-01-15',
-        startTime: '13:00',
-        endTime: '14:30',
-        color: '#10b981',
-        completed: true,
-        source: 'habit',
-        description: 'Weekly project status and milestone review'
-      },
-      {
-        id: 3,
-        title: 'Deployment Planning',
-        date: '2025-01-15',
-        startTime: '17:00',
-        endTime: '18:30',
-        color: '#f59e0b',
-        completed: false,
-        source: 'toolbox',
-        description: 'Plan next deployment cycle and rollback strategy'
-      },
-      {
-        id: 4,
-        title: 'User Testing',
-        date: '2025-01-16',
-        startTime: '10:00',
-        endTime: '10:30',
-        color: '#8b5cf6',
-        completed: false,
-        source: 'habit',
-        description: 'Conduct user testing session for new features'
-      },
-      {
-        id: 5,
-        title: 'Stakeholder Update',
-        date: '2025-01-16',
-        startTime: '18:00',
-        endTime: '18:30',
-        color: '#ef4444',
-        completed: false,
-        source: 'toolbox',
-        description: 'Weekly update to project stakeholders'
-      },
-      {
-        id: 6,
-        title: 'Design Workshop',
-        date: '2025-01-17',
-        startTime: '14:00',
-        endTime: '15:30',
-        color: '#06b6d4',
-        completed: false,
-        source: 'habit',
-        description: 'Collaborative design session for new UI components'
-      },
-      {
-        id: 7,
-        title: 'Feature Planning',
-        date: '2025-01-17',
-        startTime: '18:15',
-        endTime: '19:45',
-        color: '#84cc16',
-        completed: false,
-        source: 'toolbox',
-        description: 'Plan upcoming features and technical requirements'
+  // Helper function to calculate current streak from completion dates
+  const calculateCurrentStreak = (completedDates = []) => {
+    if (!completedDates || completedDates.length === 0) return 0;
+    
+    const today = new Date();
+    const todayString = today.toISOString().split('T')[0];
+    
+    // Sort dates in descending order (most recent first)
+    const sortedDates = [...completedDates].sort().reverse();
+    
+    let streak = 0;
+    let currentDate = new Date(today);
+    
+    // Check if today is completed
+    if (sortedDates.includes(todayString)) {
+      streak = 1;
+      currentDate.setDate(currentDate.getDate() - 1);
+    } else {
+      // If today is not completed, start from yesterday
+      currentDate.setDate(currentDate.getDate() - 1);
+    }
+    
+    // Count consecutive days backwards
+    while (true) {
+      const dateString = currentDate.toISOString().split('T')[0];
+      if (sortedDates.includes(dateString)) {
+        streak++;
+        currentDate.setDate(currentDate.getDate() - 1);
+      } else {
+        break;
       }
-    ];
-    setEvents(mockEvents);
+    }
+    
+    return streak;
+  };
+
+  // Load habits data and convert to calendar events
+  useEffect(() => {
+    const loadHabitsAndEvents = async () => {
+      try {
+        // TODO: Implement API calls to fetch habits
+        // For now, using mock data matching the habits structure
+        const today = new Date().toISOString().split('T')[0];
+        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        
+        // Generate some realistic completion dates for demonstration
+        const buildInPublicDates = [today, yesterday, twoDaysAgo, '2025-01-12', '2025-01-11', '2025-01-10', '2025-01-09', '2025-01-08'];
+        const readDates = [yesterday, twoDaysAgo, '2025-01-12', '2025-01-11', '2025-01-10'];
+        const workoutDates = [today, yesterday, twoDaysAgo];
+        
+        const mockHabits = [
+          {
+            id: '1',
+            title: 'Build in Public',
+            description: 'Share your progress and learnings publicly',
+            frequency_type: 'daily',
+            xp_reward: 10,
+            completion_count: buildInPublicDates.length,
+            streak: calculateCurrentStreak(buildInPublicDates),
+            is_active: true,
+            is_custom: true,
+            color: '#3b82f6', // Blue
+            completed_today: buildInPublicDates.includes(today),
+            completed_dates: buildInPublicDates
+          },
+          {
+            id: '2',
+            title: 'Read 10 pages',
+            description: 'Read at least 10 pages daily',
+            frequency_type: 'daily',
+            xp_reward: 10,
+            completion_count: readDates.length,
+            streak: calculateCurrentStreak(readDates),
+            is_active: true,
+            is_custom: false,
+            color: '#10b981', // Green
+            completed_today: readDates.includes(today),
+            completed_dates: readDates
+          },
+          {
+            id: '3',
+            title: 'Workout',
+            description: 'Exercise for at least 30 minutes',
+            frequency_type: 'daily',
+            xp_reward: 10,
+            completion_count: workoutDates.length,
+            streak: calculateCurrentStreak(workoutDates),
+            is_active: true,
+            is_custom: true,
+            color: '#8b5cf6', // Purple
+            completed_today: workoutDates.includes(today),
+            completed_dates: workoutDates
+          }
+        ];
+
+        setHabits(mockHabits);
+
+        // Convert habits to calendar events
+        const habitEvents = [];
+        mockHabits.forEach(habit => {
+          habit.completed_dates.forEach(date => {
+            habitEvents.push({
+              id: `habit-${habit.id}-${date}`,
+              title: habit.title,
+              date: date,
+              startTime: '09:00', // Default morning time for habits
+              endTime: '09:30',
+              color: habit.color,
+              completed: true,
+              source: 'habit',
+              habitId: habit.id,
+              description: habit.description,
+              xp_reward: habit.xp_reward
+            });
+          });
+        });
+
+        setEvents(habitEvents);
+      } catch (error) {
+        console.error('Error loading habits:', error);
+      }
+    };
+
+    loadHabitsAndEvents();
   }, []);
 
   const getDaysInMonth = (date) => {
@@ -182,54 +215,109 @@ const CalendarTab = () => {
   };
 
   const toggleEventCompletion = (eventId) => {
-    setEvents(events.map(event => 
-      event.id === eventId ? { ...event, completed: !event.completed } : event
-    ));
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
+
+    if (event.source === 'habit') {
+      // Handle habit completion
+      const habitId = event.habitId;
+      const eventDate = event.date;
+      
+      setHabits(habits.map(habit => {
+        if (habit.id === habitId) {
+          const completedDates = habit.completed_dates || [];
+          const isCompleted = completedDates.includes(eventDate);
+          
+          let newCompletedDates;
+          if (isCompleted) {
+            // Remove from completed dates
+            newCompletedDates = completedDates.filter(date => date !== eventDate);
+          } else {
+            // Add to completed dates
+            newCompletedDates = [...completedDates, eventDate];
+          }
+          
+          // Recalculate streak
+          const newStreak = calculateCurrentStreak(newCompletedDates);
+          
+          return {
+            ...habit,
+            completed_dates: newCompletedDates,
+            completion_count: newCompletedDates.length,
+            streak: newStreak,
+            completed_today: newCompletedDates.includes(new Date().toISOString().split('T')[0])
+          };
+        }
+        return habit;
+      }));
+
+      // Update events
+      setEvents(events.map(e => 
+        e.id === eventId ? { ...e, completed: !e.completed } : e
+      ));
+    } else {
+      // Handle regular events
+      setEvents(events.map(e => 
+        e.id === eventId ? { ...e, completed: !e.completed } : e
+      ));
+    }
   };
 
   const deleteEvent = (eventId) => {
-    setEvents(events.filter(event => event.id !== eventId));
-  };
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
 
-  const handleCreateEvent = () => {
-    if (newEvent.title && newEvent.date && newEvent.startTime && newEvent.endTime) {
-      const event = {
-        id: Date.now(),
-        ...newEvent,
-        completed: false,
-        source: 'manual'
-      };
-      setEvents([...events, event]);
-      setNewEvent({ title: '', date: '', startTime: '', endTime: '', color: '#3b82f6', description: '' });
-      setShowCreateDialog(false);
+    if (event.source === 'habit') {
+      // For habits, we don't delete the event, we just mark it as incomplete
+      toggleEventCompletion(eventId);
+    } else {
+      // For regular events, delete them
+      setEvents(events.filter(e => e.id !== eventId));
     }
   };
 
-  const handleEditEvent = (event) => {
-    setEditingEvent(event);
-    setNewEvent({
-      title: event.title,
-      date: event.date,
-      startTime: event.startTime,
-      endTime: event.endTime,
-      color: event.color,
-      description: event.description
-    });
-    setShowEditDialog(true);
+  // Add habit completion for today
+  const addHabitCompletion = (habitId, date) => {
+    const habit = habits.find(h => h.id === habitId);
+    if (!habit) return;
+
+    const completedDates = habit.completed_dates || [];
+    if (completedDates.includes(date)) return; // Already completed
+
+    const newCompletedDates = [...completedDates, date];
+    const newStreak = calculateCurrentStreak(newCompletedDates);
+
+    // Update habit
+    setHabits(habits.map(h => 
+      h.id === habitId 
+        ? {
+            ...h,
+            completed_dates: newCompletedDates,
+            completion_count: newCompletedDates.length,
+            streak: newStreak,
+            completed_today: newCompletedDates.includes(new Date().toISOString().split('T')[0])
+          }
+        : h
+    ));
+
+    // Add event
+    const newEvent = {
+      id: `habit-${habitId}-${date}`,
+      title: habit.title,
+      date: date,
+      startTime: '09:00',
+      endTime: '09:30',
+      color: habit.color,
+      completed: true,
+      source: 'habit',
+      habitId: habit.id,
+      description: habit.description,
+      xp_reward: habit.xp_reward
+    };
+
+    setEvents([...events, newEvent]);
   };
 
-  const handleUpdateEvent = () => {
-    if (editingEvent && newEvent.title && newEvent.date && newEvent.startTime && newEvent.endTime) {
-      setEvents(events.map(event => 
-        event.id === editingEvent.id 
-          ? { ...event, ...newEvent }
-          : event
-      ));
-      setEditingEvent(null);
-      setNewEvent({ title: '', date: '', startTime: '', endTime: '', color: '#3b82f6', description: '' });
-      setShowEditDialog(false);
-    }
-  };
 
   const formatTime = (startTime, endTime) => {
     const formatTime = (time) => {
@@ -246,18 +334,6 @@ const CalendarTab = () => {
     return `${formatTime(startTime)}-${formatTime(endTime)}`;
   };
 
-  const getEventColors = () => [
-    { name: 'Blue', value: '#3b82f6' },
-    { name: 'Green', value: '#10b981' },
-    { name: 'Yellow', value: '#f59e0b' },
-    { name: 'Red', value: '#ef4444' },
-    { name: 'Purple', value: '#8b5cf6' },
-    { name: 'Pink', value: '#ec4899' },
-    { name: 'Indigo', value: '#6366f1' },
-    { name: 'Teal', value: '#06b6d4' },
-    { name: 'Lime', value: '#84cc16' },
-    { name: 'Orange', value: '#f97316' }
-  ];
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -317,13 +393,6 @@ const CalendarTab = () => {
         </div>
         
         <div className="flex items-center space-x-4">
-          <button
-            onClick={() => setShowCreateDialog(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-          >
-            <Plus size={18} />
-            <span>Add Event</span>
-          </button>
           <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
             <button
               onClick={() => setView('month')}
@@ -410,15 +479,20 @@ const CalendarTab = () => {
                             }}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <div className={`font-medium truncate ${
-                              event.completed 
-                                ? 'text-white line-through' 
-                                : 'text-white'
-                            }`}>
-                              {event.title}
+                            <div className="flex items-center space-x-1">
+                              {event.source === 'habit' && (
+                                <Target size={10} className="text-white/80" />
+                              )}
+                              <div className={`font-medium truncate ${
+                                event.completed 
+                                  ? 'text-white line-through' 
+                                  : 'text-white'
+                              }`}>
+                                {event.title}
+                              </div>
                             </div>
                             <div className="text-xs text-white/80">
-                              {formatTime(event.startTime, event.endTime)}
+                              {event.source === 'habit' ? `+${event.xp_reward} XP` : formatTime(event.startTime, event.endTime)}
                             </div>
                             
                             <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
@@ -436,19 +510,43 @@ const CalendarTab = () => {
                               >
                                 <CheckCircle size={12} />
                               </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteEvent(event.id);
-                                }}
-                                className="p-1 rounded bg-red-500 hover:bg-red-600 text-white text-xs"
-                                title="Delete event"
-                              >
-                                <Trash2 size={12} />
-                              </button>
+                              {event.source !== 'habit' && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteEvent(event.id);
+                                  }}
+                                  className="p-1 rounded bg-red-500 hover:bg-red-600 text-white text-xs"
+                                  title="Delete event"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              )}
                             </div>
                           </div>
                         ))}
+                        
+                        {/* Add habit completion for today */}
+                        {day && day.toDateString() === new Date().toDateString() && (
+                          <div className="mt-2">
+                            {habits.filter(habit => {
+                              const today = new Date().toISOString().split('T')[0];
+                              return !habit.completed_dates.includes(today);
+                            }).map(habit => (
+                              <button
+                                key={habit.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  addHabitCompletion(habit.id, day.toISOString().split('T')[0]);
+                                }}
+                                className="w-full p-1 rounded text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center space-x-1"
+                              >
+                                <Target size={10} />
+                                <span>+ {habit.title}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </>
                   )}
@@ -497,17 +595,22 @@ const CalendarTab = () => {
                           backgroundColor: event.completed ? `${event.color}40` : event.color,
                           borderLeft: `3px solid ${event.color}`
                         }}
-                        onClick={() => handleEditEvent(event)}
+                        onClick={() => event.source !== 'habit' && console.log('Edit event:', event)}
                       >
-                        <div className={`font-medium truncate ${
-                          event.completed 
-                            ? 'text-white line-through' 
-                            : 'text-white'
-                        }`}>
-                          {event.title}
+                        <div className="flex items-center space-x-1">
+                          {event.source === 'habit' && (
+                            <Target size={10} className="text-white/80" />
+                          )}
+                          <div className={`font-medium truncate ${
+                            event.completed 
+                              ? 'text-white line-through' 
+                              : 'text-white'
+                          }`}>
+                            {event.title}
+                          </div>
                         </div>
                         <div className="text-xs text-white/80">
-                          {formatTime(event.startTime, event.endTime)}
+                          {event.source === 'habit' ? `+${event.xp_reward} XP` : formatTime(event.startTime, event.endTime)}
                         </div>
                         
                         <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
@@ -525,19 +628,43 @@ const CalendarTab = () => {
                           >
                             <CheckCircle size={12} />
                           </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteEvent(event.id);
-                            }}
-                            className="p-1 rounded bg-red-500 hover:bg-red-600 text-white text-xs"
-                            title="Delete event"
-                          >
-                            <Trash2 size={12} />
-                          </button>
+                          {event.source !== 'habit' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteEvent(event.id);
+                              }}
+                              className="p-1 rounded bg-red-500 hover:bg-red-600 text-white text-xs"
+                              title="Delete event"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}
+                    
+                    {/* Add habit completion for today */}
+                    {day.toDateString() === new Date().toDateString() && (
+                      <div className="mt-2">
+                        {habits.filter(habit => {
+                          const today = new Date().toISOString().split('T')[0];
+                          return !habit.completed_dates.includes(today);
+                        }).map(habit => (
+                          <button
+                            key={habit.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              addHabitCompletion(habit.id, day.toISOString().split('T')[0]);
+                            }}
+                            className="w-full p-1 rounded text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center space-x-1"
+                          >
+                            <Target size={10} />
+                            <span>+ {habit.title}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -614,23 +741,28 @@ const CalendarTab = () => {
                       borderLeftColor: event.color,
                       minHeight: '32px'
                     }}
-                    onClick={() => handleEditEvent(event)}
+                    onClick={() => event.source !== 'habit' && console.log('Edit event:', event)}
                   >
                     <div className="flex items-start justify-between h-full">
                       <div className="flex-1 min-w-0">
-                        <div className={`font-medium text-sm truncate ${
-                          event.completed 
-                            ? 'text-gray-600 dark:text-gray-400 line-through' 
-                            : 'text-gray-900 dark:text-white'
-                        }`}>
-                          {event.title}
+                        <div className="flex items-center space-x-1">
+                          {event.source === 'habit' && (
+                            <Target size={12} className="text-gray-600 dark:text-gray-400" />
+                          )}
+                          <div className={`font-medium text-sm truncate ${
+                            event.completed 
+                              ? 'text-gray-600 dark:text-gray-400 line-through' 
+                              : 'text-gray-900 dark:text-white'
+                          }`}>
+                            {event.title}
+                          </div>
                         </div>
                         <div className={`text-xs ${
                           event.completed 
                             ? 'text-gray-500 dark:text-gray-500' 
                             : 'text-gray-700 dark:text-gray-300'
                         }`}>
-                          {formatTime(event.startTime, event.endTime)}
+                          {event.source === 'habit' ? `+${event.xp_reward} XP` : formatTime(event.startTime, event.endTime)}
                         </div>
                         {height > 40 && event.description && (
                           <div className="text-xs text-gray-600 dark:text-gray-300 mt-1 truncate">
@@ -641,16 +773,18 @@ const CalendarTab = () => {
                       
                       {/* Action buttons - appear on hover */}
                       <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditEvent(event);
-                          }}
-                          className="p-1 rounded bg-blue-500 hover:bg-blue-600 text-white text-xs"
-                          title="Edit event"
-                        >
-                          <Edit3 size={12} />
-                        </button>
+                        {event.source !== 'habit' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              console.log('Edit event:', event);
+                            }}
+                            className="p-1 rounded bg-blue-500 hover:bg-blue-600 text-white text-xs"
+                            title="Edit event"
+                          >
+                            <Edit3 size={12} />
+                          </button>
+                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -665,40 +799,45 @@ const CalendarTab = () => {
                         >
                           <CheckCircle size={12} />
                         </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteEvent(event.id);
-                          }}
-                          className="p-1 rounded bg-red-500 hover:bg-red-600 text-white text-xs"
-                          title="Delete event"
-                        >
-                          <Trash2 size={12} />
-                        </button>
+                        {event.source !== 'habit' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteEvent(event.id);
+                            }}
+                            className="p-1 rounded bg-red-500 hover:bg-red-600 text-white text-xs"
+                            title="Delete event"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
                 );
               })}
               
-              {/* Click to add event areas */}
-              {Array.from({ length: 24 }, (_, i) => (
-                <div
-                  key={i}
-                  className="absolute left-2 right-2 h-16 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                  style={{ top: `${i * 64}px` }}
-                  onClick={() => {
-                    const hour = i.toString().padStart(2, '0');
-                    setNewEvent(prev => ({
-                      ...prev,
-                      date: selectedDay.toISOString().split('T')[0],
-                      startTime: `${hour}:00`,
-                      endTime: `${hour}:30`
-                    }));
-                    setShowCreateDialog(true);
-                  }}
-                />
-              ))}
+              {/* Add habit completion for today */}
+              {selectedDay.toDateString() === new Date().toDateString() && (
+                <div className="absolute left-2 right-2 top-2 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-md">
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">Complete habits for today:</div>
+                  <div className="space-y-1">
+                    {habits.filter(habit => {
+                      const today = new Date().toISOString().split('T')[0];
+                      return !habit.completed_dates.includes(today);
+                    }).map(habit => (
+                      <button
+                        key={habit.id}
+                        onClick={() => addHabitCompletion(habit.id, selectedDay.toISOString().split('T')[0])}
+                        className="w-full p-1 rounded text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors flex items-center space-x-1"
+                      >
+                        <Target size={10} />
+                        <span>+ {habit.title}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
             </div>
@@ -792,12 +931,17 @@ const CalendarTab = () => {
                   <div
                     key={event.id}
                     className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                    onClick={() => handleEditEvent(event)}
+                        onClick={() => event.source !== 'habit' && console.log('Edit event:', event)}
                   >
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: event.color }}
-                    ></div>
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: event.color }}
+                      ></div>
+                      {event.source === 'habit' && (
+                        <Target size={12} className="text-gray-500 dark:text-gray-400" />
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className={`text-sm font-medium truncate ${
                         event.completed 
@@ -807,7 +951,7 @@ const CalendarTab = () => {
                         {event.title}
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {formatTime(event.startTime, event.endTime)}
+                        {event.source === 'habit' ? `+${event.xp_reward} XP` : formatTime(event.startTime, event.endTime)}
                       </div>
                     </div>
                   </div>
@@ -823,225 +967,6 @@ const CalendarTab = () => {
         </div>
       </div>
 
-      {/* Create Event Dialog */}
-      {showCreateDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Create Event</h3>
-              <button
-                onClick={() => setShowCreateDialog(false)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Event Title
-                </label>
-                <input
-                  type="text"
-                  value={newEvent.title}
-                  onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
-                  placeholder="Enter event title"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Date
-                </label>
-                <input
-                  type="date"
-                  value={newEvent.date}
-                  onChange={(e) => setNewEvent({...newEvent, date: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Start Time
-                  </label>
-                  <input
-                    type="time"
-                    value={newEvent.startTime}
-                    onChange={(e) => setNewEvent({...newEvent, startTime: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    End Time
-                  </label>
-                  <input
-                    type="time"
-                    value={newEvent.endTime}
-                    onChange={(e) => setNewEvent({...newEvent, endTime: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Color
-                </label>
-                <div className="grid grid-cols-5 gap-2">
-                  {getEventColors().map(color => (
-                    <button
-                      key={color.value}
-                      onClick={() => setNewEvent({...newEvent, color: color.value})}
-                      className={`w-8 h-8 rounded-full border-2 ${
-                        newEvent.color === color.value ? 'border-gray-900 dark:border-white' : 'border-gray-300 dark:border-gray-600'
-                      }`}
-                      style={{ backgroundColor: color.value }}
-                      title={color.name}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={newEvent.description}
-                  onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
-                  rows="3"
-                  placeholder="Optional description"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => setShowCreateDialog(false)}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateEvent}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-              >
-                Create Event
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Event Dialog */}
-      {showEditDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Edit Event</h3>
-              <button
-                onClick={() => setShowEditDialog(false)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Event Title
-                </label>
-                <input
-                  type="text"
-                  value={newEvent.title}
-                  onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
-                  placeholder="Enter event title"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Date
-                </label>
-                <input
-                  type="date"
-                  value={newEvent.date}
-                  onChange={(e) => setNewEvent({...newEvent, date: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Start Time
-                  </label>
-                  <input
-                    type="time"
-                    value={newEvent.startTime}
-                    onChange={(e) => setNewEvent({...newEvent, startTime: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    End Time
-                  </label>
-                  <input
-                    type="time"
-                    value={newEvent.endTime}
-                    onChange={(e) => setNewEvent({...newEvent, endTime: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Color
-                </label>
-                <div className="grid grid-cols-5 gap-2">
-                  {getEventColors().map(color => (
-                    <button
-                      key={color.value}
-                      onClick={() => setNewEvent({...newEvent, color: color.value})}
-                      className={`w-8 h-8 rounded-full border-2 ${
-                        newEvent.color === color.value ? 'border-gray-900 dark:border-white' : 'border-gray-300 dark:border-gray-600'
-                      }`}
-                      style={{ backgroundColor: color.value }}
-                      title={color.name}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={newEvent.description}
-                  onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
-                  rows="3"
-                  placeholder="Optional description"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => setShowEditDialog(false)}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpdateEvent}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-              >
-                Update Event
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
