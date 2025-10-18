@@ -119,6 +119,25 @@ class MasteryService {
   }
 
   /**
+   * Delete a user habit
+   */
+  async deleteUserHabit(habitId) {
+    try {
+      const { data, error } = await supabase
+        .from('user_habits')
+        .update({ is_active: false })
+        .eq('id', habitId)
+        .select();
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error('Error deleting user habit:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
    * Complete a habit for a specific date
    */
   async completeHabit(userId, habitId, date = null) {
