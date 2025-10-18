@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Target, CheckCircle, Star, Laptop, BookOpen, Dumbbell, Flame, Trash2 } from 'lucide-react';
 import masteryService from '../../services/masteryService';
 import { useAuth } from '../../contexts/AuthContext';
-import { handleAsyncOperation, handleError, clearError } from '../../utils/errorHandler';
+import { handleError } from '../../utils/errorHandler';
 
 // Helper function to calculate current streak from completion dates
 const calculateCurrentStreak = (completedDates) => {
@@ -192,7 +192,7 @@ const HabitsTab = () => {
     if (!user) return;
     
     try {
-      const { data: addedHabit, error } = await masteryService.addHabitFromLibrary(user.id, habit.id);
+      const { error } = await masteryService.addHabitFromLibrary(user.id, habit.id);
       if (error) throw error;
 
       // Reload habits to get the updated list
