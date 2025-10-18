@@ -99,16 +99,16 @@ const CalendarTab = () => {
         // Transform user habits to include completion data
         const transformedHabits = await Promise.all(
           (userHabits || []).map(async (habit) => {
-            // Get completions for the last 30 days
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            // Get completions for the entire current month
             const today = new Date();
+            const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
             
             const { data: completions } = await masteryService.getHabitCompletions(
               user.id,
               habit.id,
-              thirtyDaysAgo.toISOString().split('T')[0],
-              today.toISOString().split('T')[0]
+              firstDayOfMonth.toISOString().split('T')[0],
+              lastDayOfMonth.toISOString().split('T')[0]
             );
 
             // Calculate streak
@@ -130,24 +130,53 @@ const CalendarTab = () => {
 
         setHabits(transformedHabits);
 
-        // Convert habits to calendar events
+        // Convert habits to calendar events for ALL days in current view
         const habitEvents = [];
         transformedHabits.forEach(habit => {
-          habit.completed_dates.forEach(date => {
-            habitEvents.push({
-              id: `habit-${habit.id}-${date}`,
-              title: habit.title,
-              date: date,
-              startTime: '09:00', // Default morning time for habits
-              endTime: '09:30',
-              color: habit.color,
-              completed: true,
-              source: 'habit',
-              habitId: habit.id,
-              description: habit.description,
-              xp_reward: habit.xp_reward
+          // Generate events for all days in the current month (for daily habits)
+          if (habit.frequency_type === 'daily') {
+            const today = new Date();
+            const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            
+            // Create events for every day of the month
+            for (let day = 1; day <= lastDayOfMonth.getDate(); day++) {
+              const date = new Date(today.getFullYear(), today.getMonth(), day);
+              const dateString = date.toISOString().split('T')[0];
+              const isCompleted = habit.completed_dates.includes(dateString);
+              
+              habitEvents.push({
+                id: `habit-${habit.id}-${dateString}`,
+                title: habit.title,
+                date: dateString,
+                startTime: '09:00', // Default morning time for habits
+                endTime: '09:30',
+                color: habit.color,
+                completed: isCompleted,
+                source: 'habit',
+                habitId: habit.id,
+                description: habit.description,
+                xp_reward: habit.xp_reward
+              });
+            }
+          } else {
+            // For non-daily habits, only show completed dates
+            habit.completed_dates.forEach(date => {
+              habitEvents.push({
+                id: `habit-${habit.id}-${date}`,
+                title: habit.title,
+                date: date,
+                startTime: '09:00',
+                endTime: '09:30',
+                color: habit.color,
+                completed: true,
+                source: 'habit',
+                habitId: habit.id,
+                description: habit.description,
+                xp_reward: habit.xp_reward
+              });
             });
-          });
+          }
         });
 
         // Add calendar events
@@ -383,27 +412,7 @@ const CalendarTab = () => {
 
         setHabits(transformedHabits);
 
-        // Convert habits to calendar events
-        const habitEvents = [];
-        transformedHabits.forEach(habit => {
-          habit.completed_dates.forEach(date => {
-            habitEvents.push({
-              id: `habit-${habit.id}-${date}`,
-              title: habit.title,
-              date: date,
-              startTime: '09:00',
-              endTime: '09:30',
-              color: habit.color,
-              completed: true,
-              source: 'habit',
-              habitId: habit.id,
-              description: habit.description,
-              xp_reward: habit.xp_reward
-            });
-          });
-        });
-
-        // Update events with new habit events
+        // Update events with new habit events (already generated above)
         const nonHabitEvents = events.filter(e => e.source !== 'habit');
         setEvents([...habitEvents, ...nonHabitEvents]);
         
