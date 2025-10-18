@@ -16,6 +16,9 @@ const CalendarTab = () => {
   const [error, setError] = useState(null);
   const [completionPopup, setCompletionPopup] = useState(null);
 
+  // Calculate events for the selected day using virtual events
+  const selectedDayEvents = getEventsForDate(selectedDay);
+
   // Helper function to calculate current streak from completion dates
   const calculateCurrentStreak = (completedDates = []) => {
     if (!completedDates || completedDates.length === 0) return 0;
@@ -464,7 +467,6 @@ const CalendarTab = () => {
   const totalEvents = events.length;
   const currentMonth = monthNames[currentDate.getMonth()];
   const currentYear = currentDate.getFullYear();
-  const selectedDayEvents = getEventsForDate(selectedDay);
 
   return (
     <div className="h-full flex flex-col">
@@ -802,10 +804,6 @@ const CalendarTab = () => {
         </div>
       ) : (
         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-          {(() => {
-            // Calculate events for the selected day using virtual events
-            const selectedDayEvents = getEventsForDate(selectedDay);
-            return (
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-2">
               <button
@@ -991,9 +989,6 @@ const CalendarTab = () => {
               <span className="text-gray-600 dark:text-gray-300">Today</span>
             </div>
           </div>
-        </div>
-            );
-          })()}
         </div>
 
         {/* Sidebar */}
