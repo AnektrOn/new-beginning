@@ -16,9 +16,6 @@ const CalendarTab = () => {
   const [error, setError] = useState(null);
   const [completionPopup, setCompletionPopup] = useState(null);
 
-  // Calculate events for the selected day using virtual events
-  const selectedDayEvents = getEventsForDate(selectedDay);
-
   // Helper function to calculate current streak from completion dates
   const calculateCurrentStreak = (completedDates = []) => {
     if (!completedDates || completedDates.length === 0) return 0;
@@ -244,6 +241,9 @@ const CalendarTab = () => {
     // Combine real events with virtual habit events
     return [...realEvents, ...virtualHabitEvents];
   };
+
+  // Calculate events for the selected day using virtual events
+  const selectedDayEvents = getEventsForDate(selectedDay);
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
