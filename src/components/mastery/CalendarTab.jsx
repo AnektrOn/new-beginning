@@ -191,7 +191,7 @@ const CalendarTab = () => {
       if (habit.frequency_type === 'daily') {
         const isCompleted = habit.completed_dates.includes(dateStr);
         virtualEvents.push({
-          id: `habit-${habit.id}-${dateStr}`,
+          id: `habit-${habit.id}|${dateStr}`,
           title: habit.title,
           date: dateStr,
           startTime: '09:00',
@@ -208,7 +208,7 @@ const CalendarTab = () => {
         // For non-daily habits, only show if completed on this date
         if (habit.completed_dates.includes(dateStr)) {
           virtualEvents.push({
-            id: `habit-${habit.id}-${dateStr}`,
+            id: `habit-${habit.id}|${dateStr}`,
             title: habit.title,
             date: dateStr,
             startTime: '09:00',
@@ -282,16 +282,13 @@ const CalendarTab = () => {
   const toggleEventCompletion = async (eventId) => {
     if (!user) return;
     
-    // Parse the event ID to get habit info (format: habit-{habitId}-{date})
+    // Parse the event ID to get habit info (format: habit-{habitId}|{date})
     if (eventId.startsWith('habit-')) {
-      // Remove 'habit-' prefix and split by the last occurrence of '-'
+      // Remove 'habit-' prefix and split by the pipe separator
       const withoutPrefix = eventId.substring(6); // Remove 'habit-'
-      const lastDashIndex = withoutPrefix.lastIndexOf('-');
-      const habitId = withoutPrefix.substring(0, lastDashIndex);
-      const dateString = withoutPrefix.substring(lastDashIndex + 1);
-      
-      // Fix: Reconstruct the full date string (YYYY-MM-DD)
-      const fullDateString = `2025-10-${dateString}`;
+      const pipeIndex = withoutPrefix.indexOf('|');
+      const habitId = withoutPrefix.substring(0, pipeIndex);
+      const fullDateString = withoutPrefix.substring(pipeIndex + 1);
       
       // Check if completion is allowed (current day + 2 days prior)
       const today = new Date();
