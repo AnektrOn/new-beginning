@@ -172,7 +172,7 @@ const ToolboxTab = () => {
   };
 
   // Helper function to generate progress grid for toolbox items
-  const generateProgressGrid = (completedDates, color) => {
+  const generateProgressGrid = (completedDates = [], color) => {
     const today = new Date();
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
@@ -220,7 +220,7 @@ const ToolboxTab = () => {
   };
 
   // Helper function to calculate current streak from completion dates
-  const calculateCurrentStreak = (completedDates) => {
+  const calculateCurrentStreak = (completedDates = []) => {
     if (!completedDates || completedDates.length === 0) return 0;
     
     const today = new Date();
@@ -265,7 +265,8 @@ const ToolboxTab = () => {
       
       setUserToolbox(userToolbox.map(tool => {
         if (tool.id === toolId) {
-          const isUsedToday = tool.completed_dates.includes(today);
+          const completedDates = tool.completed_dates || [];
+          const isUsedToday = completedDates.includes(today);
           
           // Prevent multiple uses on the same day
           if (isUsedToday) {
@@ -273,7 +274,7 @@ const ToolboxTab = () => {
           }
           
           // Add today to completed dates
-          const newCompletedDates = [...tool.completed_dates, today];
+          const newCompletedDates = [...completedDates, today];
           
           // Recalculate streak based on actual completion dates
           const newStreak = calculateCurrentStreak(newCompletedDates);
@@ -412,9 +413,10 @@ const ToolboxTab = () => {
           <div className="flex flex-wrap gap-3">
             {userToolbox.map(tool => {
               const today = new Date().toISOString().split('T')[0];
-              const isUsedToday = tool.completed_dates.includes(today);
-              const streak = calculateCurrentStreak(tool.completed_dates);
-              const progressGrid = generateProgressGrid(tool.completed_dates, tool.color);
+              const completedDates = tool.completed_dates || [];
+              const isUsedToday = completedDates.includes(today);
+              const streak = calculateCurrentStreak(completedDates);
+              const progressGrid = generateProgressGrid(completedDates, tool.color || '#3B82F6');
               
               return (
                 <div key={tool.id} className="w-80 bg-blue-900 rounded-lg p-4 text-white">
