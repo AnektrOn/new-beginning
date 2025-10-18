@@ -143,16 +143,16 @@ const HabitsTab = () => {
         // Transform user habits to include completion data and UI properties
         const transformedHabits = await Promise.all(
           (userHabits || []).map(async (habit) => {
-            // Get completions for the last 30 days
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            // Get completions for the entire current month (not just 30 days)
             const today = new Date();
+            const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
             
             const { data: completions } = await masteryService.getHabitCompletions(
               user.id,
               habit.id,
-              thirtyDaysAgo.toISOString().split('T')[0],
-              today.toISOString().split('T')[0]
+              firstDayOfMonth.toISOString().split('T')[0],
+              lastDayOfMonth.toISOString().split('T')[0]
             );
 
             // Calculate streak
@@ -203,15 +203,16 @@ const HabitsTab = () => {
         // Transform the updated habits
         const transformedHabits = await Promise.all(
           userHabits.map(async (h) => {
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            // Get completions for the entire current month
             const today = new Date();
+            const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
             
             const { data: completions } = await masteryService.getHabitCompletions(
               user.id,
               h.id,
-              thirtyDaysAgo.toISOString().split('T')[0],
-              today.toISOString().split('T')[0]
+              firstDayOfMonth.toISOString().split('T')[0],
+              lastDayOfMonth.toISOString().split('T')[0]
             );
 
             const { data: streak } = await masteryService.calculateHabitStreak(user.id, h.id);
@@ -253,15 +254,16 @@ const HabitsTab = () => {
         // Transform the updated habits
         const transformedHabits = await Promise.all(
           userHabits.map(async (h) => {
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            // Get completions for the entire current month
             const today = new Date();
+            const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
             
             const { data: completions } = await masteryService.getHabitCompletions(
               user.id,
               h.id,
-              thirtyDaysAgo.toISOString().split('T')[0],
-              today.toISOString().split('T')[0]
+              firstDayOfMonth.toISOString().split('T')[0],
+              lastDayOfMonth.toISOString().split('T')[0]
             );
 
             const { data: streak } = await masteryService.calculateHabitStreak(user.id, h.id);
@@ -306,15 +308,16 @@ const HabitsTab = () => {
         // Transform the updated habits
         const transformedHabits = await Promise.all(
           userHabits.map(async (h) => {
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            // Get completions for the entire current month
             const today = new Date();
+            const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
             
             const { data: completions } = await masteryService.getHabitCompletions(
               user.id,
               h.id,
-              thirtyDaysAgo.toISOString().split('T')[0],
-              today.toISOString().split('T')[0]
+              firstDayOfMonth.toISOString().split('T')[0],
+              lastDayOfMonth.toISOString().split('T')[0]
             );
 
             const { data: streak } = await masteryService.calculateHabitStreak(user.id, h.id);
@@ -356,15 +359,16 @@ const HabitsTab = () => {
         // Transform the updated habits
         const transformedHabits = await Promise.all(
           userHabits.map(async (h) => {
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            // Get completions for the entire current month
             const today = new Date();
+            const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
             
             const { data: completions } = await masteryService.getHabitCompletions(
               user.id,
               h.id,
-              thirtyDaysAgo.toISOString().split('T')[0],
-              today.toISOString().split('T')[0]
+              firstDayOfMonth.toISOString().split('T')[0],
+              lastDayOfMonth.toISOString().split('T')[0]
             );
 
             const { data: streak } = await masteryService.calculateHabitStreak(user.id, h.id);
