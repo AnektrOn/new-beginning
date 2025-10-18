@@ -128,60 +128,12 @@ const CalendarTab = () => {
           })
         );
 
+        // Store habits for virtual calendar generation (no pre-generated events)
         setHabits(transformedHabits);
 
-        // Convert habits to calendar events for ALL days in current view
-        const habitEvents = [];
-        transformedHabits.forEach(habit => {
-          // Generate events for all days in the current month (for daily habits)
-          if (habit.frequency_type === 'daily') {
-            const today = new Date();
-            const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-            const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-            
-            // Create events for every day of the month
-            for (let day = 1; day <= lastDayOfMonth.getDate(); day++) {
-              const date = new Date(today.getFullYear(), today.getMonth(), day);
-              const dateString = date.toISOString().split('T')[0];
-              const isCompleted = habit.completed_dates.includes(dateString);
-              
-              habitEvents.push({
-                id: `habit-${habit.id}-${dateString}`,
-                title: habit.title,
-                date: dateString,
-                startTime: '09:00', // Default morning time for habits
-                endTime: '09:30',
-                color: habit.color,
-                completed: isCompleted,
-                source: 'habit',
-                habitId: habit.id,
-                description: habit.description,
-                xp_reward: habit.xp_reward
-              });
-            }
-          } else {
-            // For non-daily habits, only show completed dates
-            habit.completed_dates.forEach(date => {
-              habitEvents.push({
-                id: `habit-${habit.id}-${date}`,
-                title: habit.title,
-                date: date,
-                startTime: '09:00',
-                endTime: '09:30',
-                color: habit.color,
-                completed: true,
-                source: 'habit',
-                habitId: habit.id,
-                description: habit.description,
-                xp_reward: habit.xp_reward
-              });
-            });
-          }
-        });
-
-        // Add calendar events
-        const allEvents = [...habitEvents, ...(calendarEvents || [])];
-        setEvents(allEvents);
+        // Only add non-habit calendar events (habits will be generated virtually)
+        const nonHabitCalendarEvents = (calendarEvents || []).filter(event => event.source !== 'habit');
+        setEvents(nonHabitCalendarEvents);
       } catch (error) {
         console.error('Error loading habits and events:', error);
         setError(error.message);
@@ -229,10 +181,64 @@ const CalendarTab = () => {
     return days;
   };
 
+  // Virtual event generation - creates habit events on-demand
+  const getVirtualHabitEvents = (date) => {
+    if (!date || !habits) return [];
+    const dateStr = date.toISOString().split('T')[0];
+    const virtualEvents = [];
+
+    habits.forEach(habit => {
+      // For daily habits, create virtual event for any date
+      if (habit.frequency_type === 'daily') {
+        const isCompleted = habit.completed_dates.includes(dateStr);
+        virtualEvents.push({
+          id: `habit-${habit.id}-${dateStr}`,
+          title: habit.title,
+          date: dateStr,
+          startTime: '09:00',
+          endTime: '09:30',
+          color: habit.color,
+          completed: isCompleted,
+          source: 'habit',
+          habitId: habit.id,
+          description: habit.description,
+          xp_reward: habit.xp_reward
+        });
+      } else {
+        // For non-daily habits, only show if completed on this date
+        if (habit.completed_dates.includes(dateStr)) {
+          virtualEvents.push({
+            id: `habit-${habit.id}-${dateStr}`,
+            title: habit.title,
+            date: dateStr,
+            startTime: '09:00',
+            endTime: '09:30',
+            color: habit.color,
+            completed: true,
+            source: 'habit',
+            habitId: habit.id,
+            description: habit.description,
+            xp_reward: habit.xp_reward
+          });
+        }
+      }
+    });
+
+    return virtualEvents;
+  };
+
   const getEventsForDate = (date) => {
     if (!date) return [];
     const dateStr = date.toISOString().split('T')[0];
-    return events.filter(event => event.date === dateStr);
+    
+    // Get real events from database
+    const realEvents = events.filter(event => event.date === dateStr);
+    
+    // Get virtual habit events for this date
+    const virtualHabitEvents = getVirtualHabitEvents(date);
+    
+    // Combine real events with virtual habit events
+    return [...realEvents, ...virtualHabitEvents];
   };
 
   const handlePrevMonth = () => {
@@ -286,66 +292,31 @@ const CalendarTab = () => {
         const { data: completion, error } = await masteryService.completeHabit(user.id, habitId);
         if (error) throw error;
 
-        // Reload habits and events to get updated data
-        const { data: userHabits } = await masteryService.getUserHabits(user.id);
-        if (userHabits) {
-          // Transform the updated habits
-          const transformedHabits = await Promise.all(
-            userHabits.map(async (habit) => {
-              const thirtyDaysAgo = new Date();
-              thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-              const today = new Date();
+        // Update the specific habit in our habits state (virtual calendar approach)
+        setHabits(prevHabits => 
+          prevHabits.map(habit => {
+            if (habit.id === habitId) {
+              const todayString = new Date().toISOString().split('T')[0];
+              const updatedCompletedDates = [...habit.completed_dates];
               
-              const { data: completions } = await masteryService.getHabitCompletions(
-                user.id,
-                habit.id,
-                thirtyDaysAgo.toISOString().split('T')[0],
-                today.toISOString().split('T')[0]
-              );
-
-              const { data: streak } = await masteryService.calculateHabitStreak(user.id, habit.id);
-              const completedDates = (completions || []).map(c => c.completed_at.split('T')[0]);
-              const todayString = today.toISOString().split('T')[0];
-
+              // Add today's completion if not already present
+              if (!updatedCompletedDates.includes(todayString)) {
+                updatedCompletedDates.push(todayString);
+              }
+              
               return {
                 ...habit,
-                completed_dates: completedDates,
-                completed_today: completedDates.includes(todayString),
-                streak: streak || 0,
-                color: getHabitColor(habit.title)
+                completed_dates: updatedCompletedDates,
+                completed_today: true,
+                streak: (habit.streak || 0) + 1
               };
-            })
-          );
-
-          setHabits(transformedHabits);
-
-          // Convert habits to calendar events
-          const habitEvents = [];
-          transformedHabits.forEach(habit => {
-            habit.completed_dates.forEach(date => {
-              habitEvents.push({
-                id: `habit-${habit.id}-${date}`,
-                title: habit.title,
-                date: date,
-                startTime: '09:00',
-                endTime: '09:30',
-                color: habit.color,
-                completed: true,
-                source: 'habit',
-                habitId: habit.id,
-                description: habit.description,
-                xp_reward: habit.xp_reward
-              });
-            });
-          });
-
-          // Update events with new habit events
-          const nonHabitEvents = events.filter(e => e.source !== 'habit');
-          setEvents([...habitEvents, ...nonHabitEvents]);
-          
-          // Trigger refresh to update other tabs
-          triggerRefresh();
-        }
+            }
+            return habit;
+          })
+        );
+        
+        // Trigger refresh to update other tabs
+        triggerRefresh();
       } catch (error) {
         console.error('Error completing habit:', error);
         setError(error.message);
@@ -379,96 +350,31 @@ const CalendarTab = () => {
       const { data: completion, error } = await masteryService.completeHabit(user.id, habitId);
       if (error) throw error;
 
-      // Reload habits and events to get updated data
-      const { data: userHabits } = await masteryService.getUserHabits(user.id);
-      if (userHabits) {
-        // Transform the updated habits
-        const transformedHabits = await Promise.all(
-          userHabits.map(async (habit) => {
-            // Get completions for the entire current month
-            const today = new Date();
-            const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-            const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      // Update the specific habit in our habits state (virtual calendar approach)
+      setHabits(prevHabits => 
+        prevHabits.map(habit => {
+          if (habit.id === habitId) {
+            const todayString = new Date().toISOString().split('T')[0];
+            const updatedCompletedDates = [...habit.completed_dates];
             
-            const { data: completions } = await masteryService.getHabitCompletions(
-              user.id,
-              habit.id,
-              firstDayOfMonth.toISOString().split('T')[0],
-              lastDayOfMonth.toISOString().split('T')[0]
-            );
-
-            const { data: streak } = await masteryService.calculateHabitStreak(user.id, habit.id);
-            const completedDates = (completions || []).map(c => c.completed_at.split('T')[0]);
-            const todayString = today.toISOString().split('T')[0];
-
+            // Add today's completion if not already present
+            if (!updatedCompletedDates.includes(todayString)) {
+              updatedCompletedDates.push(todayString);
+            }
+            
             return {
               ...habit,
-              completed_dates: completedDates,
-              completed_today: completedDates.includes(todayString),
-              streak: streak || 0,
-              color: getHabitColor(habit.title)
+              completed_dates: updatedCompletedDates,
+              completed_today: true,
+              streak: (habit.streak || 0) + 1
             };
-          })
-        );
-
-        setHabits(transformedHabits);
-
-        // Regenerate habit events for all days
-        const habitEvents = [];
-        transformedHabits.forEach(habit => {
-          // Generate events for all days in the current month (for daily habits)
-          if (habit.frequency_type === 'daily') {
-            const today = new Date();
-            const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-            const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-            
-            // Create events for every day of the month
-            for (let day = 1; day <= lastDayOfMonth.getDate(); day++) {
-              const date = new Date(today.getFullYear(), today.getMonth(), day);
-              const dateString = date.toISOString().split('T')[0];
-              const isCompleted = habit.completed_dates.includes(dateString);
-              
-              habitEvents.push({
-                id: `habit-${habit.id}-${dateString}`,
-                title: habit.title,
-                date: dateString,
-                startTime: '09:00',
-                endTime: '09:30',
-                color: habit.color,
-                completed: isCompleted,
-                source: 'habit',
-                habitId: habit.id,
-                description: habit.description,
-                xp_reward: habit.xp_reward
-              });
-            }
-          } else {
-            // For non-daily habits, only show completed dates
-            habit.completed_dates.forEach(date => {
-              habitEvents.push({
-                id: `habit-${habit.id}-${date}`,
-                title: habit.title,
-                date: date,
-                startTime: '09:00',
-                endTime: '09:30',
-                color: habit.color,
-                completed: true,
-                source: 'habit',
-                habitId: habit.id,
-                description: habit.description,
-                xp_reward: habit.xp_reward
-              });
-            });
           }
-        });
-
-        // Update events with new habit events
-        const nonHabitEvents = events.filter(e => e.source !== 'habit');
-        setEvents([...habitEvents, ...nonHabitEvents]);
-        
-        // Trigger refresh to update other tabs
-        triggerRefresh();
-      }
+          return habit;
+        })
+      );
+      
+      // Trigger refresh to update other tabs
+      triggerRefresh();
     } catch (error) {
       console.error('Error completing habit:', error);
       setError(error.message);
