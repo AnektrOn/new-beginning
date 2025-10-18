@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Wrench, Plus, Target, Trash2 } from 'lucide-react';
+import { Wrench, Plus, Target, Trash2, CheckCircle, Clock, Star } from 'lucide-react';
 
 const ToolboxTab = () => {
   const [activeTab, setActiveTab] = useState('library');
@@ -66,7 +66,38 @@ const ToolboxTab = () => {
             title: 'Pomodoro Technique',
             description: 'Time management method using 25-minute focused work sessions',
             is_active: true,
-            converted_to_habit_id: null
+            converted_to_habit_id: null,
+            usage_count: 12,
+            last_used: '2024-01-15',
+            xp_earned: 180,
+            color: '#3B82F6',
+            completed_dates: ['2024-01-01', '2024-01-02', '2024-01-03', '2024-01-05', '2024-01-06', '2024-01-08', '2024-01-09', '2024-01-10', '2024-01-12', '2024-01-13', '2024-01-14', '2024-01-15']
+          },
+          {
+            id: '2',
+            toolbox_id: '2',
+            title: 'Mind Mapping',
+            description: 'Visual technique for organizing thoughts and ideas',
+            is_active: true,
+            converted_to_habit_id: null,
+            usage_count: 8,
+            last_used: '2024-01-14',
+            xp_earned: 120,
+            color: '#8B5CF6',
+            completed_dates: ['2024-01-02', '2024-01-04', '2024-01-06', '2024-01-08', '2024-01-10', '2024-01-12', '2024-01-13', '2024-01-14']
+          },
+          {
+            id: '3',
+            toolbox_id: '3',
+            title: 'Body Scan Meditation',
+            description: 'Mindfulness practice focusing on physical sensations',
+            is_active: true,
+            converted_to_habit_id: null,
+            usage_count: 15,
+            last_used: '2024-01-15',
+            xp_earned: 225,
+            color: '#10B981',
+            completed_dates: ['2024-01-01', '2024-01-02', '2024-01-03', '2024-01-04', '2024-01-05', '2024-01-06', '2024-01-07', '2024-01-08', '2024-01-09', '2024-01-10', '2024-01-11', '2024-01-12', '2024-01-13', '2024-01-14', '2024-01-15']
           }
         ];
 
@@ -138,6 +169,130 @@ const ToolboxTab = () => {
   // Check if tool is already in user toolbox
   const isToolInUserToolbox = (toolId) => {
     return userToolbox.some(tool => tool.toolbox_id === toolId);
+  };
+
+  // Helper function to generate progress grid for toolbox items
+  const generateProgressGrid = (completedDates, color) => {
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    
+    // Get first day of current month and how many days it has
+    const firstDay = new Date(currentYear, currentMonth, 1);
+    const lastDay = new Date(currentYear, currentMonth + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    
+    const grid = [];
+    
+    // Create 6 rows (weeks) x 7 columns (days)
+    for (let week = 0; week < 6; week++) {
+      const weekRow = [];
+      for (let day = 0; day < 7; day++) {
+        const dayNumber = week * 7 + day - startingDayOfWeek + 1;
+        
+        if (dayNumber < 1 || dayNumber > daysInMonth) {
+          // Day is outside current month
+          weekRow.push(
+            <div
+              key={`${week}-${day}`}
+              className="w-3 h-3 rounded-sm"
+              style={{ backgroundColor: '#ffffff' }}
+            />
+          );
+        } else {
+          const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(dayNumber).padStart(2, '0')}`;
+          const isCompleted = completedDates.includes(dateString);
+          
+          weekRow.push(
+            <div
+              key={`${week}-${day}`}
+              className="w-3 h-3 rounded-sm"
+              style={{ backgroundColor: isCompleted ? color : '#ffffff' }}
+            />
+          );
+        }
+      }
+      grid.push(weekRow);
+    }
+    
+    return grid;
+  };
+
+  // Helper function to calculate current streak from completion dates
+  const calculateCurrentStreak = (completedDates) => {
+    if (!completedDates || completedDates.length === 0) return 0;
+    
+    const today = new Date();
+    const todayString = today.toISOString().split('T')[0];
+    
+    // Sort dates in descending order (most recent first)
+    const sortedDates = [...completedDates].sort().reverse();
+    
+    let streak = 0;
+    let currentDate = new Date(today);
+    
+    // Check if today is completed
+    if (sortedDates.includes(todayString)) {
+      streak = 1;
+      currentDate.setDate(currentDate.getDate() - 1);
+    } else {
+      // If today is not completed, start from yesterday
+      currentDate.setDate(currentDate.getDate() - 1);
+    }
+    
+    // Count consecutive days backwards
+    while (true) {
+      const dateString = currentDate.toISOString().split('T')[0];
+      if (sortedDates.includes(dateString)) {
+        streak++;
+        currentDate.setDate(currentDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
+  };
+
+  // Use toolbox tool
+  const handleUseTool = async (toolId) => {
+    try {
+      // TODO: Implement API call to use toolbox tool
+      console.log('Using toolbox tool:', toolId);
+      
+      const today = new Date().toISOString().split('T')[0];
+      
+      setUserToolbox(userToolbox.map(tool => {
+        if (tool.id === toolId) {
+          const isUsedToday = tool.completed_dates.includes(today);
+          
+          // Prevent multiple uses on the same day
+          if (isUsedToday) {
+            return tool; // Already used today, don't change anything
+          }
+          
+          // Add today to completed dates
+          const newCompletedDates = [...tool.completed_dates, today];
+          
+          // Recalculate streak based on actual completion dates
+          const newStreak = calculateCurrentStreak(newCompletedDates);
+          
+          return {
+            ...tool,
+            usage_count: tool.usage_count + 1,
+            last_used: today,
+            xp_earned: tool.xp_earned + 15, // Assuming 15 XP per use
+            streak: newStreak,
+            completed_dates: newCompletedDates,
+            progress_grid: generateProgressGrid(newCompletedDates, tool.color)
+          };
+        }
+        return tool;
+      }));
+    } catch (error) {
+      console.error('Error using toolbox tool:', error);
+    }
   };
 
   if (loading) {
@@ -254,32 +409,70 @@ const ToolboxTab = () => {
             Your personal collection of learning tools and techniques.
           </p>
           
-          <div className="grid gap-4">
-            {userToolbox.map(tool => (
-              <div key={tool.id} className="glass-toolbox-card">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <div className="flex flex-wrap gap-3">
+            {userToolbox.map(tool => {
+              const today = new Date().toISOString().split('T')[0];
+              const isUsedToday = tool.completed_dates.includes(today);
+              const streak = calculateCurrentStreak(tool.completed_dates);
+              const progressGrid = generateProgressGrid(tool.completed_dates, tool.color);
+              
+              return (
+                <div key={tool.id} className="w-80 bg-blue-900 rounded-lg p-4 text-white">
+                  {/* Header with icon and title */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      <Wrench size={20} className="text-white" strokeWidth={1.5} />
+                      <h3 className="text-lg font-semibold text-white truncate">
                         {tool.title}
                       </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {tool.description}
-                      </p>
-                      <div className="flex items-center space-x-4 mt-2">
-                        {tool.converted_to_habit_id ? (
-                          <span className="text-xs text-green-600 dark:text-green-400 font-medium">
-                            ✓ Converted to Habit
-                          </span>
-                        ) : (
-                          <span className="text-xs text-orange-600 dark:text-orange-400">
-                            Available as Tool
-                          </span>
-                        )}
-                      </div>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Star size={16} className="text-yellow-400" />
+                      <span className="text-sm text-yellow-400 font-medium">
+                        {tool.xp_earned} XP
+                      </span>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
+
+                  {/* Description */}
+                  <p className="text-sm text-gray-300 mb-3 line-clamp-2">
+                    {tool.description}
+                  </p>
+
+                  {/* Usage button */}
+                  <div className="flex items-center justify-between mb-3">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleUseTool(tool.id);
+                      }}
+                      className={`flex items-center space-x-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        isUsedToday
+                          ? 'bg-blue-600 text-white'
+                          : 'border border-white text-white hover:bg-white hover:text-blue-900'
+                      }`}
+                    >
+                      <CheckCircle size={16} strokeWidth={1.5} />
+                      <span>{isUsedToday ? 'Used Today' : 'Use Tool'}</span>
+                    </button>
+                    
+                    <div className="flex items-center space-x-2 text-sm">
+                      <Clock size={14} className="text-gray-300" />
+                      <span className="text-gray-300">
+                        {tool.usage_count} uses
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Streak counter */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-300">Streak:</span>
+                      <span className="text-sm font-semibold text-white">
+                        {streak} days
+                      </span>
+                    </div>
+                    
                     {!tool.converted_to_habit_id && (
                       <button
                         onClick={() => {
@@ -289,22 +482,38 @@ const ToolboxTab = () => {
                             setShowConvertModal(true);
                           }
                         }}
-                        className="glass-primary-btn"
+                        className="text-xs text-blue-300 hover:text-blue-200 underline"
                       >
-                        <Target size={16} className="mr-2" />
                         Convert to Habit
                       </button>
                     )}
+                  </div>
+
+                  {/* Progress grid */}
+                  <div className="space-y-1">
+                    <div className="grid grid-cols-7 gap-1">
+                      {progressGrid.map((week, weekIndex) =>
+                        week.map((day, dayIndex) => (
+                          <div key={`${weekIndex}-${dayIndex}`}>
+                            {day}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Remove button */}
+                  <div className="flex justify-end mt-3">
                     <button
                       onClick={() => removeTool(tool.id)}
-                      className="glass-delete-btn"
+                      className="text-red-400 hover:text-red-300 transition-colors"
                     >
-                      <Trash2 size={20} />
+                      <Trash2 size={16} strokeWidth={1.5} />
                     </button>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {userToolbox.length === 0 && (
