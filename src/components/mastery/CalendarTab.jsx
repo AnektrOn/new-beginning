@@ -179,6 +179,12 @@ const CalendarTab = () => {
     const dateStr = date.toISOString().split('T')[0];
     const virtualEvents = [];
 
+    // Check if this date is within completion range (current day + 2 days prior)
+    const today = new Date();
+    const targetDate = new Date(dateStr);
+    const daysDiff = Math.floor((today - targetDate) / (1000 * 60 * 60 * 24));
+    const isClickable = daysDiff >= 0 && daysDiff <= 2;
+
     habits.forEach(habit => {
       // For daily habits, create virtual event for any date
       if (habit.frequency_type === 'daily') {
@@ -194,7 +200,8 @@ const CalendarTab = () => {
           source: 'habit',
           habitId: habit.id,
           description: habit.description,
-          xp_reward: habit.xp_reward
+          xp_reward: habit.xp_reward,
+          isClickable: isClickable
         });
       } else {
         // For non-daily habits, only show if completed on this date
@@ -210,7 +217,8 @@ const CalendarTab = () => {
             source: 'habit',
             habitId: habit.id,
             description: habit.description,
-            xp_reward: habit.xp_reward
+            xp_reward: habit.xp_reward,
+            isClickable: isClickable
           });
         }
       }
@@ -275,7 +283,26 @@ const CalendarTab = () => {
     
     // Parse the event ID to get habit info (format: habit-{habitId}-{date})
     if (eventId.startsWith('habit-')) {
-      const [, habitId, dateString] = eventId.split('-');
+      // Remove 'habit-' prefix and split by the last occurrence of '-'
+      const withoutPrefix = eventId.substring(6); // Remove 'habit-'
+      const lastDashIndex = withoutPrefix.lastIndexOf('-');
+      const habitId = withoutPrefix.substring(0, lastDashIndex);
+      const dateString = withoutPrefix.substring(lastDashIndex + 1);
+      
+      // Check if completion is allowed (current day + 2 days prior)
+      const today = new Date();
+      const targetDate = new Date(dateString);
+      const daysDiff = Math.floor((today - targetDate) / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff > 2) {
+        alert('You can only complete habits for today and up to 2 days prior.');
+        return;
+      }
+      
+      if (daysDiff < 0) {
+        alert('You cannot complete habits for future dates.');
+        return;
+      }
       
       try {
         const { data: completion, error } = await masteryService.completeHabit(user.id, habitId);
@@ -553,14 +580,25 @@ const CalendarTab = () => {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  toggleEventCompletion(event.id);
+                                  if (event.isClickable !== false) {
+                                    toggleEventCompletion(event.id);
+                                  }
                                 }}
                                 className={`p-1 rounded text-xs ${
-                                  event.completed 
-                                    ? 'bg-yellow-500 hover:bg-yellow-600 text-white' 
-                                    : 'bg-green-500 hover:bg-green-600 text-white'
+                                  event.isClickable === false
+                                    ? 'bg-gray-400 cursor-not-allowed text-white'
+                                    : event.completed 
+                                      ? 'bg-yellow-500 hover:bg-yellow-600 text-white' 
+                                      : 'bg-green-500 hover:bg-green-600 text-white'
                                 }`}
-                                title={event.completed ? 'Mark as incomplete' : 'Mark as complete'}
+                                title={
+                                  event.isClickable === false
+                                    ? 'Cannot complete - too far in the past'
+                                    : event.completed 
+                                      ? 'Mark as incomplete' 
+                                      : 'Mark as complete'
+                                }
+                                disabled={event.isClickable === false}
                               >
                                 <CheckCircle size={12} />
                               </button>
