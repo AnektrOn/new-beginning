@@ -108,10 +108,12 @@ const ToolboxTab = () => {
 
             return {
               ...item,
+              title: item.toolbox_library?.title || 'Unknown Tool',
+              description: item.toolbox_library?.description || 'No description available',
               usage_count: mockUsageCount,
               last_used: mockCompletedDates[mockCompletedDates.length - 1] || null,
               xp_earned: mockUsageCount * (item.toolbox_library?.xp_reward || 15),
-              color: getToolboxColor(item.toolbox_library?.title || item.title),
+              color: getToolboxColor(item.toolbox_library?.title || 'Unknown Tool'),
               completed_dates: mockCompletedDates,
               used_today: isUsedToday,
               streak: calculateCurrentStreak(mockCompletedDates)
@@ -159,10 +161,12 @@ const ToolboxTab = () => {
 
             return {
               ...item,
+              title: item.toolbox_library?.title || 'Unknown Tool',
+              description: item.toolbox_library?.description || 'No description available',
               usage_count: mockUsageCount,
               last_used: mockCompletedDates[mockCompletedDates.length - 1] || null,
               xp_earned: mockUsageCount * (item.toolbox_library?.xp_reward || 15),
-              color: getToolboxColor(item.toolbox_library?.title || item.title),
+              color: getToolboxColor(item.toolbox_library?.title || 'Unknown Tool'),
               completed_dates: mockCompletedDates,
               used_today: isUsedToday,
               streak: calculateCurrentStreak(mockCompletedDates)
@@ -223,10 +227,12 @@ const ToolboxTab = () => {
 
             return {
               ...item,
+              title: item.toolbox_library?.title || 'Unknown Tool',
+              description: item.toolbox_library?.description || 'No description available',
               usage_count: mockUsageCount,
               last_used: mockCompletedDates[mockCompletedDates.length - 1] || null,
               xp_earned: mockUsageCount * (item.toolbox_library?.xp_reward || 15),
-              color: getToolboxColor(item.toolbox_library?.title || item.title),
+              color: getToolboxColor(item.toolbox_library?.title || 'Unknown Tool'),
               completed_dates: mockCompletedDates,
               used_today: isUsedToday,
               streak: calculateCurrentStreak(mockCompletedDates)
@@ -374,10 +380,12 @@ const ToolboxTab = () => {
 
             return {
               ...item,
+              title: item.toolbox_library?.title || 'Unknown Tool',
+              description: item.toolbox_library?.description || 'No description available',
               usage_count: mockUsageCount,
               last_used: mockCompletedDates[mockCompletedDates.length - 1] || null,
               xp_earned: mockUsageCount * (item.toolbox_library?.xp_reward || 15),
-              color: getToolboxColor(item.toolbox_library?.title || item.title),
+              color: getToolboxColor(item.toolbox_library?.title || 'Unknown Tool'),
               completed_dates: mockCompletedDates,
               used_today: isUsedToday,
               streak: calculateCurrentStreak(mockCompletedDates)
