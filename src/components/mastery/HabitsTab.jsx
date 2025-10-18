@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Target, CheckCircle, Star, Laptop, BookOpen, Dumbbell, Flame } from 'lucide-react';
+import { Plus, Target, CheckCircle, Star, Laptop, BookOpen, Dumbbell, Flame, Trash2 } from 'lucide-react';
 import masteryService from '../../services/masteryService';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -292,17 +292,55 @@ const HabitsTab = () => {
     }
   };
 
-  // Delete habit (commented out for now - will be added back when needed)
-  // const deleteHabit = async (habitId) => {
-  //   try {
-  //     // TODO: Implement API call to delete habit
-  //     console.log('Deleting habit:', habitId);
-  //     
-  //     setPersonalHabits(personalHabits.filter(habit => habit.id !== habitId));
-  //   } catch (error) {
-  //     console.error('Error deleting habit:', error);
-  //   }
-  // };
+  // Delete habit
+  const deleteHabit = async (habitId) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await masteryService.deleteUserHabit(habitId);
+      if (error) throw error;
+
+      // Reload habits to get updated data
+      const { data: userHabits } = await masteryService.getUserHabits(user.id);
+      if (userHabits) {
+        // Transform the updated habits
+        const transformedHabits = await Promise.all(
+          userHabits.map(async (h) => {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const today = new Date();
+            
+            const { data: completions } = await masteryService.getHabitCompletions(
+              user.id,
+              h.id,
+              thirtyDaysAgo.toISOString().split('T')[0],
+              today.toISOString().split('T')[0]
+            );
+
+            const { data: streak } = await masteryService.calculateHabitStreak(user.id, h.id);
+            const completedDates = (completions || []).map(c => c.completed_at.split('T')[0]);
+            const todayString = today.toISOString().split('T')[0];
+            const { icon, color } = getHabitIconAndColor(h.title);
+
+            return {
+              ...h,
+              completed_dates: completedDates,
+              completed_today: completedDates.includes(todayString),
+              streak: streak || 0,
+              icon,
+              color,
+              progress_grid: generateProgressGrid(completedDates, color)
+            };
+          })
+        );
+
+        setPersonalHabits(transformedHabits);
+      }
+    } catch (error) {
+      console.error('Error deleting habit:', error);
+      setError(error.message);
+    }
+  };
 
   // Complete habit
   const completeHabit = async (habitId) => {
@@ -523,7 +561,7 @@ const HabitsTab = () => {
                       </button>
                     </div>
 
-                    {/* Right Section - Streak and Progress Grid */}
+                    {/* Right Section - Streak, Progress Grid, and Delete Button */}
                     <div className="flex items-center space-x-3">
                       {/* Streak Counter */}
                       <div className="flex items-center space-x-1">
@@ -549,6 +587,15 @@ const HabitsTab = () => {
                           />
                         ))}
                       </div>
+
+                      {/* Delete Button */}
+                      <button
+                        onClick={() => deleteHabit(habit.id)}
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-red-400 hover:text-red-300 hover:bg-red-900/20 transition-colors"
+                        title="Delete habit"
+                      >
+                        <Trash2 size={12} strokeWidth={1.5} />
+                      </button>
                     </div>
                   </div>
                 </div>

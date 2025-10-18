@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Grid3X3, Clock, Edit3, Trash2, CheckCircle, Target } from 'lucide-react';
 import masteryService from '../../services/masteryService';
 import { useAuth } from '../../contexts/AuthContext';
+import { useMasteryRefresh } from '../../pages/Mastery';
 
 const CalendarTab = () => {
   const { user } = useAuth();
+  const { triggerRefresh } = useMasteryRefresh();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState([]);
   const [habits, setHabits] = useState([]);
@@ -311,6 +313,9 @@ const CalendarTab = () => {
           // Update events with new habit events
           const nonHabitEvents = events.filter(e => e.source !== 'habit');
           setEvents([...habitEvents, ...nonHabitEvents]);
+          
+          // Trigger refresh to update other tabs
+          triggerRefresh();
         }
       } catch (error) {
         console.error('Error completing habit:', error);
@@ -401,6 +406,9 @@ const CalendarTab = () => {
         // Update events with new habit events
         const nonHabitEvents = events.filter(e => e.source !== 'habit');
         setEvents([...habitEvents, ...nonHabitEvents]);
+        
+        // Trigger refresh to update other tabs
+        triggerRefresh();
       }
     } catch (error) {
       console.error('Error completing habit:', error);

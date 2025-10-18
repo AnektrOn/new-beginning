@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, createContext, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Calendar, Target, Wrench } from 'lucide-react';
 
@@ -7,9 +7,25 @@ import CalendarTab from '../components/mastery/CalendarTab';
 import HabitsTab from '../components/mastery/HabitsTab';
 import ToolboxTab from '../components/mastery/ToolboxTab';
 
+// Create a context for sharing refresh state
+const MasteryRefreshContext = createContext();
+
+export const useMasteryRefresh = () => {
+  const context = useContext(MasteryRefreshContext);
+  if (!context) {
+    throw new Error('useMasteryRefresh must be used within MasteryRefreshProvider');
+  }
+  return context;
+};
+
 const Mastery = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const triggerRefresh = () => {
+    setRefreshKey(prev => prev + 1);
+  };
 
   const tabs = [
     { id: 'calendar', label: 'Calendar', icon: Calendar, path: '/mastery/calendar' },
@@ -55,17 +71,19 @@ const Mastery = () => {
       
       {/* Tab Content */}
       <div className="glass-tab-content">
-        {(() => {
-          if (location.pathname === '/mastery' || location.pathname === '/mastery/calendar') {
-            return <CalendarTab />;
-          } else if (location.pathname === '/mastery/habits') {
-            return <HabitsTab />;
-          } else if (location.pathname === '/mastery/toolbox') {
-            return <ToolboxTab />;
-          } else {
-            return <CalendarTab />;
-          }
-        })()}
+        <MasteryRefreshContext.Provider value={{ triggerRefresh, refreshKey }}>
+          {(() => {
+            if (location.pathname === '/mastery' || location.pathname === '/mastery/calendar') {
+              return <CalendarTab key={`calendar-${refreshKey}`} />;
+            } else if (location.pathname === '/mastery/habits') {
+              return <HabitsTab key={`habits-${refreshKey}`} />;
+            } else if (location.pathname === '/mastery/toolbox') {
+              return <ToolboxTab key={`toolbox-${refreshKey}`} />;
+            } else {
+              return <CalendarTab key={`calendar-${refreshKey}`} />;
+            }
+          })()}
+        </MasteryRefreshContext.Provider>
       </div>
     </div>
   );
