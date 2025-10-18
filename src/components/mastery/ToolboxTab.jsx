@@ -66,8 +66,7 @@ const ToolboxTab = () => {
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [selectedTool, setSelectedTool] = useState(null);
   const [conversionData, setConversionData] = useState({
-    frequency_type: 'daily',
-    xp_reward: 15
+    frequency_type: 'daily'
   });
 
   // Load toolbox data
@@ -181,21 +180,69 @@ const ToolboxTab = () => {
 
   // Convert tool to habit
   const convertToolToHabit = async () => {
+    if (!user || !selectedTool) return;
+    
     try {
-      // TODO: Implement API call to convert tool to habit
-      console.log('Converting tool to habit:', selectedTool, conversionData);
-      
-      // Update user toolbox item
-      setUserToolbox(userToolbox.map(tool => 
-        tool.toolbox_id === selectedTool.id 
-          ? { ...tool, converted_to_habit_id: `habit_${Date.now()}` }
-          : tool
-      ));
+      // Create a custom habit from the toolbox item
+      const habitData = {
+        title: selectedTool.toolbox_library?.title || selectedTool.title,
+        description: selectedTool.toolbox_library?.description || selectedTool.description,
+        frequency_type: conversionData.frequency_type,
+        xp_reward: selectedTool.toolbox_library?.xp_reward || 15, // Use the XP from the toolbox library
+        skill_tags: selectedTool.toolbox_library?.skill_tags || [],
+        is_custom: true,
+        converted_from_toolbox_id: selectedTool.toolbox_id
+      };
+
+      const { data: newHabit, error: habitError } = await masteryService.createCustomHabit(user.id, habitData);
+      if (habitError) throw habitError;
+
+      // Update the toolbox item to mark it as converted
+      const { data: updatedToolboxItem, error: updateError } = await masteryService.updateUserToolboxItem(
+        selectedTool.id, 
+        { converted_to_habit_id: newHabit.id }
+      );
+      if (updateError) throw updateError;
+
+      // Reload toolbox to get updated data
+      const { data: userToolboxData } = await masteryService.getUserToolboxItems(user.id);
+      if (userToolboxData) {
+        // Transform the updated toolbox items
+        const transformedUserToolbox = await Promise.all(
+          userToolboxData.map(async (item) => {
+            const mockUsageCount = Math.floor(Math.random() * 20) + 1;
+            const mockCompletedDates = Array.from({ length: mockUsageCount }, (_, i) => {
+              const date = new Date();
+              date.setDate(date.getDate() - Math.floor(Math.random() * 30));
+              return date.toISOString().split('T')[0];
+            }).sort();
+
+            const today = new Date();
+            const todayString = today.toISOString().split('T')[0];
+            const isUsedToday = mockCompletedDates.includes(todayString);
+
+            return {
+              ...item,
+              usage_count: mockUsageCount,
+              last_used: mockCompletedDates[mockCompletedDates.length - 1] || null,
+              xp_earned: mockUsageCount * (item.toolbox_library?.xp_reward || 15),
+              color: getToolboxColor(item.toolbox_library?.title || item.title),
+              completed_dates: mockCompletedDates,
+              used_today: isUsedToday,
+              streak: calculateCurrentStreak(mockCompletedDates)
+            };
+          })
+        );
+
+        setUserToolbox(transformedUserToolbox);
+      }
       
       setShowConvertModal(false);
       setSelectedTool(null);
+      setConversionData({ frequency_type: 'daily' }); // Reset form
     } catch (error) {
-      console.error('Error converting tool:', error);
+      console.error('Error converting tool to habit:', error);
+      setError(error.message);
     }
   };
 
@@ -448,16 +495,17 @@ const ToolboxTab = () => {
                         ✓ In Your Toolbox
                       </span>
                     )}
-                    {tool.can_convert_to_habit && (
+                    {tool.toolbox_library?.can_convert_to_habit && (
                       <button
                         onClick={() => {
                           setSelectedTool(tool);
                           setShowConvertModal(true);
                         }}
-                        className="glass-secondary-btn"
+                        className={`glass-secondary-btn ${tool.converted_to_habit_id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        disabled={tool.converted_to_habit_id}
                       >
                         <Target size={16} className="mr-2" />
-                        Convert to Habit
+                        {tool.converted_to_habit_id ? 'Already Converted' : 'Convert to Habit'}
                       </button>
                     )}
                   </div>
@@ -631,19 +679,6 @@ const ToolboxTab = () => {
                   <option value="weekly">Weekly</option>
                   <option value="monthly">Monthly</option>
                 </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  XP Reward
-                </label>
-                <input
-                  type="number"
-                  value={conversionData.xp_reward}
-                  onChange={(e) => setConversionData({ ...conversionData, xp_reward: parseInt(e.target.value) })}
-                  className="glass-input"
-                  min="1"
-                  max="100"
-                />
               </div>
             </div>
             
