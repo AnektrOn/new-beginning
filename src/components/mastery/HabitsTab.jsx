@@ -88,6 +88,25 @@ const generateProgressGrid = (completedDates = [], color) => {
   return grid;
 };
 
+// Helper function to get appropriate icon and color for habits
+const getHabitIconAndColor = (title) => {
+  const titleLower = title.toLowerCase();
+  
+  if (titleLower.includes('read') || titleLower.includes('book')) {
+    return { icon: BookOpen, color: '#10b981' }; // Green
+  } else if (titleLower.includes('workout') || titleLower.includes('exercise') || titleLower.includes('gym')) {
+    return { icon: Dumbbell, color: '#8b5cf6' }; // Purple
+  } else if (titleLower.includes('build') || titleLower.includes('code') || titleLower.includes('program')) {
+    return { icon: Laptop, color: '#3b82f6' }; // Blue
+  } else if (titleLower.includes('meditation') || titleLower.includes('mindfulness')) {
+    return { icon: Star, color: '#f59e0b' }; // Orange
+  } else if (titleLower.includes('journal') || titleLower.includes('write')) {
+    return { icon: BookOpen, color: '#ef4444' }; // Red
+  } else {
+    return { icon: Target, color: '#6b7280' }; // Gray default
+  }
+};
+
 const HabitsTab = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('personal');
@@ -106,148 +125,170 @@ const HabitsTab = () => {
   // Load habits data
   useEffect(() => {
     const loadHabits = async () => {
+      if (!user) return;
+      
       setLoading(true);
+      setError(null);
+      
       try {
-        // TODO: Implement API calls to fetch habits
-        // For now, using mock data matching the image design
-        const today = new Date().toISOString().split('T')[0];
-        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        
-        // Generate some realistic completion dates for demonstration
-        const buildInPublicDates = [today, yesterday, twoDaysAgo, '2024-10-14', '2024-10-13', '2024-10-12', '2024-10-11', '2024-10-10'];
-        const readDates = [yesterday, twoDaysAgo, '2024-10-14', '2024-10-13', '2024-10-12'];
-        const workoutDates = [today, yesterday, twoDaysAgo];
-        
-        const mockPersonalHabits = [
-          {
-            id: '1',
-            title: 'Build in Public',
-            description: 'Share your progress and learnings publicly',
-            frequency_type: 'daily',
-            xp_reward: 10,
-            completion_count: buildInPublicDates.length,
-            streak: calculateCurrentStreak(buildInPublicDates),
-            is_active: true,
-            is_custom: true,
-            icon: Laptop,
-            color: '#3b82f6', // Blue
-            completed_today: buildInPublicDates.includes(today),
-            completed_dates: buildInPublicDates,
-            progress_grid: generateProgressGrid(buildInPublicDates, '#3b82f6')
-          },
-          {
-            id: '2',
-            title: 'Read 10 pages',
-            description: 'Read at least 10 pages daily',
-            frequency_type: 'daily',
-            xp_reward: 10,
-            completion_count: readDates.length,
-            streak: calculateCurrentStreak(readDates),
-            is_active: true,
-            is_custom: false,
-            icon: BookOpen,
-            color: '#10b981', // Green
-            completed_today: readDates.includes(today),
-            completed_dates: readDates,
-            progress_grid: generateProgressGrid(readDates, '#10b981')
-          },
-          {
-            id: '3',
-            title: 'Workout',
-            description: 'Exercise for at least 30 minutes',
-            frequency_type: 'daily',
-            xp_reward: 10,
-            completion_count: workoutDates.length,
-            streak: calculateCurrentStreak(workoutDates),
-            is_active: true,
-            is_custom: true,
-            icon: Dumbbell,
-            color: '#8b5cf6', // Purple
-            completed_today: workoutDates.includes(today),
-            completed_dates: workoutDates,
-            progress_grid: generateProgressGrid(workoutDates, '#8b5cf6')
-          }
-        ];
+        // Load user habits with completion data
+        const { data: userHabits, error: userHabitsError } = await masteryService.getUserHabits(user.id);
+        if (userHabitsError) throw userHabitsError;
 
-        const mockHabitsLibrary = [
-          {
-            id: '3',
-            title: 'Meditation',
-            description: 'Practice mindfulness for 15 minutes',
-            category: 'spiritual',
-            xp_reward: 10,
-            frequency_type: 'daily'
-          },
-          {
-            id: '4',
-            title: 'Journaling',
-            description: 'Write in your journal for 10 minutes',
-            category: 'creative',
-            xp_reward: 10,
-            frequency_type: 'daily'
-          },
-          {
-            id: '5',
-            title: 'Healthy Breakfast',
-            description: 'Eat a nutritious breakfast every morning',
-            category: 'physical',
-            xp_reward: 10,
-            frequency_type: 'daily'
-          }
-        ];
+        // Load habits library
+        const { data: libraryHabits, error: libraryError } = await masteryService.getHabitsLibrary();
+        if (libraryError) throw libraryError;
 
-        setPersonalHabits(mockPersonalHabits);
-        setHabitsLibrary(mockHabitsLibrary);
+        // Transform user habits to include completion data and UI properties
+        const transformedHabits = await Promise.all(
+          (userHabits || []).map(async (habit) => {
+            // Get completions for the last 30 days
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const today = new Date();
+            
+            const { data: completions } = await masteryService.getHabitCompletions(
+              user.id,
+              habit.id,
+              thirtyDaysAgo.toISOString().split('T')[0],
+              today.toISOString().split('T')[0]
+            );
+
+            // Calculate streak
+            const { data: streak } = await masteryService.calculateHabitStreak(user.id, habit.id);
+
+            // Get completion dates
+            const completedDates = (completions || []).map(c => c.completed_at.split('T')[0]);
+            const todayString = today.toISOString().split('T')[0];
+
+            // Get appropriate icon and color
+            const { icon, color } = getHabitIconAndColor(habit.title);
+
+            return {
+              ...habit,
+              completed_dates: completedDates,
+              completed_today: completedDates.includes(todayString),
+              streak: streak || 0,
+              icon,
+              color,
+              progress_grid: generateProgressGrid(completedDates, color)
+            };
+          })
+        );
+
+        setPersonalHabits(transformedHabits);
+        setHabitsLibrary(libraryHabits || []);
       } catch (error) {
         console.error('Error loading habits:', error);
+        setError(error.message);
       } finally {
         setLoading(false);
       }
     };
 
     loadHabits();
-  }, []);
+  }, [user]);
 
   // Add habit from library to personal
   const addHabitFromLibrary = async (habit) => {
+    if (!user) return;
+    
     try {
-      // TODO: Implement API call to add habit to personal list
-      console.log('Adding habit from library:', habit);
-      
-      const newPersonalHabit = {
-        ...habit,
-        id: `personal_${Date.now()}`,
-        completion_count: 0,
-        is_active: true,
-        is_custom: false
-      };
-      
-      setPersonalHabits([...personalHabits, newPersonalHabit]);
+      const { data: addedHabit, error } = await masteryService.addHabitFromLibrary(user.id, habit.id);
+      if (error) throw error;
+
+      // Reload habits to get the updated list
+      const { data: userHabits } = await masteryService.getUserHabits(user.id);
+      if (userHabits) {
+        // Transform the updated habits
+        const transformedHabits = await Promise.all(
+          userHabits.map(async (h) => {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const today = new Date();
+            
+            const { data: completions } = await masteryService.getHabitCompletions(
+              user.id,
+              h.id,
+              thirtyDaysAgo.toISOString().split('T')[0],
+              today.toISOString().split('T')[0]
+            );
+
+            const { data: streak } = await masteryService.calculateHabitStreak(user.id, h.id);
+            const completedDates = (completions || []).map(c => c.completed_at.split('T')[0]);
+            const todayString = today.toISOString().split('T')[0];
+            const { icon, color } = getHabitIconAndColor(h.title);
+
+            return {
+              ...h,
+              completed_dates: completedDates,
+              completed_today: completedDates.includes(todayString),
+              streak: streak || 0,
+              icon,
+              color,
+              progress_grid: generateProgressGrid(completedDates, color)
+            };
+          })
+        );
+
+        setPersonalHabits(transformedHabits);
+      }
     } catch (error) {
       console.error('Error adding habit:', error);
+      setError(error.message);
     }
   };
 
   // Create custom habit
   const createCustomHabit = async () => {
+    if (!user) return;
+    
     try {
-      // TODO: Implement API call to create custom habit
-      console.log('Creating custom habit:', newHabit);
-      
-      const customHabit = {
-        ...newHabit,
-        id: `custom_${Date.now()}`,
-        completion_count: 0,
-        is_active: true,
-        is_custom: true
-      };
-      
-      setPersonalHabits([...personalHabits, customHabit]);
+      const { data: customHabit, error } = await masteryService.createCustomHabit(user.id, newHabit);
+      if (error) throw error;
+
+      // Reload habits to get the updated list
+      const { data: userHabits } = await masteryService.getUserHabits(user.id);
+      if (userHabits) {
+        // Transform the updated habits
+        const transformedHabits = await Promise.all(
+          userHabits.map(async (h) => {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const today = new Date();
+            
+            const { data: completions } = await masteryService.getHabitCompletions(
+              user.id,
+              h.id,
+              thirtyDaysAgo.toISOString().split('T')[0],
+              today.toISOString().split('T')[0]
+            );
+
+            const { data: streak } = await masteryService.calculateHabitStreak(user.id, h.id);
+            const completedDates = (completions || []).map(c => c.completed_at.split('T')[0]);
+            const todayString = today.toISOString().split('T')[0];
+            const { icon, color } = getHabitIconAndColor(h.title);
+
+            return {
+              ...h,
+              completed_dates: completedDates,
+              completed_today: completedDates.includes(todayString),
+              streak: streak || 0,
+              icon,
+              color,
+              progress_grid: generateProgressGrid(completedDates, color)
+            };
+          })
+        );
+
+        setPersonalHabits(transformedHabits);
+      }
+
       setNewHabit({ title: '', description: '', frequency_type: 'daily', xp_reward: 10 });
       setShowAddHabit(false);
     } catch (error) {
       console.error('Error creating habit:', error);
+      setError(error.message);
     }
   };
 
@@ -265,40 +306,51 @@ const HabitsTab = () => {
 
   // Complete habit
   const completeHabit = async (habitId) => {
+    if (!user) return;
+    
     try {
-      // TODO: Implement API call to complete habit
-      console.log('Completing habit:', habitId);
-      
-      const today = new Date().toISOString().split('T')[0];
-      
-      setPersonalHabits(personalHabits.map(habit => {
-        if (habit.id === habitId) {
-          const isCompletedToday = habit.completed_dates.includes(today);
-          
-          // Prevent multiple completions on the same day
-          if (isCompletedToday) {
-            return habit; // Already completed today, don't change anything
-          }
-          
-          // Add today to completed dates
-          const newCompletedDates = [...habit.completed_dates, today];
-          
-          // Recalculate streak based on actual completion dates
-          const newStreak = calculateCurrentStreak(newCompletedDates);
-          
-          return {
-            ...habit,
-            completion_count: newCompletedDates.length,
-            streak: newStreak,
-            completed_today: true,
-            completed_dates: newCompletedDates,
-            progress_grid: generateProgressGrid(newCompletedDates, habit.color)
-          };
-        }
-        return habit;
-      }));
+      const { data: completion, error } = await masteryService.completeHabit(user.id, habitId);
+      if (error) throw error;
+
+      // Reload habits to get updated data
+      const { data: userHabits } = await masteryService.getUserHabits(user.id);
+      if (userHabits) {
+        // Transform the updated habits
+        const transformedHabits = await Promise.all(
+          userHabits.map(async (h) => {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const today = new Date();
+            
+            const { data: completions } = await masteryService.getHabitCompletions(
+              user.id,
+              h.id,
+              thirtyDaysAgo.toISOString().split('T')[0],
+              today.toISOString().split('T')[0]
+            );
+
+            const { data: streak } = await masteryService.calculateHabitStreak(user.id, h.id);
+            const completedDates = (completions || []).map(c => c.completed_at.split('T')[0]);
+            const todayString = today.toISOString().split('T')[0];
+            const { icon, color } = getHabitIconAndColor(h.title);
+
+            return {
+              ...h,
+              completed_dates: completedDates,
+              completed_today: completedDates.includes(todayString),
+              streak: streak || 0,
+              icon,
+              color,
+              progress_grid: generateProgressGrid(completedDates, color)
+            };
+          })
+        );
+
+        setPersonalHabits(transformedHabits);
+      }
     } catch (error) {
       console.error('Error completing habit:', error);
+      setError(error.message);
     }
   };
 
@@ -306,6 +358,24 @@ const HabitsTab = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2 text-gray-600">Loading habits...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-red-600 mb-2">Error loading habits</div>
+          <div className="text-sm text-gray-600">{error}</div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }

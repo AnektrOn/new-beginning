@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Grid3X3, Clock, Edit3, Trash2, CheckCircle, Target } from 'lucide-react';
+import masteryService from '../../services/masteryService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const CalendarTab = () => {
+  const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState([]);
   const [habits, setHabits] = useState([]);
   const [view, setView] = useState('month');
   const [selectedDay, setSelectedDay] = useState(new Date());
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Helper function to calculate current streak from completion dates
   const calculateCurrentStreak = (completedDates = []) => {
@@ -44,71 +49,88 @@ const CalendarTab = () => {
     return streak;
   };
 
+  // Helper function to get appropriate color for habits
+  const getHabitColor = (title) => {
+    const titleLower = title.toLowerCase();
+    
+    if (titleLower.includes('read') || titleLower.includes('book')) {
+      return '#10b981'; // Green
+    } else if (titleLower.includes('workout') || titleLower.includes('exercise') || titleLower.includes('gym')) {
+      return '#8b5cf6'; // Purple
+    } else if (titleLower.includes('build') || titleLower.includes('code') || titleLower.includes('program')) {
+      return '#3b82f6'; // Blue
+    } else if (titleLower.includes('meditation') || titleLower.includes('mindfulness')) {
+      return '#f59e0b'; // Orange
+    } else if (titleLower.includes('journal') || titleLower.includes('write')) {
+      return '#ef4444'; // Red
+    } else {
+      return '#6b7280'; // Gray default
+    }
+  };
+
   // Load habits data and convert to calendar events
   useEffect(() => {
     const loadHabitsAndEvents = async () => {
+      if (!user) return;
+      
+      setLoading(true);
+      setError(null);
+      
       try {
-        // TODO: Implement API calls to fetch habits
-        // For now, using mock data matching the habits structure
-        const today = new Date().toISOString().split('T')[0];
-        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        
-        // Generate some realistic completion dates for demonstration
-        const buildInPublicDates = [today, yesterday, twoDaysAgo, '2025-01-12', '2025-01-11', '2025-01-10', '2025-01-09', '2025-01-08'];
-        const readDates = [yesterday, twoDaysAgo, '2025-01-12', '2025-01-11', '2025-01-10'];
-        const workoutDates = [today, yesterday, twoDaysAgo];
-        
-        const mockHabits = [
-          {
-            id: '1',
-            title: 'Build in Public',
-            description: 'Share your progress and learnings publicly',
-            frequency_type: 'daily',
-            xp_reward: 10,
-            completion_count: buildInPublicDates.length,
-            streak: calculateCurrentStreak(buildInPublicDates),
-            is_active: true,
-            is_custom: true,
-            color: '#3b82f6', // Blue
-            completed_today: buildInPublicDates.includes(today),
-            completed_dates: buildInPublicDates
-          },
-          {
-            id: '2',
-            title: 'Read 10 pages',
-            description: 'Read at least 10 pages daily',
-            frequency_type: 'daily',
-            xp_reward: 10,
-            completion_count: readDates.length,
-            streak: calculateCurrentStreak(readDates),
-            is_active: true,
-            is_custom: false,
-            color: '#10b981', // Green
-            completed_today: readDates.includes(today),
-            completed_dates: readDates
-          },
-          {
-            id: '3',
-            title: 'Workout',
-            description: 'Exercise for at least 30 minutes',
-            frequency_type: 'daily',
-            xp_reward: 10,
-            completion_count: workoutDates.length,
-            streak: calculateCurrentStreak(workoutDates),
-            is_active: true,
-            is_custom: true,
-            color: '#8b5cf6', // Purple
-            completed_today: workoutDates.includes(today),
-            completed_dates: workoutDates
-          }
-        ];
+        // Load user habits
+        const { data: userHabits, error: userHabitsError } = await masteryService.getUserHabits(user.id);
+        if (userHabitsError) throw userHabitsError;
 
-        setHabits(mockHabits);
+        // Load calendar events for current month
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        const endOfMonth = new Date();
+        endOfMonth.setMonth(endOfMonth.getMonth() + 1, 0);
+        
+        const { data: calendarEvents, error: calendarError } = await masteryService.getCalendarEvents(
+          user.id,
+          startOfMonth.toISOString().split('T')[0],
+          endOfMonth.toISOString().split('T')[0]
+        );
+        if (calendarError) throw calendarError;
+
+        // Transform user habits to include completion data
+        const transformedHabits = await Promise.all(
+          (userHabits || []).map(async (habit) => {
+            // Get completions for the last 30 days
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const today = new Date();
+            
+            const { data: completions } = await masteryService.getHabitCompletions(
+              user.id,
+              habit.id,
+              thirtyDaysAgo.toISOString().split('T')[0],
+              today.toISOString().split('T')[0]
+            );
+
+            // Calculate streak
+            const { data: streak } = await masteryService.calculateHabitStreak(user.id, habit.id);
+
+            // Get completion dates
+            const completedDates = (completions || []).map(c => c.completed_at.split('T')[0]);
+            const todayString = today.toISOString().split('T')[0];
+
+            return {
+              ...habit,
+              completed_dates: completedDates,
+              completed_today: completedDates.includes(todayString),
+              streak: streak || 0,
+              color: getHabitColor(habit.title)
+            };
+          })
+        );
+
+        setHabits(transformedHabits);
 
         // Convert habits to calendar events
         const habitEvents = [];
-        mockHabits.forEach(habit => {
+        transformedHabits.forEach(habit => {
           habit.completed_dates.forEach(date => {
             habitEvents.push({
               id: `habit-${habit.id}-${date}`,
@@ -126,14 +148,19 @@ const CalendarTab = () => {
           });
         });
 
-        setEvents(habitEvents);
+        // Add calendar events
+        const allEvents = [...habitEvents, ...(calendarEvents || [])];
+        setEvents(allEvents);
       } catch (error) {
-        console.error('Error loading habits:', error);
+        console.error('Error loading habits and events:', error);
+        setError(error.message);
+      } finally {
+        setLoading(false);
       }
     };
 
     loadHabitsAndEvents();
-  }, []);
+  }, [user]);
 
   const getDaysInMonth = (date) => {
     const year = date.getFullYear();
@@ -214,49 +241,83 @@ const CalendarTab = () => {
     setView('day');
   };
 
-  const toggleEventCompletion = (eventId) => {
+  const toggleEventCompletion = async (eventId) => {
+    if (!user) return;
+    
     const event = events.find(e => e.id === eventId);
     if (!event) return;
 
     if (event.source === 'habit') {
-      // Handle habit completion
+      // Handle habit completion using real service
       const habitId = event.habitId;
-      const eventDate = event.date;
       
-      setHabits(habits.map(habit => {
-        if (habit.id === habitId) {
-          const completedDates = habit.completed_dates || [];
-          const isCompleted = completedDates.includes(eventDate);
-          
-          let newCompletedDates;
-          if (isCompleted) {
-            // Remove from completed dates
-            newCompletedDates = completedDates.filter(date => date !== eventDate);
-          } else {
-            // Add to completed dates
-            newCompletedDates = [...completedDates, eventDate];
-          }
-          
-          // Recalculate streak
-          const newStreak = calculateCurrentStreak(newCompletedDates);
-          
-          return {
-            ...habit,
-            completed_dates: newCompletedDates,
-            completion_count: newCompletedDates.length,
-            streak: newStreak,
-            completed_today: newCompletedDates.includes(new Date().toISOString().split('T')[0])
-          };
-        }
-        return habit;
-      }));
+      try {
+        const { data: completion, error } = await masteryService.completeHabit(user.id, habitId);
+        if (error) throw error;
 
-      // Update events
-      setEvents(events.map(e => 
-        e.id === eventId ? { ...e, completed: !e.completed } : e
-      ));
+        // Reload habits and events to get updated data
+        const { data: userHabits } = await masteryService.getUserHabits(user.id);
+        if (userHabits) {
+          // Transform the updated habits
+          const transformedHabits = await Promise.all(
+            userHabits.map(async (habit) => {
+              const thirtyDaysAgo = new Date();
+              thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+              const today = new Date();
+              
+              const { data: completions } = await masteryService.getHabitCompletions(
+                user.id,
+                habit.id,
+                thirtyDaysAgo.toISOString().split('T')[0],
+                today.toISOString().split('T')[0]
+              );
+
+              const { data: streak } = await masteryService.calculateHabitStreak(user.id, habit.id);
+              const completedDates = (completions || []).map(c => c.completed_at.split('T')[0]);
+              const todayString = today.toISOString().split('T')[0];
+
+              return {
+                ...habit,
+                completed_dates: completedDates,
+                completed_today: completedDates.includes(todayString),
+                streak: streak || 0,
+                color: getHabitColor(habit.title)
+              };
+            })
+          );
+
+          setHabits(transformedHabits);
+
+          // Convert habits to calendar events
+          const habitEvents = [];
+          transformedHabits.forEach(habit => {
+            habit.completed_dates.forEach(date => {
+              habitEvents.push({
+                id: `habit-${habit.id}-${date}`,
+                title: habit.title,
+                date: date,
+                startTime: '09:00',
+                endTime: '09:30',
+                color: habit.color,
+                completed: true,
+                source: 'habit',
+                habitId: habit.id,
+                description: habit.description,
+                xp_reward: habit.xp_reward
+              });
+            });
+          });
+
+          // Update events with new habit events
+          const nonHabitEvents = events.filter(e => e.source !== 'habit');
+          setEvents([...habitEvents, ...nonHabitEvents]);
+        }
+      } catch (error) {
+        console.error('Error completing habit:', error);
+        setError(error.message);
+      }
     } else {
-      // Handle regular events
+      // Handle regular events (for now, just toggle locally)
       setEvents(events.map(e => 
         e.id === eventId ? { ...e, completed: !e.completed } : e
       ));
@@ -277,45 +338,74 @@ const CalendarTab = () => {
   };
 
   // Add habit completion for today
-  const addHabitCompletion = (habitId, date) => {
-    const habit = habits.find(h => h.id === habitId);
-    if (!habit) return;
+  const addHabitCompletion = async (habitId, date) => {
+    if (!user) return;
+    
+    try {
+      const { data: completion, error } = await masteryService.completeHabit(user.id, habitId);
+      if (error) throw error;
 
-    const completedDates = habit.completed_dates || [];
-    if (completedDates.includes(date)) return; // Already completed
+      // Reload habits and events to get updated data
+      const { data: userHabits } = await masteryService.getUserHabits(user.id);
+      if (userHabits) {
+        // Transform the updated habits
+        const transformedHabits = await Promise.all(
+          userHabits.map(async (habit) => {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const today = new Date();
+            
+            const { data: completions } = await masteryService.getHabitCompletions(
+              user.id,
+              habit.id,
+              thirtyDaysAgo.toISOString().split('T')[0],
+              today.toISOString().split('T')[0]
+            );
 
-    const newCompletedDates = [...completedDates, date];
-    const newStreak = calculateCurrentStreak(newCompletedDates);
+            const { data: streak } = await masteryService.calculateHabitStreak(user.id, habit.id);
+            const completedDates = (completions || []).map(c => c.completed_at.split('T')[0]);
+            const todayString = today.toISOString().split('T')[0];
 
-    // Update habit
-    setHabits(habits.map(h => 
-      h.id === habitId 
-        ? {
-            ...h,
-            completed_dates: newCompletedDates,
-            completion_count: newCompletedDates.length,
-            streak: newStreak,
-            completed_today: newCompletedDates.includes(new Date().toISOString().split('T')[0])
-          }
-        : h
-    ));
+            return {
+              ...habit,
+              completed_dates: completedDates,
+              completed_today: completedDates.includes(todayString),
+              streak: streak || 0,
+              color: getHabitColor(habit.title)
+            };
+          })
+        );
 
-    // Add event
-    const newEvent = {
-      id: `habit-${habitId}-${date}`,
-      title: habit.title,
-      date: date,
-      startTime: '09:00',
-      endTime: '09:30',
-      color: habit.color,
-      completed: true,
-      source: 'habit',
-      habitId: habit.id,
-      description: habit.description,
-      xp_reward: habit.xp_reward
-    };
+        setHabits(transformedHabits);
 
-    setEvents([...events, newEvent]);
+        // Convert habits to calendar events
+        const habitEvents = [];
+        transformedHabits.forEach(habit => {
+          habit.completed_dates.forEach(date => {
+            habitEvents.push({
+              id: `habit-${habit.id}-${date}`,
+              title: habit.title,
+              date: date,
+              startTime: '09:00',
+              endTime: '09:30',
+              color: habit.color,
+              completed: true,
+              source: 'habit',
+              habitId: habit.id,
+              description: habit.description,
+              xp_reward: habit.xp_reward
+            });
+          });
+        });
+
+        // Update events with new habit events
+        const nonHabitEvents = events.filter(e => e.source !== 'habit');
+        setEvents([...habitEvents, ...nonHabitEvents]);
+      }
+    } catch (error) {
+      console.error('Error completing habit:', error);
+      setError(error.message);
+    }
   };
 
 

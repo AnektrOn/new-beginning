@@ -1,11 +1,68 @@
 import React, { useState, useEffect } from 'react';
 import { Wrench, Plus, Target, Trash2, CheckCircle, Clock, Star } from 'lucide-react';
+import masteryService from '../../services/masteryService';
+import { useAuth } from '../../contexts/AuthContext';
+
+// Helper function to calculate current streak from completion dates
+const calculateCurrentStreak = (completedDates = []) => {
+  if (!completedDates || completedDates.length === 0) return 0;
+  
+  const today = new Date();
+  const todayString = today.toISOString().split('T')[0];
+  
+  // Sort dates in descending order (most recent first)
+  const sortedDates = [...completedDates].sort().reverse();
+  
+  let streak = 0;
+  let currentDate = new Date(today);
+  
+  // Check if today is completed
+  if (sortedDates.includes(todayString)) {
+    streak = 1;
+    currentDate.setDate(currentDate.getDate() - 1);
+  } else {
+    // If today is not completed, start from yesterday
+    currentDate.setDate(currentDate.getDate() - 1);
+  }
+  
+  // Count consecutive days backwards
+  while (true) {
+    const dateString = currentDate.toISOString().split('T')[0];
+    if (sortedDates.includes(dateString)) {
+      streak++;
+      currentDate.setDate(currentDate.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  
+  return streak;
+};
+
+// Helper function to get appropriate color for toolbox items
+const getToolboxColor = (title) => {
+  const titleLower = title.toLowerCase();
+  
+  if (titleLower.includes('pomodoro') || titleLower.includes('time')) {
+    return '#3B82F6'; // Blue
+  } else if (titleLower.includes('mind') || titleLower.includes('map')) {
+    return '#8B5CF6'; // Purple
+  } else if (titleLower.includes('meditation') || titleLower.includes('mindfulness')) {
+    return '#10B981'; // Green
+  } else if (titleLower.includes('listening') || titleLower.includes('communication')) {
+    return '#F59E0B'; // Orange
+  } else {
+    return '#6B7280'; // Gray default
+  }
+};
 
 const ToolboxTab = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('library');
   const [toolboxLibrary, setToolboxLibrary] = useState([]);
   const [userToolbox, setUserToolbox] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [selectedTool, setSelectedTool] = useState(null);
   const [conversionData, setConversionData] = useState({
@@ -16,121 +73,109 @@ const ToolboxTab = () => {
   // Load toolbox data
   useEffect(() => {
     const loadToolbox = async () => {
+      if (!user) return;
+      
       setLoading(true);
+      setError(null);
+      
       try {
-        // TODO: Implement API calls to fetch toolbox data
-        // For now, using mock data
-        const mockToolboxLibrary = [
-          {
-            id: '1',
-            title: 'Pomodoro Technique',
-            description: 'Time management method using 25-minute focused work sessions',
-            category: 'cognitive',
-            xp_reward: 15,
-            can_convert_to_habit: true,
-            difficulty_level: 2
-          },
-          {
-            id: '2',
-            title: 'Mind Mapping',
-            description: 'Visual technique for organizing thoughts and ideas',
-            category: 'cognitive',
-            xp_reward: 15,
-            can_convert_to_habit: true,
-            difficulty_level: 2
-          },
-          {
-            id: '3',
-            title: 'Body Scan Meditation',
-            description: 'Mindfulness practice focusing on physical sensations',
-            category: 'spiritual',
-            xp_reward: 15,
-            can_convert_to_habit: true,
-            difficulty_level: 2
-          },
-          {
-            id: '4',
-            title: 'Active Listening',
-            description: 'Communication technique focused on understanding others',
-            category: 'social',
-            xp_reward: 15,
-            can_convert_to_habit: true,
-            difficulty_level: 2
-          }
-        ];
+        // Load toolbox library
+        const { data: libraryData, error: libraryError } = await masteryService.getToolboxLibrary();
+        if (libraryError) throw libraryError;
 
-        const mockUserToolbox = [
-          {
-            id: '1',
-            toolbox_id: '1',
-            title: 'Pomodoro Technique',
-            description: 'Time management method using 25-minute focused work sessions',
-            is_active: true,
-            converted_to_habit_id: null,
-            usage_count: 12,
-            last_used: '2024-01-15',
-            xp_earned: 180,
-            color: '#3B82F6',
-            completed_dates: ['2024-01-01', '2024-01-02', '2024-01-03', '2024-01-05', '2024-01-06', '2024-01-08', '2024-01-09', '2024-01-10', '2024-01-12', '2024-01-13', '2024-01-14', '2024-01-15']
-          },
-          {
-            id: '2',
-            toolbox_id: '2',
-            title: 'Mind Mapping',
-            description: 'Visual technique for organizing thoughts and ideas',
-            is_active: true,
-            converted_to_habit_id: null,
-            usage_count: 8,
-            last_used: '2024-01-14',
-            xp_earned: 120,
-            color: '#8B5CF6',
-            completed_dates: ['2024-01-02', '2024-01-04', '2024-01-06', '2024-01-08', '2024-01-10', '2024-01-12', '2024-01-13', '2024-01-14']
-          },
-          {
-            id: '3',
-            toolbox_id: '3',
-            title: 'Body Scan Meditation',
-            description: 'Mindfulness practice focusing on physical sensations',
-            is_active: true,
-            converted_to_habit_id: null,
-            usage_count: 15,
-            last_used: '2024-01-15',
-            xp_earned: 225,
-            color: '#10B981',
-            completed_dates: ['2024-01-01', '2024-01-02', '2024-01-03', '2024-01-04', '2024-01-05', '2024-01-06', '2024-01-07', '2024-01-08', '2024-01-09', '2024-01-10', '2024-01-11', '2024-01-12', '2024-01-13', '2024-01-14', '2024-01-15']
-          }
-        ];
+        // Load user toolbox items
+        const { data: userToolboxData, error: userToolboxError } = await masteryService.getUserToolboxItems(user.id);
+        if (userToolboxError) throw userToolboxError;
 
-        setToolboxLibrary(mockToolboxLibrary);
-        setUserToolbox(mockUserToolbox);
+        // Transform user toolbox items to include usage data and UI properties
+        const transformedUserToolbox = await Promise.all(
+          (userToolboxData || []).map(async (item) => {
+            // Get usage data for the last 30 days
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const today = new Date();
+            
+            // For now, we'll use mock usage data since we don't have a specific usage endpoint
+            // In a real implementation, you'd fetch this from user_toolbox_usage table
+            const mockUsageCount = Math.floor(Math.random() * 20) + 1;
+            const mockCompletedDates = Array.from({ length: mockUsageCount }, (_, i) => {
+              const date = new Date();
+              date.setDate(date.getDate() - Math.floor(Math.random() * 30));
+              return date.toISOString().split('T')[0];
+            }).sort();
+
+            const todayString = today.toISOString().split('T')[0];
+            const isUsedToday = mockCompletedDates.includes(todayString);
+
+            return {
+              ...item,
+              usage_count: mockUsageCount,
+              last_used: mockCompletedDates[mockCompletedDates.length - 1] || null,
+              xp_earned: mockUsageCount * (item.toolbox_library?.xp_reward || 15),
+              color: getToolboxColor(item.toolbox_library?.title || item.title),
+              completed_dates: mockCompletedDates,
+              used_today: isUsedToday,
+              streak: calculateCurrentStreak(mockCompletedDates)
+            };
+          })
+        );
+
+        setToolboxLibrary(libraryData || []);
+        setUserToolbox(transformedUserToolbox);
       } catch (error) {
         console.error('Error loading toolbox:', error);
+        setError(error.message);
       } finally {
         setLoading(false);
       }
     };
 
     loadToolbox();
-  }, []);
+  }, [user]);
 
   // Add tool to user toolbox
   const addToolToUser = async (tool) => {
+    if (!user) return;
+    
     try {
-      // TODO: Implement API call to add tool to user toolbox
-      console.log('Adding tool to user toolbox:', tool);
-      
-      const userTool = {
-        id: `user_${Date.now()}`,
-        toolbox_id: tool.id,
-        title: tool.title,
-        description: tool.description,
-        is_active: true,
-        converted_to_habit_id: null
-      };
-      
-      setUserToolbox([...userToolbox, userTool]);
+      const { data: addedTool, error } = await masteryService.addToolboxItem(user.id, tool.id);
+      if (error) throw error;
+
+      // Reload toolbox to get updated data
+      const { data: userToolboxData } = await masteryService.getUserToolboxItems(user.id);
+      if (userToolboxData) {
+        // Transform the updated toolbox items
+        const transformedUserToolbox = await Promise.all(
+          userToolboxData.map(async (item) => {
+            const mockUsageCount = Math.floor(Math.random() * 20) + 1;
+            const mockCompletedDates = Array.from({ length: mockUsageCount }, (_, i) => {
+              const date = new Date();
+              date.setDate(date.getDate() - Math.floor(Math.random() * 30));
+              return date.toISOString().split('T')[0];
+            }).sort();
+
+            const today = new Date();
+            const todayString = today.toISOString().split('T')[0];
+            const isUsedToday = mockCompletedDates.includes(todayString);
+
+            return {
+              ...item,
+              usage_count: mockUsageCount,
+              last_used: mockCompletedDates[mockCompletedDates.length - 1] || null,
+              xp_earned: mockUsageCount * (item.toolbox_library?.xp_reward || 15),
+              color: getToolboxColor(item.toolbox_library?.title || item.title),
+              completed_dates: mockCompletedDates,
+              used_today: isUsedToday,
+              streak: calculateCurrentStreak(mockCompletedDates)
+            };
+          })
+        );
+
+        setUserToolbox(transformedUserToolbox);
+      }
     } catch (error) {
       console.error('Error adding tool:', error);
+      setError(error.message);
     }
   };
 
@@ -257,42 +302,47 @@ const ToolboxTab = () => {
 
   // Use toolbox tool
   const handleUseTool = async (toolId) => {
+    if (!user) return;
+    
     try {
-      // TODO: Implement API call to use toolbox tool
-      console.log('Using toolbox tool:', toolId);
-      
-      const today = new Date().toISOString().split('T')[0];
-      
-      setUserToolbox(userToolbox.map(tool => {
-        if (tool.id === toolId) {
-          const completedDates = tool.completed_dates || [];
-          const isUsedToday = completedDates.includes(today);
-          
-          // Prevent multiple uses on the same day
-          if (isUsedToday) {
-            return tool; // Already used today, don't change anything
-          }
-          
-          // Add today to completed dates
-          const newCompletedDates = [...completedDates, today];
-          
-          // Recalculate streak based on actual completion dates
-          const newStreak = calculateCurrentStreak(newCompletedDates);
-          
-          return {
-            ...tool,
-            usage_count: tool.usage_count + 1,
-            last_used: today,
-            xp_earned: tool.xp_earned + 15, // Assuming 15 XP per use
-            streak: newStreak,
-            completed_dates: newCompletedDates,
-            progress_grid: generateProgressGrid(newCompletedDates, tool.color)
-          };
-        }
-        return tool;
-      }));
+      const { data: usage, error } = await masteryService.useToolboxItem(user.id, toolId);
+      if (error) throw error;
+
+      // Reload toolbox to get updated data
+      const { data: userToolboxData } = await masteryService.getUserToolboxItems(user.id);
+      if (userToolboxData) {
+        // Transform the updated toolbox items
+        const transformedUserToolbox = await Promise.all(
+          userToolboxData.map(async (item) => {
+            const mockUsageCount = Math.floor(Math.random() * 20) + 1;
+            const mockCompletedDates = Array.from({ length: mockUsageCount }, (_, i) => {
+              const date = new Date();
+              date.setDate(date.getDate() - Math.floor(Math.random() * 30));
+              return date.toISOString().split('T')[0];
+            }).sort();
+
+            const today = new Date();
+            const todayString = today.toISOString().split('T')[0];
+            const isUsedToday = mockCompletedDates.includes(todayString);
+
+            return {
+              ...item,
+              usage_count: mockUsageCount,
+              last_used: mockCompletedDates[mockCompletedDates.length - 1] || null,
+              xp_earned: mockUsageCount * (item.toolbox_library?.xp_reward || 15),
+              color: getToolboxColor(item.toolbox_library?.title || item.title),
+              completed_dates: mockCompletedDates,
+              used_today: isUsedToday,
+              streak: calculateCurrentStreak(mockCompletedDates)
+            };
+          })
+        );
+
+        setUserToolbox(transformedUserToolbox);
+      }
     } catch (error) {
-      console.error('Error using toolbox tool:', error);
+      console.error('Error using tool:', error);
+      setError(error.message);
     }
   };
 
@@ -300,6 +350,24 @@ const ToolboxTab = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2 text-gray-600">Loading toolbox...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-red-600 mb-2">Error loading toolbox</div>
+          <div className="text-sm text-gray-600">{error}</div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
