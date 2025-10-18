@@ -181,6 +181,8 @@ const HabitsTab = () => {
         setHabitsLibrary(libraryHabits || []);
       } catch (error) {
         handleError(error, 'loading habits', setError, setLoading);
+      } finally {
+        setLoading(false);
       }
     };
 
