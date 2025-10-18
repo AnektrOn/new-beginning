@@ -346,6 +346,25 @@ class MasteryService {
    */
   async addToolboxItem(userId, toolboxId) {
     try {
+      // First check if the item already exists
+      const { data: existingItem, error: checkError } = await supabase
+        .from('user_toolbox_items')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('toolbox_id', toolboxId)
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        // PGRST116 is "not found" error, which is expected if item doesn't exist
+        throw checkError;
+      }
+
+      if (existingItem) {
+        // Item already exists, return it
+        return { data: existingItem, error: null };
+      }
+
+      // Item doesn't exist, create it
       const { data, error } = await supabase
         .from('user_toolbox_items')
         .insert({
@@ -373,11 +392,15 @@ class MasteryService {
         .from('user_toolbox_items')
         .update(updates)
         .eq('id', itemId)
-        .select()
-        .single();
+        .select();
 
       if (error) throw error;
-      return { data, error: null };
+      
+      if (!data || data.length === 0) {
+        throw new Error(`No toolbox item found with id: ${itemId}`);
+      }
+      
+      return { data: data[0], error: null };
     } catch (error) {
       console.error('Error updating user toolbox item:', error);
       return { data: null, error };
