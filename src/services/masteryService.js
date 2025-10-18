@@ -236,6 +236,7 @@ class MasteryService {
    */
   async calculateHabitStreak(userId, habitId) {
     try {
+      // Get all completions for this habit
       const { data: completions, error } = await supabase
         .from('user_habit_completions')
         .select('completed_at')
@@ -249,46 +250,37 @@ class MasteryService {
         return { data: 0, error: null };
       }
 
+      // Convert to date strings and sort
+      const completionDates = completions.map(c => c.completed_at.split('T')[0]).sort();
+      
+      // Calculate streak
+      let streak = 0;
       const today = new Date();
       const todayString = today.toISOString().split('T')[0];
       
-      let streak = 0;
-      let currentDate = new Date(today);
-      
-      // Check if today is completed
-      const todayCompleted = completions.some(completion => 
-        completion.completed_at.startsWith(todayString)
-      );
-      
-      if (todayCompleted) {
-        streak = 1;
-        currentDate.setDate(currentDate.getDate() - 1);
-      } else {
-        // If today is not completed, start from yesterday
-        currentDate.setDate(currentDate.getDate() - 1);
+      // Check if completed today or yesterday
+      let checkDate = new Date(today);
+      if (!completionDates.includes(todayString)) {
+        checkDate.setDate(checkDate.getDate() - 1);
       }
       
-      // Count consecutive days backwards
       while (true) {
-        const dateString = currentDate.toISOString().split('T')[0];
-        const isCompleted = completions.some(completion => 
-          completion.completed_at.startsWith(dateString)
-        );
-        
-        if (isCompleted) {
+        const checkDateString = checkDate.toISOString().split('T')[0];
+        if (completionDates.includes(checkDateString)) {
           streak++;
-          currentDate.setDate(currentDate.getDate() - 1);
+          checkDate.setDate(checkDate.getDate() - 1);
         } else {
           break;
         }
       }
-      
+
       return { data: streak, error: null };
     } catch (error) {
       console.error('Error calculating habit streak:', error);
       return { data: 0, error };
     }
   }
+
 
   // ===== TOOLBOX =====
 
@@ -403,6 +395,28 @@ class MasteryService {
       return { data: data[0], error: null };
     } catch (error) {
       console.error('Error updating user toolbox item:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Get toolbox usage data for a user
+   */
+  async getToolboxUsage(userId, toolboxItemId, startDate, endDate) {
+    try {
+      const { data, error } = await supabase
+        .from('user_toolbox_usage')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('toolbox_item_id', toolboxItemId)
+        .gte('used_at', `${startDate}T00:00:00`)
+        .lte('used_at', `${endDate}T23:59:59`)
+        .order('used_at', { ascending: true });
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error('Error fetching toolbox usage:', error);
       return { data: null, error };
     }
   }

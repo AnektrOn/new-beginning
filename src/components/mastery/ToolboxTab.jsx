@@ -86,37 +86,38 @@ const ToolboxTab = () => {
         const { data: userToolboxData, error: userToolboxError } = await masteryService.getUserToolboxItems(user.id);
         if (userToolboxError) throw userToolboxError;
 
-        // Transform user toolbox items to include usage data and UI properties
+        // Transform user toolbox items to include real usage data and UI properties
         const transformedUserToolbox = await Promise.all(
           (userToolboxData || []).map(async (item) => {
-            // Get usage data for the last 30 days
+            // Get real usage data for the last 30 days
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
             const today = new Date();
             
-            // For now, we'll use mock usage data since we don't have a specific usage endpoint
-            // In a real implementation, you'd fetch this from user_toolbox_usage table
-            const mockUsageCount = Math.floor(Math.random() * 20) + 1;
-            const mockCompletedDates = Array.from({ length: mockUsageCount }, (_, i) => {
-              const date = new Date();
-              date.setDate(date.getDate() - Math.floor(Math.random() * 30));
-              return date.toISOString().split('T')[0];
-            }).sort();
+            const { data: usageData } = await masteryService.getToolboxUsage(
+              user.id,
+              item.id,
+              thirtyDaysAgo.toISOString().split('T')[0],
+              today.toISOString().split('T')[0]
+            );
 
+            // Get usage dates from real data
+            const usageDates = (usageData || []).map(usage => usage.used_at.split('T')[0]);
             const todayString = today.toISOString().split('T')[0];
-            const isUsedToday = mockCompletedDates.includes(todayString);
+            const isUsedToday = usageDates.includes(todayString);
+            const totalXPEarned = (usageData || []).reduce((sum, usage) => sum + (usage.xp_earned || 0), 0);
 
             return {
               ...item,
               title: item.toolbox_library?.title || 'Unknown Tool',
               description: item.toolbox_library?.description || 'No description available',
-              usage_count: mockUsageCount,
-              last_used: mockCompletedDates[mockCompletedDates.length - 1] || null,
-              xp_earned: mockUsageCount * (item.toolbox_library?.xp_reward || 15),
+              usage_count: usageData?.length || 0,
+              last_used: usageDates[usageDates.length - 1] || null,
+              xp_earned: totalXPEarned,
               color: getToolboxColor(item.toolbox_library?.title || 'Unknown Tool'),
-              completed_dates: mockCompletedDates,
+              completed_dates: usageDates,
               used_today: isUsedToday,
-              streak: calculateCurrentStreak(mockCompletedDates)
+              streak: calculateCurrentStreak(usageDates)
             };
           })
         );
