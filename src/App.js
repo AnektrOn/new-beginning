@@ -13,6 +13,7 @@ import Dashboard from './pages/Dashboard'
 import PricingPage from './pages/PricingPage'
 import ProfilePage from './pages/ProfilePage'
 import Mastery from './pages/Mastery'
+import MasteryTestComponent from './components/test/MasteryTestComponent'
 
 // Import glassmorphism styles
 import './styles/glassmorphism.css'
@@ -53,6 +54,21 @@ const AppRoutes = () => {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/pricing" element={<PricingPage />} />
+      
+      {/* Test route without authentication */}
+      <Route path="/test" element={
+        <div style={{padding: '20px', backgroundColor: 'lightblue'}}>
+          <h1>TEST ROUTE WORKS!</h1>
+          <p>If you can see this, routing is working.</p>
+        </div>
+      } />
+
+      {/* Mastery Test Component */}
+      <Route path="/mastery-test" element={
+        <ProtectedRoute>
+          <MasteryTestComponent />
+        </ProtectedRoute>
+      } />
 
       {/* Protected Routes (With AppShell) */}
       <Route path="/dashboard" element={
@@ -73,11 +89,14 @@ const AppRoutes = () => {
 
       <Route path="/mastery/*" element={
         <ProtectedRoute>
-          <AppShell>
-            <Mastery />
-          </AppShell>
+          <AppShell />
         </ProtectedRoute>
-      } />
+      }>
+        <Route index element={<Mastery />} />
+        <Route path="calendar" element={<Mastery />} />
+        <Route path="habits" element={<Mastery />} />
+        <Route path="toolbox" element={<Mastery />} />
+      </Route>
 
       {/* Default redirect */}
       <Route path="/" element={<AuthRedirect />} />

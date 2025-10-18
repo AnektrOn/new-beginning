@@ -1,8 +1,8 @@
 import React from 'react';
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Calendar, Target, Wrench } from 'lucide-react';
 
-// Import components (we'll create these next)
+// Import components
 import CalendarTab from '../components/mastery/CalendarTab';
 import HabitsTab from '../components/mastery/HabitsTab';
 import ToolboxTab from '../components/mastery/ToolboxTab';
@@ -21,7 +21,6 @@ const Mastery = () => {
     navigate(path);
   };
 
-
   return (
     <div className="min-h-full">
       {/* Header */}
@@ -33,14 +32,13 @@ const Mastery = () => {
           Build lasting habits, track your progress, and access powerful learning tools
         </p>
       </div>
-
+      
       {/* Tab Navigation */}
       <div className="glass-tab-navigation mb-8">
         <nav className="flex space-x-1">
           {tabs.map((tab) => {
             const Icon = tab.icon;
-            const isActive = location.pathname === tab.path;
-            
+            const isActive = location.pathname === tab.path || (tab.path === '/mastery/calendar' && location.pathname === '/mastery');
             return (
               <button
                 key={tab.id}
@@ -54,15 +52,20 @@ const Mastery = () => {
           })}
         </nav>
       </div>
-
+      
       {/* Tab Content */}
       <div className="glass-tab-content">
-        <Routes>
-          <Route path="/" element={<CalendarTab />} />
-          <Route path="/calendar" element={<CalendarTab />} />
-          <Route path="/habits" element={<HabitsTab />} />
-          <Route path="/toolbox" element={<ToolboxTab />} />
-        </Routes>
+        {(() => {
+          if (location.pathname === '/mastery' || location.pathname === '/mastery/calendar') {
+            return <CalendarTab />;
+          } else if (location.pathname === '/mastery/habits') {
+            return <HabitsTab />;
+          } else if (location.pathname === '/mastery/toolbox') {
+            return <ToolboxTab />;
+          } else {
+            return <CalendarTab />;
+          }
+        })()}
       </div>
     </div>
   );

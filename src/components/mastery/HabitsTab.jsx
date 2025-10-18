@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Target, CheckCircle, Star, Laptop, BookOpen, Dumbbell, Flame } from 'lucide-react';
+import masteryService from '../../services/masteryService';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Helper function to calculate current streak from completion dates
 const calculateCurrentStreak = (completedDates) => {
@@ -87,10 +89,12 @@ const generateProgressGrid = (completedDates = [], color) => {
 };
 
 const HabitsTab = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('personal');
   const [personalHabits, setPersonalHabits] = useState([]);
   const [habitsLibrary, setHabitsLibrary] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showAddHabit, setShowAddHabit] = useState(false);
   const [newHabit, setNewHabit] = useState({
     title: '',

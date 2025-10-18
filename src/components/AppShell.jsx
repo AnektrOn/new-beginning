@@ -155,7 +155,9 @@ const AppShell = () => {
       {/* Main Content Area - Large glass panel */}
       <main className="fixed left-32 top-20 right-4 bottom-4 z-30">
         <div className="glass-main-panel">
-          <Outlet />
+          <div className="p-4">
+            <Outlet />
+          </div>
         </div>
       </main>
     </div>
