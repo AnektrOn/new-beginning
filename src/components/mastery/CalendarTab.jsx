@@ -306,16 +306,36 @@ const CalendarTab = () => {
       }
       
       try {
-        const { data: completion, error } = await masteryService.completeHabit(user.id, habitId, fullDateString);
-        if (error) throw error;
-
-        // Show completion popup
+        // Check if habit is already completed for this date
         const habit = habits.find(h => h.id === habitId);
-        setCompletionPopup({
-          habit: habit?.title || 'Habit',
-          date: fullDateString,
-          xp: habit?.xp_reward || 10
-        });
+        const isAlreadyCompleted = habit?.completed_dates?.includes(fullDateString);
+        
+        let result;
+        if (isAlreadyCompleted) {
+          // Uncomplete the habit
+          result = await masteryService.removeHabitCompletion(user.id, habitId, fullDateString);
+          if (result.error) throw result.error;
+          
+          // Show uncompletion popup
+          setCompletionPopup({
+            habit: habit?.title || 'Habit',
+            date: fullDateString,
+            xp: habit?.xp_reward || 10,
+            action: 'uncompleted'
+          });
+        } else {
+          // Complete the habit
+          result = await masteryService.completeHabit(user.id, habitId, fullDateString);
+          if (result.error) throw result.error;
+          
+          // Show completion popup
+          setCompletionPopup({
+            habit: habit?.title || 'Habit',
+            date: fullDateString,
+            xp: habit?.xp_reward || 10,
+            action: 'completed'
+          });
+        }
 
         // Update the specific habit in our habits state (virtual calendar approach)
         setHabits(prevHabits => 
@@ -323,16 +343,24 @@ const CalendarTab = () => {
             if (habit.id === habitId) {
               const updatedCompletedDates = [...habit.completed_dates];
               
-            // Add completion date if not already present
-            if (!updatedCompletedDates.includes(fullDateString)) {
-              updatedCompletedDates.push(fullDateString);
-            }
+              if (isAlreadyCompleted) {
+                // Remove completion date
+                const index = updatedCompletedDates.indexOf(fullDateString);
+                if (index > -1) {
+                  updatedCompletedDates.splice(index, 1);
+                }
+              } else {
+                // Add completion date if not already present
+                if (!updatedCompletedDates.includes(fullDateString)) {
+                  updatedCompletedDates.push(fullDateString);
+                }
+              }
               
               return {
                 ...habit,
                 completed_dates: updatedCompletedDates,
                 completed_today: updatedCompletedDates.includes(new Date().toISOString().split('T')[0]),
-                streak: (habit.streak || 0) + 1
+                streak: isAlreadyCompleted ? Math.max(0, (habit.streak || 0) - 1) : (habit.streak || 0) + 1
               };
             }
             return habit;
@@ -604,8 +632,8 @@ const CalendarTab = () => {
                                   event.isClickable === false
                                     ? 'Cannot complete - too far in the past'
                                     : event.completed 
-                                      ? 'Mark as incomplete' 
-                                      : 'Mark as complete'
+                                      ? 'Click to uncomplete' 
+                                      : 'Click to complete'
                                 }
                                 disabled={event.isClickable === false}
                               >
@@ -774,6 +802,10 @@ const CalendarTab = () => {
         </div>
       ) : (
         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          {(() => {
+            // Calculate events for the selected day using virtual events
+            const selectedDayEvents = getEventsForDate(selectedDay);
+            return (
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-2">
               <button
@@ -960,6 +992,9 @@ const CalendarTab = () => {
             </div>
           </div>
         </div>
+            );
+          })()}
+        </div>
 
         {/* Sidebar */}
         <div className="w-80 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
@@ -1073,25 +1108,46 @@ const CalendarTab = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
             <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle size={32} className="text-green-600 dark:text-green-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Habit Completed! 🎉
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
-                <span className="font-medium">{completionPopup.habit}</span> completed on {completionPopup.date}
-              </p>
-              <div className="bg-yellow-100 dark:bg-yellow-900 rounded-lg p-3 mb-4">
-                <p className="text-yellow-800 dark:text-yellow-200 font-medium">
-                  +{completionPopup.xp} XP Earned!
-                </p>
-              </div>
+              {completionPopup.action === 'completed' ? (
+                <>
+                  <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle size={32} className="text-green-600 dark:text-green-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    Habit Completed! 🎉
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4">
+                    <span className="font-medium">{completionPopup.habit}</span> completed on {completionPopup.date}
+                  </p>
+                  <div className="bg-yellow-100 dark:bg-yellow-900 rounded-lg p-3 mb-4">
+                    <p className="text-yellow-800 dark:text-yellow-200 font-medium">
+                      +{completionPopup.xp} XP Earned!
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle size={32} className="text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    Habit Uncompleted! 🔄
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4">
+                    <span className="font-medium">{completionPopup.habit}</span> uncompleted for {completionPopup.date}
+                  </p>
+                  <div className="bg-orange-100 dark:bg-orange-900 rounded-lg p-3 mb-4">
+                    <p className="text-orange-800 dark:text-orange-200 font-medium">
+                      -{completionPopup.xp} XP Removed
+                    </p>
+                  </div>
+                </>
+              )}
               <button
                 onClick={() => setCompletionPopup(null)}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
               >
-                Awesome!
+                {completionPopup.action === 'completed' ? 'Awesome!' : 'Got it!'}
               </button>
             </div>
           </div>
