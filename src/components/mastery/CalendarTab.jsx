@@ -14,6 +14,7 @@ const CalendarTab = () => {
   const [selectedDay, setSelectedDay] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [completionPopup, setCompletionPopup] = useState(null);
 
   // Helper function to calculate current streak from completion dates
   const calculateCurrentStreak = (completedDates = []) => {
@@ -279,11 +280,7 @@ const CalendarTab = () => {
   };
 
   const toggleEventCompletion = async (eventId) => {
-    console.log('🎯 toggleEventCompletion called with:', eventId);
-    if (!user) {
-      console.log('❌ No user found');
-      return;
-    }
+    if (!user) return;
     
     // Parse the event ID to get habit info (format: habit-{habitId}-{date})
     if (eventId.startsWith('habit-')) {
@@ -293,14 +290,13 @@ const CalendarTab = () => {
       const habitId = withoutPrefix.substring(0, lastDashIndex);
       const dateString = withoutPrefix.substring(lastDashIndex + 1);
       
-      console.log('📅 Parsed habitId:', habitId, 'dateString:', dateString);
+      // Fix: Reconstruct the full date string (YYYY-MM-DD)
+      const fullDateString = `2025-10-${dateString}`;
       
       // Check if completion is allowed (current day + 2 days prior)
       const today = new Date();
-      const targetDate = new Date(dateString);
+      const targetDate = new Date(fullDateString);
       const daysDiff = Math.floor((today - targetDate) / (1000 * 60 * 60 * 24));
-      
-      console.log('📊 Days difference:', daysDiff);
       
       if (daysDiff > 2) {
         alert('You can only complete habits for today and up to 2 days prior.');
@@ -313,10 +309,16 @@ const CalendarTab = () => {
       }
       
       try {
-        console.log('🚀 Calling masteryService.completeHabit with:', user.id, habitId);
-        const { data: completion, error } = await masteryService.completeHabit(user.id, habitId);
-        console.log('✅ Completion result:', completion, error);
+        const { data: completion, error } = await masteryService.completeHabit(user.id, habitId, fullDateString);
         if (error) throw error;
+
+        // Show completion popup
+        const habit = habits.find(h => h.id === habitId);
+        setCompletionPopup({
+          habit: habit?.title || 'Habit',
+          date: fullDateString,
+          xp: habit?.xp_reward || 10
+        });
 
         // Update the specific habit in our habits state (virtual calendar approach)
         setHabits(prevHabits => 
@@ -324,10 +326,10 @@ const CalendarTab = () => {
             if (habit.id === habitId) {
               const updatedCompletedDates = [...habit.completed_dates];
               
-              // Add completion date if not already present
-              if (!updatedCompletedDates.includes(dateString)) {
-                updatedCompletedDates.push(dateString);
-              }
+            // Add completion date if not already present
+            if (!updatedCompletedDates.includes(fullDateString)) {
+              updatedCompletedDates.push(fullDateString);
+            }
               
               return {
                 ...habit,
@@ -590,11 +592,8 @@ const CalendarTab = () => {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  console.log('🖱️ Completion button clicked for event:', event.id, 'isClickable:', event.isClickable);
                                   if (event.isClickable !== false) {
                                     toggleEventCompletion(event.id);
-                                  } else {
-                                    console.log('❌ Event not clickable');
                                   }
                                 }}
                                 className={`p-1 rounded text-xs ${
@@ -1071,6 +1070,36 @@ const CalendarTab = () => {
           </div>
         </div>
       </div>
+
+      {/* Completion Popup */}
+      {completionPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle size={32} className="text-green-600 dark:text-green-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Habit Completed! 🎉
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                <span className="font-medium">{completionPopup.habit}</span> completed on {completionPopup.date}
+              </p>
+              <div className="bg-yellow-100 dark:bg-yellow-900 rounded-lg p-3 mb-4">
+                <p className="text-yellow-800 dark:text-yellow-200 font-medium">
+                  +{completionPopup.xp} XP Earned!
+                </p>
+              </div>
+              <button
+                onClick={() => setCompletionPopup(null)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+              >
+                Awesome!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
