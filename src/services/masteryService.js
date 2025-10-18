@@ -300,6 +300,115 @@ class MasteryService {
     }
   }
 
+  /**
+   * Update habit completion count
+   */
+  async updateHabitCompletionCount(habitId) {
+    try {
+      const { data, error } = await supabase
+        .from('user_habit_completions')
+        .select('id, completed_at')
+        .eq('habit_id', habitId)
+        .order('completed_at', { ascending: false });
+
+      if (error) throw error;
+
+      const completionCount = data?.length || 0;
+      const lastCompleted = data?.[0]?.completed_at || null;
+
+      const { error: updateError } = await supabase
+        .from('user_habits')
+        .update({
+          completion_count: completionCount,
+          last_completed_at: lastCompleted
+        })
+        .eq('id', habitId);
+
+      if (updateError) throw updateError;
+      return { data: { completionCount, lastCompleted }, error: null };
+    } catch (error) {
+      console.error('Error updating habit completion count:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Award XP to user
+   */
+  async awardXP(userId, amount, source, description) {
+    try {
+      // Get current user profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('current_xp, total_xp_earned')
+        .eq('id', userId)
+        .single();
+
+      if (profileError) throw profileError;
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          current_xp: profile.current_xp + amount,
+          total_xp_earned: profile.total_xp_earned + amount
+        })
+        .eq('id', userId);
+
+      if (updateError) throw updateError;
+
+      // Record XP transaction
+      const { data, error } = await supabase
+        .from('xp_transactions')
+        .insert({
+          user_id: userId,
+          amount: amount,
+          source: source,
+          description: description
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error('Error awarding XP:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Get calendar events for a date range
+   */
+  async getCalendarEvents(userId, startDate, endDate) {
+    try {
+      const { data, error } = await supabase
+        .from('user_calendar_events')
+        .select(`
+          *,
+          user_habits (
+            title,
+            description,
+            xp_reward
+          ),
+          toolbox_library (
+            title,
+            description,
+            xp_reward
+          )
+        `)
+        .eq('user_id', userId)
+        .gte('event_date', startDate)
+        .lte('event_date', endDate)
+        .order('event_date', { ascending: true });
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error('Error fetching calendar events:', error);
+      return { data: null, error };
+    }
+  }
+
 
   // ===== TOOLBOX =====
 
