@@ -23,11 +23,14 @@ class MasteryService {
   }
 
   /**
-   * Get user's personal habits
+   * Get user's personal habits (with pagination support)
    */
-  async getUserHabits(userId) {
+  async getUserHabits(userId, page = 1, limit = 50) {
     try {
-      const { data, error } = await supabase
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+      
+      const { data, error, count } = await supabase
         .from('user_habits')
         .select(`
           *,
@@ -38,13 +41,23 @@ class MasteryService {
             skill_tags,
             xp_reward
           )
-        `)
+        `, { count: 'exact' })
         .eq('user_id', userId)
         .eq('is_active', true)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
       if (error) throw error;
-      return { data, error: null };
+      return { 
+        data, 
+        error: null, 
+        pagination: {
+          page,
+          limit,
+          total: count,
+          totalPages: Math.ceil(count / limit)
+        }
+      };
     } catch (error) {
       console.error('Error fetching user habits:', error);
       return { data: null, error };
@@ -251,16 +264,20 @@ class MasteryService {
   }
 
   /**
-   * Calculate current streak for a habit
+   * Calculate current streak for a habit (optimized)
    */
   async calculateHabitStreak(userId, habitId) {
     try {
-      // Get all completions for this habit
+      // Get completions for the last 30 days only (more efficient)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
       const { data: completions, error } = await supabase
         .from('user_habit_completions')
         .select('completed_at')
         .eq('user_id', userId)
         .eq('habit_id', habitId)
+        .gte('completed_at', thirtyDaysAgo.toISOString())
         .order('completed_at', { ascending: false });
 
       if (error) throw error;
@@ -432,11 +449,14 @@ class MasteryService {
   }
 
   /**
-   * Get user's toolbox items
+   * Get user's toolbox items (with pagination support)
    */
-  async getUserToolboxItems(userId) {
+  async getUserToolboxItems(userId, page = 1, limit = 50) {
     try {
-      const { data, error } = await supabase
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+      
+      const { data, error, count } = await supabase
         .from('user_toolbox_items')
         .select(`
           *,
@@ -448,13 +468,23 @@ class MasteryService {
             xp_reward,
             can_convert_to_habit
           )
-        `)
+        `, { count: 'exact' })
         .eq('user_id', userId)
         .eq('is_active', true)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
       if (error) throw error;
-      return { data, error: null };
+      return { 
+        data, 
+        error: null, 
+        pagination: {
+          page,
+          limit,
+          total: count,
+          totalPages: Math.ceil(count / limit)
+        }
+      };
     } catch (error) {
       console.error('Error fetching user toolbox items:', error);
       return { data: null, error };
