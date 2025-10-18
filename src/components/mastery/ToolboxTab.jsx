@@ -140,37 +140,44 @@ const ToolboxTab = () => {
     if (!user) return;
     
     try {
-      const { data: addedTool, error } = await masteryService.addToolboxItem(user.id, tool.id);
+      const { error } = await masteryService.addToolboxItem(user.id, tool.id);
       if (error) throw error;
 
       // Reload toolbox to get updated data
       const { data: userToolboxData } = await masteryService.getUserToolboxItems(user.id);
       if (userToolboxData) {
-        // Transform the updated toolbox items
+        // Transform the updated toolbox items with real data
         const transformedUserToolbox = await Promise.all(
           userToolboxData.map(async (item) => {
-            const mockUsageCount = Math.floor(Math.random() * 20) + 1;
-            const mockCompletedDates = Array.from({ length: mockUsageCount }, (_, i) => {
-              const date = new Date();
-              date.setDate(date.getDate() - Math.floor(Math.random() * 30));
-              return date.toISOString().split('T')[0];
-            }).sort();
-
+            // Get real usage data for the last 30 days
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
             const today = new Date();
+            
+            const { data: usageData } = await masteryService.getToolboxUsage(
+              user.id,
+              item.id,
+              thirtyDaysAgo.toISOString().split('T')[0],
+              today.toISOString().split('T')[0]
+            );
+
+            // Get usage dates from real data
+            const usageDates = (usageData || []).map(usage => usage.used_at.split('T')[0]);
             const todayString = today.toISOString().split('T')[0];
-            const isUsedToday = mockCompletedDates.includes(todayString);
+            const isUsedToday = usageDates.includes(todayString);
+            const totalXPEarned = (usageData || []).reduce((sum, usage) => sum + (usage.xp_earned || 0), 0);
 
             return {
               ...item,
               title: item.toolbox_library?.title || 'Unknown Tool',
               description: item.toolbox_library?.description || 'No description available',
-              usage_count: mockUsageCount,
-              last_used: mockCompletedDates[mockCompletedDates.length - 1] || null,
-              xp_earned: mockUsageCount * (item.toolbox_library?.xp_reward || 15),
+              usage_count: usageData?.length || 0,
+              last_used: usageDates[usageDates.length - 1] || null,
+              xp_earned: totalXPEarned,
               color: getToolboxColor(item.toolbox_library?.title || 'Unknown Tool'),
-              completed_dates: mockCompletedDates,
+              completed_dates: usageDates,
               used_today: isUsedToday,
-              streak: calculateCurrentStreak(mockCompletedDates)
+              streak: calculateCurrentStreak(usageDates)
             };
           })
         );
@@ -203,7 +210,7 @@ const ToolboxTab = () => {
       if (habitError) throw habitError;
 
       // Update the toolbox item to mark it as converted
-      const { data: updatedToolboxItem, error: updateError } = await masteryService.updateUserToolboxItem(
+      const { error: updateError } = await masteryService.updateUserToolboxItem(
         selectedTool.id, 
         { converted_to_habit_id: newHabit.id }
       );
@@ -212,31 +219,38 @@ const ToolboxTab = () => {
       // Reload toolbox to get updated data
       const { data: userToolboxData } = await masteryService.getUserToolboxItems(user.id);
       if (userToolboxData) {
-        // Transform the updated toolbox items
+        // Transform the updated toolbox items with real data
         const transformedUserToolbox = await Promise.all(
           userToolboxData.map(async (item) => {
-            const mockUsageCount = Math.floor(Math.random() * 20) + 1;
-            const mockCompletedDates = Array.from({ length: mockUsageCount }, (_, i) => {
-              const date = new Date();
-              date.setDate(date.getDate() - Math.floor(Math.random() * 30));
-              return date.toISOString().split('T')[0];
-            }).sort();
-
+            // Get real usage data for the last 30 days
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
             const today = new Date();
+            
+            const { data: usageData } = await masteryService.getToolboxUsage(
+              user.id,
+              item.id,
+              thirtyDaysAgo.toISOString().split('T')[0],
+              today.toISOString().split('T')[0]
+            );
+
+            // Get usage dates from real data
+            const usageDates = (usageData || []).map(usage => usage.used_at.split('T')[0]);
             const todayString = today.toISOString().split('T')[0];
-            const isUsedToday = mockCompletedDates.includes(todayString);
+            const isUsedToday = usageDates.includes(todayString);
+            const totalXPEarned = (usageData || []).reduce((sum, usage) => sum + (usage.xp_earned || 0), 0);
 
             return {
               ...item,
               title: item.toolbox_library?.title || 'Unknown Tool',
               description: item.toolbox_library?.description || 'No description available',
-              usage_count: mockUsageCount,
-              last_used: mockCompletedDates[mockCompletedDates.length - 1] || null,
-              xp_earned: mockUsageCount * (item.toolbox_library?.xp_reward || 15),
+              usage_count: usageData?.length || 0,
+              last_used: usageDates[usageDates.length - 1] || null,
+              xp_earned: totalXPEarned,
               color: getToolboxColor(item.toolbox_library?.title || 'Unknown Tool'),
-              completed_dates: mockCompletedDates,
+              completed_dates: usageDates,
               used_today: isUsedToday,
-              streak: calculateCurrentStreak(mockCompletedDates)
+              streak: calculateCurrentStreak(usageDates)
             };
           })
         );
@@ -359,7 +373,7 @@ const ToolboxTab = () => {
     if (!user) return;
     
     try {
-      const { data: usage, error } = await masteryService.useToolboxItem(user.id, toolId);
+      const { error } = await masteryService.useToolboxItem(user.id, toolId);
       if (error) throw error;
 
       // Reload toolbox to get updated data
