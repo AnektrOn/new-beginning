@@ -1,5 +1,90 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Target, Trash2, Circle, Star } from 'lucide-react';
+import { Plus, Target, CheckCircle, Star, Laptop, BookOpen, Dumbbell, Flame } from 'lucide-react';
+
+// Helper function to calculate current streak from completion dates
+const calculateCurrentStreak = (completedDates) => {
+  if (!completedDates || completedDates.length === 0) return 0;
+  
+  const today = new Date();
+  const todayString = today.toISOString().split('T')[0];
+  
+  // Sort dates in descending order (most recent first)
+  const sortedDates = [...completedDates].sort().reverse();
+  
+  let streak = 0;
+  let currentDate = new Date(today);
+  
+  // Check if today is completed
+  if (sortedDates.includes(todayString)) {
+    streak = 1;
+    currentDate.setDate(currentDate.getDate() - 1);
+  } else {
+    // If today is not completed, start from yesterday
+    currentDate.setDate(currentDate.getDate() - 1);
+  }
+  
+  // Count consecutive days backwards
+  while (true) {
+    const dateString = currentDate.toISOString().split('T')[0];
+    if (sortedDates.includes(dateString)) {
+      streak++;
+      currentDate.setDate(currentDate.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  
+  return streak;
+};
+
+// Helper function to generate progress grid for current month with proper calendar layout
+const generateProgressGrid = (completedDates = [], color) => {
+  const grid = [];
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  
+  // Get first day of current month
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+  const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
+  
+  // Get the day of week for first day (0 = Sunday, 1 = Monday, etc.)
+  const firstDayOfWeek = firstDayOfMonth.getDay();
+  
+  // Create 6 rows x 7 columns = 42 cells to cover any month
+  for (let week = 0; week < 6; week++) {
+    for (let day = 0; day < 7; day++) {
+      const cellIndex = week * 7 + day;
+      const dayOfMonth = cellIndex - firstDayOfWeek + 1;
+      
+      // Check if this cell represents a valid day of the month
+      if (dayOfMonth >= 1 && dayOfMonth <= lastDayOfMonth.getDate()) {
+        const date = new Date(currentYear, currentMonth, dayOfMonth);
+        const dateString = date.toISOString().split('T')[0];
+        const wasCompleted = completedDates.includes(dateString);
+        
+        grid.push({
+          date: dateString,
+          dayOfMonth: dayOfMonth,
+          filled: wasCompleted,
+          color: wasCompleted ? color : '#ffffff',
+          isCurrentMonth: true
+        });
+      } else {
+        // Empty cell for days outside the current month
+        grid.push({
+          date: null,
+          dayOfMonth: null,
+          filled: false,
+          color: '#ffffff',
+          isCurrentMonth: false
+        });
+      }
+    }
+  }
+  
+  return grid;
+};
 
 const HabitsTab = () => {
   const [activeTab, setActiveTab] = useState('personal');
@@ -20,27 +105,64 @@ const HabitsTab = () => {
       setLoading(true);
       try {
         // TODO: Implement API calls to fetch habits
-        // For now, using mock data
+        // For now, using mock data matching the image design
+        const today = new Date().toISOString().split('T')[0];
+        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        
+        // Generate some realistic completion dates for demonstration
+        const buildInPublicDates = [today, yesterday, twoDaysAgo, '2024-10-14', '2024-10-13', '2024-10-12', '2024-10-11', '2024-10-10'];
+        const readDates = [yesterday, twoDaysAgo, '2024-10-14', '2024-10-13', '2024-10-12'];
+        const workoutDates = [today, yesterday, twoDaysAgo];
+        
         const mockPersonalHabits = [
           {
             id: '1',
-            title: 'Morning Workout',
-            description: '30 minutes of exercise to start the day',
+            title: 'Build in Public',
+            description: 'Share your progress and learnings publicly',
             frequency_type: 'daily',
             xp_reward: 10,
-            completion_count: 15,
+            completion_count: buildInPublicDates.length,
+            streak: calculateCurrentStreak(buildInPublicDates),
             is_active: true,
-            is_custom: true
+            is_custom: true,
+            icon: Laptop,
+            color: '#3b82f6', // Blue
+            completed_today: buildInPublicDates.includes(today),
+            completed_dates: buildInPublicDates,
+            progress_grid: generateProgressGrid(buildInPublicDates, '#3b82f6')
           },
           {
             id: '2',
-            title: 'Daily Reading',
-            description: 'Read for 30 minutes to expand knowledge',
+            title: 'Read 10 pages',
+            description: 'Read at least 10 pages daily',
             frequency_type: 'daily',
             xp_reward: 10,
-            completion_count: 8,
+            completion_count: readDates.length,
+            streak: calculateCurrentStreak(readDates),
             is_active: true,
-            is_custom: false
+            is_custom: false,
+            icon: BookOpen,
+            color: '#10b981', // Green
+            completed_today: readDates.includes(today),
+            completed_dates: readDates,
+            progress_grid: generateProgressGrid(readDates, '#10b981')
+          },
+          {
+            id: '3',
+            title: 'Workout',
+            description: 'Exercise for at least 30 minutes',
+            frequency_type: 'daily',
+            xp_reward: 10,
+            completion_count: workoutDates.length,
+            streak: calculateCurrentStreak(workoutDates),
+            is_active: true,
+            is_custom: true,
+            icon: Dumbbell,
+            color: '#8b5cf6', // Purple
+            completed_today: workoutDates.includes(today),
+            completed_dates: workoutDates,
+            progress_grid: generateProgressGrid(workoutDates, '#8b5cf6')
           }
         ];
 
@@ -125,17 +247,17 @@ const HabitsTab = () => {
     }
   };
 
-  // Delete habit
-  const deleteHabit = async (habitId) => {
-    try {
-      // TODO: Implement API call to delete habit
-      console.log('Deleting habit:', habitId);
-      
-      setPersonalHabits(personalHabits.filter(habit => habit.id !== habitId));
-    } catch (error) {
-      console.error('Error deleting habit:', error);
-    }
-  };
+  // Delete habit (commented out for now - will be added back when needed)
+  // const deleteHabit = async (habitId) => {
+  //   try {
+  //     // TODO: Implement API call to delete habit
+  //     console.log('Deleting habit:', habitId);
+  //     
+  //     setPersonalHabits(personalHabits.filter(habit => habit.id !== habitId));
+  //   } catch (error) {
+  //     console.error('Error deleting habit:', error);
+  //   }
+  // };
 
   // Complete habit
   const completeHabit = async (habitId) => {
@@ -143,11 +265,34 @@ const HabitsTab = () => {
       // TODO: Implement API call to complete habit
       console.log('Completing habit:', habitId);
       
-      setPersonalHabits(personalHabits.map(habit => 
-        habit.id === habitId 
-          ? { ...habit, completion_count: habit.completion_count + 1 }
-          : habit
-      ));
+      const today = new Date().toISOString().split('T')[0];
+      
+      setPersonalHabits(personalHabits.map(habit => {
+        if (habit.id === habitId) {
+          const isCompletedToday = habit.completed_dates.includes(today);
+          
+          // Prevent multiple completions on the same day
+          if (isCompletedToday) {
+            return habit; // Already completed today, don't change anything
+          }
+          
+          // Add today to completed dates
+          const newCompletedDates = [...habit.completed_dates, today];
+          
+          // Recalculate streak based on actual completion dates
+          const newStreak = calculateCurrentStreak(newCompletedDates);
+          
+          return {
+            ...habit,
+            completion_count: newCompletedDates.length,
+            streak: newStreak,
+            completed_today: true,
+            completed_dates: newCompletedDates,
+            progress_grid: generateProgressGrid(newCompletedDates, habit.color)
+          };
+        }
+        return habit;
+      }));
     } catch (error) {
       console.error('Error completing habit:', error);
     }
@@ -280,51 +425,61 @@ const HabitsTab = () => {
           )}
 
           {/* Personal Habits List */}
-          <div className="grid gap-4">
-            {personalHabits.map(habit => (
-              <div key={habit.id} className="glass-habit-card">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <button
-                      onClick={() => completeHabit(habit.id)}
-                      className="glass-completion-btn"
-                    >
-                      <Circle size={24} className="text-gray-400 hover:text-green-500" />
-                    </button>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <div className="flex flex-wrap gap-3">
+            {personalHabits.map(habit => {
+              const IconComponent = habit.icon;
+              return (
+                <div key={habit.id} className="bg-blue-900 rounded-lg p-4 shadow-sm w-80">
+                  <div className="flex items-center justify-between">
+                    {/* Left Section - Icon, Title, and Completion Button */}
+                    <div className="flex items-center space-x-3">
+                      <IconComponent size={16} className="text-white" strokeWidth={1.5} />
+                      <h3 className="text-sm font-semibold text-white">
                         {habit.title}
                       </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {habit.description}
-                      </p>
-                      <div className="flex items-center space-x-4 mt-2">
-                        <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                          +{habit.xp_reward} XP
+                      <button
+                        onClick={() => completeHabit(habit.id)}
+                        className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
+                          habit.completed_today
+                            ? 'bg-blue-600 text-white'
+                            : 'border-2 border-white text-white hover:bg-white hover:text-blue-900'
+                        }`}
+                      >
+                        <CheckCircle size={12} strokeWidth={1.5} />
+                      </button>
+                    </div>
+
+                    {/* Right Section - Streak and Progress Grid */}
+                    <div className="flex items-center space-x-3">
+                      {/* Streak Counter */}
+                      <div className="flex items-center space-x-1">
+                        <Flame size={14} className="text-white" strokeWidth={1.5} />
+                        <span className="text-sm font-medium text-white">
+                          {habit.streak}
                         </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {habit.frequency_type}
-                        </span>
-                        <span className="text-xs text-green-600 dark:text-green-400">
-                          {habit.completion_count} completions
-                        </span>
-                        {habit.is_custom && (
-                          <span className="text-xs text-purple-600 dark:text-purple-400">
-                            Custom
-                          </span>
-                        )}
+                      </div>
+
+                      {/* Progress Grid - Monthly Calendar Layout */}
+                      <div className="grid grid-cols-7 gap-0.5">
+                        {habit.progress_grid.map((day, index) => (
+                          <div
+                            key={index}
+                            className={`w-2.5 h-2.5 rounded-sm ${
+                              day.isCurrentMonth ? '' : 'opacity-30'
+                            }`}
+                            style={{ 
+                              backgroundColor: day.filled ? day.color : '#ffffff',
+                              border: day.isCurrentMonth ? 'none' : '1px solid #e5e7eb'
+                            }}
+                            title={day.date ? new Date(day.date).toLocaleDateString() : ''}
+                          />
+                        ))}
                       </div>
                     </div>
                   </div>
-                  <button
-                    onClick={() => deleteHabit(habit.id)}
-                    className="glass-delete-btn"
-                  >
-                    <Trash2 size={20} />
-                  </button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {personalHabits.length === 0 && (
