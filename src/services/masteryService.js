@@ -365,6 +365,26 @@ class MasteryService {
   }
 
   /**
+   * Update user toolbox item
+   */
+  async updateUserToolboxItem(itemId, updates) {
+    try {
+      const { data, error } = await supabase
+        .from('user_toolbox_items')
+        .update(updates)
+        .eq('id', itemId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error('Error updating user toolbox item:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
    * Use a toolbox item
    */
   async useToolboxItem(userId, toolboxItemId) {
