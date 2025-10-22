@@ -171,13 +171,18 @@ const ToolboxTabCompact = () => {
   }, [user]);
 
   const handleConvertToHabit = async () => {
-    if (!user || !selectedTool) return;
+    if (!user || !selectedTool) {
+      console.log('🔧 ToolboxTabCompact: Cannot convert - no user or tool selected');
+      setError('Please log in to convert tools to habits');
+      return;
+    }
     
     try {
       console.log('🔧 ToolboxTabCompact: Converting tool to habit:', selectedTool.title);
+      console.log('🔧 ToolboxTabCompact: Frequency type:', conversionData.frequency_type);
       
       // Create a new habit from the tool
-      const { error } = await supabase
+      const { data: newHabit, error } = await supabase
         .from('user_habits')
         .insert({
           user_id: user.id,
@@ -191,17 +196,24 @@ const ToolboxTabCompact = () => {
 
       if (error) {
         console.error('❌ ToolboxTabCompact: Error converting tool to habit:', error);
-        setError('Failed to convert tool to habit');
+        console.error('❌ ToolboxTabCompact: Error details:', error.message);
+        setError(`Failed to convert tool to habit: ${error.message}`);
         return;
       }
 
+      console.log('✅ ToolboxTabCompact: Tool converted to habit successfully:', newHabit);
+      
+      // Show success message
+      alert(`✅ "${selectedTool.title}" has been converted to a habit!\n\nYou can now track it in the Habits tab.`);
+      
+      // Close modal
       setShowConvertModal(false);
       setSelectedTool(null);
+      setConversionData({ frequency_type: 'daily' });
       
-      console.log('✅ ToolboxTabCompact: Tool converted to habit successfully');
     } catch (error) {
       console.error('❌ ToolboxTabCompact: Exception during tool conversion:', error);
-      setError('Failed to convert tool to habit');
+      setError(`Failed to convert tool to habit: ${error.message}`);
     }
   };
 
