@@ -4,8 +4,8 @@ import { Calendar, Target, Wrench, Clock } from 'lucide-react';
 
 // Import components
 import CalendarTab from '../components/mastery/CalendarTab';
-import HabitsTab from '../components/mastery/HabitsTab';
-import ToolboxTab from '../components/mastery/ToolboxTab';
+import HabitsTabCompact from '../components/mastery/HabitsTabCompact';
+import ToolboxTabCompact from '../components/mastery/ToolboxTabCompact';
 
 // Create a context for sharing refresh state
 const MasteryRefreshContext = createContext();
@@ -116,9 +116,9 @@ const Mastery = () => {
             if (location.pathname === '/mastery' || location.pathname === '/mastery/calendar') {
               return <CalendarTab key={`calendar-${refreshKey}`} />;
             } else if (location.pathname === '/mastery/habits') {
-              return <HabitsTab key={`habits-${refreshKey}`} />;
+              return <HabitsTabCompact key={`habits-${refreshKey}`} />;
             } else if (location.pathname === '/mastery/toolbox') {
-              return <ToolboxTab key={`toolbox-${refreshKey}`} />;
+              return <ToolboxTabCompact key={`toolbox-${refreshKey}`} />;
             } else {
               return <CalendarTab key={`calendar-${refreshKey}`} />;
             }

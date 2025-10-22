@@ -19,14 +19,18 @@ export const AuthProvider = ({ children }) => {
 
   const createDefaultProfile = useCallback(async (userId) => {
     try {
+      console.log('📝 createDefaultProfile: Starting profile creation for user:', userId)
+      
       // Get user email from auth
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user?.email) {
-        console.error('No user email found for profile creation')
+        console.error('❌ createDefaultProfile: No user email found for profile creation')
         setProfile(null)
         return
       }
+
+      console.log('📧 createDefaultProfile: User email found:', user.email)
 
       // Check if profile already exists
       const { data: existingProfile } = await supabase
@@ -36,10 +40,12 @@ export const AuthProvider = ({ children }) => {
         .single()
 
       if (existingProfile) {
-        console.log('Profile already exists:', existingProfile)
+        console.log('✅ createDefaultProfile: Profile already exists:', existingProfile)
         setProfile(existingProfile)
         return
       }
+
+      console.log('🆕 createDefaultProfile: Creating new profile...')
 
       // Create new profile
       const { data, error } = await supabase
@@ -62,22 +68,24 @@ export const AuthProvider = ({ children }) => {
         .single()
 
       if (error) {
-        console.error('Error creating profile:', error)
-        console.error('Error details:', error.message, error.code, error.details)
+        console.error('❌ createDefaultProfile: Error creating profile:', error)
+        console.error('❌ createDefaultProfile: Error details:', error.message, error.code, error.details)
         setProfile(null)
         return
       }
 
-      console.log('Profile created successfully:', data)
+      console.log('✅ createDefaultProfile: Profile created successfully:', data)
       setProfile(data)
     } catch (error) {
-      console.error('Error creating profile:', error)
+      console.error('❌ createDefaultProfile: Exception during profile creation:', error)
       setProfile(null)
     }
   }, [])
 
   const fetchProfile = useCallback(async (userId) => {
     try {
+      console.log('📥 fetchProfile: Starting profile fetch for user:', userId)
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -87,49 +95,76 @@ export const AuthProvider = ({ children }) => {
       if (error) {
         if (error.code === 'PGRST116') {
           // Profile doesn't exist, create a default one
-          console.log('Profile not found, creating default profile for user:', userId)
+          console.log('📝 fetchProfile: Profile not found, creating default profile for user:', userId)
           await createDefaultProfile(userId)
           return
         }
-        console.error('Error fetching profile:', error)
-        console.error('Error details:', error.message, error.code, error.details)
+        console.error('❌ fetchProfile: Error fetching profile:', error)
+        console.error('❌ fetchProfile: Error details:', error.message, error.code, error.details)
         setProfile(null)
         return
       }
 
-      console.log('Profile fetched successfully:', data)
+      console.log('✅ fetchProfile: Profile fetched successfully:', data)
       setProfile(data)
     } catch (error) {
-      console.error('Error fetching profile:', error)
+      console.error('❌ fetchProfile: Exception during profile fetch:', error)
       setProfile(null)
     }
   }, [createDefaultProfile])
 
   useEffect(() => {
+    console.log('🔍 AuthContext: Starting authentication check...')
+    
+    // Force timeout to prevent infinite loading
+    const forceTimeout = setTimeout(() => {
+      console.log('⏰ AuthContext: Force timeout reached, setting loading to false')
+      setLoading(false)
+    }, 3000) // 3 second timeout
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('👤 AuthContext: Initial session check:', session?.user ? 'User found' : 'No user')
       setUser(session?.user ?? null)
       if (session?.user) {
-        fetchProfile(session.user.id)
+        console.log('📥 AuthContext: Fetching profile for user:', session.user.id)
+        fetchProfile(session.user.id).finally(() => {
+          console.log('✅ AuthContext: Profile fetch completed, setting loading to false')
+          setLoading(false)
+          clearTimeout(forceTimeout)
+        })
+      } else {
+        console.log('✅ AuthContext: No user, setting loading to false')
+        setLoading(false)
+        clearTimeout(forceTimeout)
       }
+    }).catch((error) => {
+      console.error('❌ AuthContext: Error getting session:', error)
       setLoading(false)
+      clearTimeout(forceTimeout)
     })
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🔄 AuthContext: Auth state changed:', event, session?.user ? 'User found' : 'No user')
         setUser(session?.user ?? null)
         if (session?.user) {
+          console.log('📥 AuthContext: Fetching profile after auth change for user:', session.user.id)
           await fetchProfile(session.user.id)
         } else {
           setProfile(null)
         }
+        console.log('✅ AuthContext: Auth state change completed, setting loading to false')
         setLoading(false)
+        clearTimeout(forceTimeout)
       }
     )
 
     return () => {
+      console.log('🧹 AuthContext: Cleaning up auth subscription and timeout')
       subscription.unsubscribe()
+      clearTimeout(forceTimeout)
     }
   }, [fetchProfile])
 

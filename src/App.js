@@ -19,31 +19,57 @@ import MasteryTestComponent from './components/test/MasteryTestComponent'
 import './styles/glassmorphism.css'
 
 // Loading component
-const LoadingScreen = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-      <p className="text-gray-600">Loading...</p>
+const LoadingScreen = () => {
+  console.log('🔄 LoadingScreen: Rendering loading screen')
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading...</p>
+        <p className="text-sm text-gray-400 mt-2">If this takes too long, check the console for errors</p>
+      </div>
     </div>
-  </div>
-)
+  )
+}
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth()
   
-  if (loading) return <LoadingScreen />
+  console.log('🔒 ProtectedRoute: loading =', loading, 'user =', user ? 'authenticated' : 'not authenticated')
   
-  return user ? children : <Navigate to="/login" replace />
+  if (loading) {
+    console.log('🔒 ProtectedRoute: Showing loading screen')
+    return <LoadingScreen />
+  }
+  
+  if (!user) {
+    console.log('🔒 ProtectedRoute: No user, redirecting to login')
+    return <Navigate to="/login" replace />
+  }
+  
+  console.log('🔒 ProtectedRoute: User authenticated, rendering children')
+  return children
 }
 
 // Auth redirect component
 const AuthRedirect = () => {
   const { user, loading } = useAuth()
   
-  if (loading) return <LoadingScreen />
+  console.log('🔄 AuthRedirect: loading =', loading, 'user =', user ? 'authenticated' : 'not authenticated')
   
-  return user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
+  if (loading) {
+    console.log('🔄 AuthRedirect: Showing loading screen')
+    return <LoadingScreen />
+  }
+  
+  if (user) {
+    console.log('🔄 AuthRedirect: User authenticated, redirecting to dashboard')
+    return <Navigate to="/dashboard" replace />
+  } else {
+    console.log('🔄 AuthRedirect: No user, redirecting to login')
+    return <Navigate to="/login" replace />
+  }
 }
 
 // Main App Routes
