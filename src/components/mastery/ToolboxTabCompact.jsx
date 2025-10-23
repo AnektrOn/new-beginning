@@ -233,7 +233,7 @@ const ToolboxTabCompact = () => {
       console.log('🔧 ToolboxTabCompact: Adding tool to user toolbox:', toolId);
       
       // Use masteryService to add tool to user toolbox
-      const { data: insertedData, error } = await masteryService.addToUserToolbox(user.id, toolId);
+      const { data: insertedData, error } = await masteryService.addToolboxItem(user.id, toolId);
 
       if (error) {
         console.error('❌ ToolboxTabCompact: Error adding tool to toolbox:', error);
