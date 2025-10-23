@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Wrench, Plus, Trash2, CheckCircle, Flame } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
+import masteryService from '../../services/masteryService';
 
 // Helper function to calculate current streak from completion dates
 const calculateCurrentStreak = (completedDates = []) => {
@@ -89,10 +90,7 @@ const ToolboxTabCompact = () => {
         if (user && user.id) {
           console.log('🔧 ToolboxTabCompact: Loading user toolbox for user:', user.id);
           
-          const { data: userData, error: userToolboxError } = await supabase
-            .from('user_toolbox_items')
-            .select('*')
-            .eq('user_id', user.id);
+          const { data: userData, error: userToolboxError } = await masteryService.getUserToolboxItems(user.id);
 
           if (userToolboxError) {
             console.error('❌ ToolboxTabCompact: Error loading user toolbox:', userToolboxError);
@@ -134,10 +132,17 @@ const ToolboxTabCompact = () => {
 
             const completedDates = usageData.map(u => u.usage_date);
             const currentStreak = calculateCurrentStreak(completedDates);
-            const color = getToolboxColor(item.title);
+            
+            // Get tool details from the joined data
+            const toolData = item.toolbox_library || {};
+            const color = getToolboxColor(toolData.title || item.title);
 
             return {
-              ...item,
+              id: item.id,
+              title: toolData.title || item.title,
+              description: toolData.description || '',
+              xp_reward: toolData.xp_reward || 0,
+              can_convert_to_habit: toolData.can_convert_to_habit || false,
               completedDates,
               currentStreak,
               color,
@@ -218,64 +223,68 @@ const ToolboxTabCompact = () => {
   };
 
   const handleAddToToolbox = async (toolId) => {
-    if (!user) return;
+    if (!user) {
+      console.log('🔧 ToolboxTabCompact: Cannot add tool - no user');
+      setError('Please log in to add tools to your toolbox');
+      return;
+    }
     
     try {
       console.log('🔧 ToolboxTabCompact: Adding tool to user toolbox:', toolId);
       
-      // Get the tool from library
-      const { data: tool, error: toolError } = await supabase
-        .from('toolbox_library')
-        .select('*')
-        .eq('id', toolId)
-        .single();
-
-      if (toolError) {
-        console.error('❌ ToolboxTabCompact: Error getting tool from library:', toolError);
-        setError('Failed to get tool from library');
-        return;
-      }
-
-      // Add to user toolbox
-      const { data: insertedData, error } = await supabase
-        .from('user_toolbox_items')
-        .insert({
-          user_id: user.id,
-          toolbox_item_id: toolId,
-          title: tool.title,
-          description: tool.description,
-          xp_reward: tool.xp_reward
-        })
-        .select()
-        .single();
+      // Use masteryService to add tool to user toolbox
+      const { data: insertedData, error } = await masteryService.addToUserToolbox(user.id, toolId);
 
       if (error) {
         console.error('❌ ToolboxTabCompact: Error adding tool to toolbox:', error);
-        setError('Failed to add tool to toolbox');
+        setError(`Failed to add tool to toolbox: ${error.message}`);
         return;
       }
 
-      // Add to local state
-      const color = getToolboxColor(insertedData.title);
-      const newToolData = {
-        ...insertedData,
-        completedDates: [],
-        currentStreak: 0,
-        color,
-        totalUsage: 0
-      };
-
-      setUserToolbox(prev => [...prev, newToolData]);
+      console.log('✅ ToolboxTabCompact: Tool added to toolbox successfully:', insertedData);
       
-      console.log('✅ ToolboxTabCompact: Tool added to toolbox successfully');
+      // Refresh the toolbox data to get the updated list
+      const { data: updatedToolbox, error: refreshError } = await masteryService.getUserToolboxItems(user.id);
+      
+      if (refreshError) {
+        console.error('❌ ToolboxTabCompact: Error refreshing toolbox:', refreshError);
+        // Don't fail completely, just show success
+      } else {
+        // Transform the updated data
+        const transformedUserToolbox = await Promise.all(
+          (updatedToolbox || []).map(async (item) => {
+            const toolData = item.toolbox_library || {};
+            const color = getToolboxColor(toolData.title || item.title);
+
+            return {
+              id: item.id,
+              title: toolData.title || item.title,
+              description: toolData.description || '',
+              xp_reward: toolData.xp_reward || 0,
+              can_convert_to_habit: toolData.can_convert_to_habit || false,
+              completedDates: [],
+              currentStreak: 0,
+              color,
+              totalUsage: 0
+            };
+          })
+        );
+        
+        setUserToolbox(transformedUserToolbox);
+      }
+      
     } catch (error) {
       console.error('❌ ToolboxTabCompact: Exception during tool addition:', error);
-      setError('Failed to add tool to toolbox');
+      setError(`Failed to add tool to toolbox: ${error.message}`);
     }
   };
 
   const handleRemoveFromToolbox = async (toolId) => {
-    if (!user) return;
+    if (!user) {
+      console.log('🔧 ToolboxTabCompact: Cannot remove tool - no user');
+      setError('Please log in to remove tools from your toolbox');
+      return;
+    }
     
     try {
       console.log('🔧 ToolboxTabCompact: Removing tool from user toolbox:', toolId);
@@ -288,7 +297,7 @@ const ToolboxTabCompact = () => {
 
       if (error) {
         console.error('❌ ToolboxTabCompact: Error removing tool from toolbox:', error);
-        setError('Failed to remove tool from toolbox');
+        setError(`Failed to remove tool from toolbox: ${error.message}`);
         return;
       }
 
@@ -296,7 +305,7 @@ const ToolboxTabCompact = () => {
       console.log('✅ ToolboxTabCompact: Tool removed from toolbox successfully');
     } catch (error) {
       console.error('❌ ToolboxTabCompact: Exception during tool removal:', error);
-      setError('Failed to remove tool from toolbox');
+      setError(`Failed to remove tool from toolbox: ${error.message}`);
     }
   };
 
