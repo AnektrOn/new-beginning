@@ -3,6 +3,7 @@ import { Plus, Target, Star, BookOpen, Dumbbell, Flame, Trash2, CheckCircle } fr
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMasteryRefresh } from '../../pages/Mastery';
+import skillsService from '../../services/skillsService';
 
 // Helper function to calculate current streak from completion dates
 const calculateCurrentStreak = (completedDates) => {
@@ -67,6 +68,10 @@ const HabitsTabCompact = () => {
     frequency_type: 'daily',
     xp_reward: 10
   });
+  const [allSkills, setAllSkills] = useState([]);
+  const [skillsMap, setSkillsMap] = useState(new Map());
+  const [selectedSkillFilter, setSelectedSkillFilter] = useState(null);
+  const [masterStats, setMasterStats] = useState([]);
 
   // Load habits data from database - NO LOADING STATE
   useEffect(() => {
@@ -75,6 +80,23 @@ const HabitsTabCompact = () => {
       setError(null);
       
       try {
+        // Load skills first
+        console.log('🎯 HabitsTabCompact: Loading skills...');
+        const { data: skillsData, error: skillsError } = await skillsService.getAllSkills();
+        if (!skillsError && skillsData) {
+          setAllSkills(skillsData);
+          const map = new Map(skillsData.map(skill => [skill.id, skill]));
+          setSkillsMap(map);
+          console.log('✅ HabitsTabCompact: Skills loaded:', skillsData.length);
+        }
+
+        // Load master stats
+        const { data: masterStatsData, error: masterStatsError } = await skillsService.getMasterStats();
+        if (!masterStatsError && masterStatsData) {
+          setMasterStats(masterStatsData);
+          console.log('✅ HabitsTabCompact: Master stats loaded:', masterStatsData.length);
+        }
+
         // Load habits library from database (always load this)
         const { data: libraryHabits, error: libraryError } = await supabase
           .from('habits_library')
@@ -141,21 +163,52 @@ const HabitsTabCompact = () => {
             const currentStreak = calculateCurrentStreak(completedDates);
             const { icon: Icon, color } = getHabitIconAndColor(habit.title);
 
+            // Get skills for this habit from library
+            let habitSkills = [];
+            try {
+              const { data: libraryHabit } = await supabase
+                .from('habits_library')
+                .select('skill_tags')
+                .eq('id', habit.habit_id)
+                .single();
+              
+              if (libraryHabit && libraryHabit.skill_tags) {
+                habitSkills = libraryHabit.skill_tags
+                  .map(skillId => skillsMap.get(skillId))
+                  .filter(Boolean);
+              }
+            } catch (skillError) {
+              console.log('Could not load skills for habit:', habit.id);
+            }
+
             return {
               ...habit,
               completedDates,
               currentStreak,
               Icon,
               color,
-              progressGrid: generateProgressGrid(completedDates, color)
+              progressGrid: generateProgressGrid(completedDates, color),
+              skills: habitSkills
             };
           })
         );
 
+        // Enrich library habits with skill information
+        const enrichedLibraryHabits = (libraryHabits || []).map(habit => {
+          const habitSkills = (habit.skill_tags || [])
+            .map(skillId => skillsMap.get(skillId))
+            .filter(Boolean);
+          
+          return {
+            ...habit,
+            skills: habitSkills
+          };
+        });
+
         setPersonalHabits(transformedHabits);
-        setHabitsLibrary(libraryHabits || []);
-        console.log('✅ HabitsTabCompact: Habits loaded successfully:', transformedHabits.length, 'personal habits,', libraryHabits?.length || 0, 'library habits');
-        console.log('📋 HabitsTabCompact: Library habits data:', libraryHabits);
+        setHabitsLibrary(enrichedLibraryHabits);
+        console.log('✅ HabitsTabCompact: Habits loaded successfully:', transformedHabits.length, 'personal habits,', enrichedLibraryHabits.length, 'library habits');
+        console.log('📋 HabitsTabCompact: Library habits data:', enrichedLibraryHabits);
       } catch (error) {
         console.error('❌ HabitsTabCompact: Exception during habits load:', error);
         // Try to at least load the library data as fallback
@@ -174,6 +227,7 @@ const HabitsTabCompact = () => {
     };
 
     loadHabits();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   // Compact progress grid generation (4x6 = 24 squares)
@@ -479,6 +533,26 @@ const HabitsTabCompact = () => {
                         </div>
                         <div>
                           <h3 className="text-sm font-semibold text-gray-900">{habit.title}</h3>
+                          {/* Skill badges */}
+                          {habit.skills && habit.skills.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {habit.skills.slice(0, 2).map(skill => (
+                                <span
+                                  key={skill.id}
+                                  className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium"
+                                  style={{ 
+                                    backgroundColor: skill.master_stats?.color + '20',
+                                    color: skill.master_stats?.color 
+                                  }}
+                                >
+                                  {skill.display_name}
+                                </span>
+                              ))}
+                              {habit.skills.length > 2 && (
+                                <span className="text-xs text-gray-500">+{habit.skills.length - 2}</span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -543,6 +617,26 @@ const HabitsTabCompact = () => {
                     <div>
                       <h3 className="text-sm font-semibold text-gray-900">{habit.title}</h3>
                       <p className="text-xs text-gray-600">{habit.description}</p>
+                      {/* Skill badges */}
+                      {habit.skills && habit.skills.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {habit.skills.slice(0, 3).map(skill => (
+                            <span
+                              key={skill.id}
+                              className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium"
+                              style={{ 
+                                backgroundColor: skill.master_stats?.color + '20',
+                                color: skill.master_stats?.color 
+                              }}
+                            >
+                              {skill.display_name}
+                            </span>
+                          ))}
+                          {habit.skills.length > 3 && (
+                            <span className="text-xs text-gray-500">+{habit.skills.length - 3}</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <button 
