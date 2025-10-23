@@ -3,6 +3,7 @@ import { Wrench, Plus, Trash2, CheckCircle, Flame } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
 import masteryService from '../../services/masteryService';
+import skillsService from '../../services/skillsService';
 
 // Helper function to calculate current streak from completion dates
 const calculateCurrentStreak = (completedDates = []) => {
@@ -64,6 +65,11 @@ const ToolboxTabCompact = () => {
   const [conversionData, setConversionData] = useState({
     frequency_type: 'daily'
   });
+  
+  // Skills system state
+  const [allSkills, setAllSkills] = useState([]);
+  const [skillsMap, setSkillsMap] = useState(new Map());
+  const [masterStats, setMasterStats] = useState([]);
 
   // Load toolbox data from database - NO LOADING STATE
   useEffect(() => {
@@ -72,6 +78,27 @@ const ToolboxTabCompact = () => {
       setError(null);
       
       try {
+        // Load skills first
+        console.log('🎯 ToolboxTabCompact: Loading skills...');
+        const { data: skillsData, error: skillsError } = await skillsService.getAllSkills();
+        let skillsMap = new Map();
+        if (!skillsError && skillsData) {
+          setAllSkills(skillsData);
+          skillsMap = new Map(skillsData.map(skill => [skill.id, skill]));
+          setSkillsMap(skillsMap);
+          console.log('✅ ToolboxTabCompact: Skills loaded:', skillsData.length);
+          console.log('📋 Skills map created with', skillsMap.size, 'entries');
+        } else {
+          console.error('❌ ToolboxTabCompact: Failed to load skills:', skillsError);
+        }
+
+        // Load master stats
+        const { data: masterStatsData, error: masterStatsError } = await skillsService.getMasterStats();
+        if (!masterStatsError && masterStatsData) {
+          setMasterStats(masterStatsData);
+          console.log('✅ ToolboxTabCompact: Master stats loaded:', masterStatsData.length);
+        }
+
         // Load toolbox library from database (always load this)
         const { data: libraryData, error: libraryError } = await supabase
           .from('toolbox_library')
@@ -137,6 +164,14 @@ const ToolboxTabCompact = () => {
             const toolData = item.toolbox_library || {};
             const color = getToolboxColor(toolData.title || item.title);
 
+            // Enrich with skills
+            let toolSkills = [];
+            if (toolData.skill_tags && toolData.skill_tags.length > 0) {
+              toolSkills = toolData.skill_tags
+                .map(skillId => skillsMap.get(skillId))
+                .filter(Boolean);
+            }
+
             return {
               id: item.id,
               title: toolData.title || item.title,
@@ -146,15 +181,38 @@ const ToolboxTabCompact = () => {
               completedDates,
               currentStreak,
               color,
-              totalUsage: usageData.length
+              totalUsage: usageData.length,
+              skills: toolSkills
             };
           })
         );
 
-        setToolboxLibrary(libraryData || []);
+        // Enrich library tools with skill information
+        console.log('🎯 ToolboxTabCompact: Enriching library tools with skills...');
+        console.log('📋 Skills map size:', skillsMap.size);
+        const enrichedLibraryTools = (libraryData || []).map(tool => {
+          const toolSkills = (tool.skill_tags || [])
+            .map(skillId => {
+              const skill = skillsMap.get(skillId);
+              if (!skill) {
+                console.log(`⚠️ Skill not found in map: ${skillId}`);
+              }
+              return skill;
+            })
+            .filter(Boolean);
+          
+          console.log(`📝 Tool "${tool.title}": ${tool.skill_tags?.length || 0} skill_tags -> ${toolSkills.length} skills`);
+          
+          return {
+            ...tool,
+            skills: toolSkills
+          };
+        });
+
+        setToolboxLibrary(enrichedLibraryTools);
         setUserToolbox(transformedUserToolbox);
-        console.log('✅ ToolboxTabCompact: Toolbox loaded successfully:', transformedUserToolbox.length, 'user tools,', libraryData?.length || 0, 'library tools');
-        console.log('📋 ToolboxTabCompact: Library toolbox data:', libraryData);
+        console.log('✅ ToolboxTabCompact: Toolbox loaded successfully:', transformedUserToolbox.length, 'user tools,', enrichedLibraryTools.length, 'library tools');
+        console.log('📋 ToolboxTabCompact: Library toolbox data:', enrichedLibraryTools);
       } catch (error) {
         console.error('❌ ToolboxTabCompact: Exception during toolbox load:', error);
         // Try to at least load the library data as fallback
@@ -435,6 +493,25 @@ const ToolboxTabCompact = () => {
                       <div>
                         <h3 className="text-sm font-semibold text-gray-900">{tool.title}</h3>
                         <p className="text-xs text-gray-600">{tool.description}</p>
+                        {tool.skills && tool.skills.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {tool.skills.slice(0, 3).map(skill => (
+                              <span
+                                key={skill.id}
+                                className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium"
+                                style={{ 
+                                  backgroundColor: skill.master_stats?.color + '20',
+                                  color: skill.master_stats?.color 
+                                }}
+                              >
+                                {skill.display_name}
+                              </span>
+                            ))}
+                            {tool.skills.length > 3 && (
+                              <span className="text-xs text-gray-500">+{tool.skills.length - 3}</span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -490,6 +567,25 @@ const ToolboxTabCompact = () => {
                       </div>
                       <div>
                         <h3 className="text-sm font-semibold text-gray-900">{tool.title}</h3>
+                        {tool.skills && tool.skills.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {tool.skills.slice(0, 2).map(skill => (
+                              <span
+                                key={skill.id}
+                                className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium"
+                                style={{ 
+                                  backgroundColor: skill.master_stats?.color + '20',
+                                  color: skill.master_stats?.color 
+                                }}
+                              >
+                                {skill.display_name}
+                              </span>
+                            ))}
+                            {tool.skills.length > 2 && (
+                              <span className="text-xs text-gray-500">+{tool.skills.length - 2}</span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
