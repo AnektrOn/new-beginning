@@ -401,7 +401,7 @@ const ToolboxTabCompact = () => {
 
       {/* Content */}
       {activeTab === 'library' && (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {toolboxLibrary.length === 0 ? (
             <div className="text-center py-8">
               <Wrench className="w-8 h-8 text-gray-400 mx-auto mb-2" />
@@ -452,7 +452,7 @@ const ToolboxTabCompact = () => {
       )}
 
       {activeTab === 'my-tools' && (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {userToolbox.length === 0 ? (
             <div className="text-center py-8">
               <Wrench className="w-8 h-8 text-gray-400 mx-auto mb-2" />

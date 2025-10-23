@@ -462,7 +462,7 @@ const HabitsTabCompact = () => {
               </div>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {personalHabits.map((habit) => {
                 const Icon = habit.Icon;
                 const isCompletedToday = habit.completedDates.includes(new Date().toISOString().split('T')[0]);
@@ -527,7 +527,7 @@ const HabitsTabCompact = () => {
       )}
 
       {activeTab === 'library' && (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {habitsLibrary.map((habit) => {
             const { icon: Icon, color } = getHabitIconAndColor(habit.title);
             return (
