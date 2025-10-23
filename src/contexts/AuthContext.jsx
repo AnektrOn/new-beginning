@@ -229,13 +229,22 @@ export const AuthProvider = ({ children }) => {
 
   const signOut = async () => {
     try {
+      console.log('🔓 signOut: Starting sign out process...')
+      
       const { error } = await supabase.auth.signOut()
       if (error) throw error
       
+      // Explicitly clear local state immediately
+      console.log('🔓 signOut: Clearing local state...')
+      setUser(null)
+      setProfile(null)
+      setLoading(false)
+      
+      console.log('✅ signOut: Sign out successful')
       toast.success('Signed out successfully')
       return { error: null }
     } catch (error) {
-      console.error('Sign out error:', error)
+      console.error('❌ signOut: Sign out error:', error)
       toast.error(error.message)
       return { error }
     }
