@@ -99,19 +99,19 @@ const AppRoutes = () => {
       {/* Protected Routes (With AppShell) */}
       <Route path="/dashboard" element={
         <ProtectedRoute>
-          <AppShell>
-            <Dashboard />
-          </AppShell>
+          <AppShell />
         </ProtectedRoute>
-      } />
+      }>
+        <Route index element={<Dashboard />} />
+      </Route>
       
       <Route path="/profile" element={
         <ProtectedRoute>
-          <AppShell>
-            <ProfilePage />
-          </AppShell>
+          <AppShell />
         </ProtectedRoute>
-      } />
+      }>
+        <Route index element={<ProfilePage />} />
+      </Route>
 
       <Route path="/mastery/*" element={
         <ProtectedRoute>
