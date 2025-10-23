@@ -88,6 +88,9 @@ const HabitsTabCompact = () => {
           const map = new Map(skillsData.map(skill => [skill.id, skill]));
           setSkillsMap(map);
           console.log('✅ HabitsTabCompact: Skills loaded:', skillsData.length);
+          console.log('📋 Skills map created with', map.size, 'entries');
+        } else {
+          console.error('❌ HabitsTabCompact: Failed to load skills:', skillsError);
         }
 
         // Load master stats
@@ -194,10 +197,20 @@ const HabitsTabCompact = () => {
         );
 
         // Enrich library habits with skill information
+        console.log('🎯 HabitsTabCompact: Enriching library habits with skills...');
+        console.log('📋 Skills map size:', skillsMap.size);
         const enrichedLibraryHabits = (libraryHabits || []).map(habit => {
           const habitSkills = (habit.skill_tags || [])
-            .map(skillId => skillsMap.get(skillId))
+            .map(skillId => {
+              const skill = skillsMap.get(skillId);
+              if (!skill) {
+                console.log(`⚠️ Skill not found in map: ${skillId}`);
+              }
+              return skill;
+            })
             .filter(Boolean);
+          
+          console.log(`📝 Habit "${habit.title}": ${habit.skill_tags?.length || 0} skill_tags -> ${habitSkills.length} skills`);
           
           return {
             ...habit,
