@@ -83,12 +83,13 @@ const HabitsTabCompact = () => {
         // Load skills first
         console.log('🎯 HabitsTabCompact: Loading skills...');
         const { data: skillsData, error: skillsError } = await skillsService.getAllSkills();
+        let skillsMap = new Map();
         if (!skillsError && skillsData) {
           setAllSkills(skillsData);
-          const map = new Map(skillsData.map(skill => [skill.id, skill]));
-          setSkillsMap(map);
+          skillsMap = new Map(skillsData.map(skill => [skill.id, skill]));
+          setSkillsMap(skillsMap);
           console.log('✅ HabitsTabCompact: Skills loaded:', skillsData.length);
-          console.log('📋 Skills map created with', map.size, 'entries');
+          console.log('📋 Skills map created with', skillsMap.size, 'entries');
         } else {
           console.error('❌ HabitsTabCompact: Failed to load skills:', skillsError);
         }
