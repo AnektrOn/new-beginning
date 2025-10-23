@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
+import skillsService from './skillsService';
 
 class MasteryService {
   // ===== HABITS LIBRARY =====
@@ -175,10 +176,16 @@ class MasteryService {
         return { data: { alreadyCompleted: true }, error: null };
       }
 
-      // Get habit details for XP reward
+      // Get habit details for XP reward and skill_tags
       const { data: habit, error: habitError } = await supabase
         .from('user_habits')
-        .select('xp_reward')
+        .select(`
+          xp_reward,
+          habit_id,
+          habits_library (
+            skill_tags
+          )
+        `)
         .eq('id', habitId)
         .single();
 
@@ -203,6 +210,13 @@ class MasteryService {
 
       // Award XP to user
       await this.awardXP(userId, habit.xp_reward, 'habit_completion', `Completed habit: ${habitId}`);
+
+      // Award skill points (0.1 per skill)
+      const skillTags = habit.habits_library?.skill_tags || [];
+      if (skillTags.length > 0) {
+        console.log(`🎯 Awarding 0.1 skill points to ${skillTags.length} skills`);
+        await skillsService.awardSkillPoints(userId, skillTags, 0.1);
+      }
 
       return { data, error: null };
     } catch (error) {
@@ -591,7 +605,8 @@ class MasteryService {
           *,
           toolbox_library (
             title,
-            xp_reward
+            xp_reward,
+            skill_tags
           )
         `)
         .eq('id', toolboxItemId)
@@ -615,6 +630,13 @@ class MasteryService {
 
       // Award XP
       await this.awardXP(userId, toolboxItem.toolbox_library.xp_reward, 'toolbox_usage', `Used toolbox item: ${toolboxItem.toolbox_library.title}`);
+
+      // Award skill points (0.15 per skill)
+      const skillTags = toolboxItem.toolbox_library?.skill_tags || [];
+      if (skillTags.length > 0) {
+        console.log(`🎯 Awarding 0.15 skill points to ${skillTags.length} skills`);
+        await skillsService.awardSkillPoints(userId, skillTags, 0.15);
+      }
 
       return { data, error: null };
     } catch (error) {
