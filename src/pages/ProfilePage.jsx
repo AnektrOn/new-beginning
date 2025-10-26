@@ -74,7 +74,7 @@ const ProfilePage = () => {
           if (userMasterStatsResult.data) {
             userMasterStatsResult.data.forEach(stat => {
               const currentValue = stat.user_master_stats?.[0]?.current_value || 0;
-              radarData[stat.display_name] = Math.min(currentValue, 100); // Cap at 100 for radar
+              radarData[stat.display_name] = Math.min(currentValue, 200); // Cap at 200 for radar
             });
           }
           setRadarData(radarData);
@@ -116,7 +116,7 @@ const ProfilePage = () => {
     return {
       ...stat,
       points: currentValue,
-      maxPoints: 100 // Set a reasonable max for progress bars
+      maxPoints: 200 // Set a reasonable max for progress bars
     };
   });
 
@@ -211,7 +211,7 @@ const ProfilePage = () => {
           <div className="bg-black/30 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
             <h3 className="text-lg font-semibold mb-4 text-center">Core Stats</h3>
             <div className="flex justify-center">
-              <RadarChart data={radarData} size={250} />
+              <RadarChart data={radarData} size={350} />
             </div>
           </div>
 
@@ -315,7 +315,7 @@ const ProfilePage = () => {
               <div className="pt-2 border-t border-gray-600">
                 <div className="flex justify-between text-sm">
                   <span className="font-medium">Total</span>
-                  <span className="text-gray-400">{totalXP.toFixed(1)}</span>
+                  <span className="text-gray-400">{masterStatsProgress.reduce((sum, stat) => sum + stat.points, 0).toFixed(1)}</span>
                 </div>
               </div>
             </div>
