@@ -237,10 +237,19 @@ const ProfilePage = () => {
             </div>
           </div>
 
-          {/* Pixel Art Placeholder */}
+          {/* Individual Skills */}
           <div className="bg-black/30 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
-            <div className="w-full h-32 bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center">
-              <Sparkles className="w-12 h-12 text-white opacity-50" />
+            <h3 className="text-lg font-semibold mb-4 flex items-center">
+              <Brain className="w-5 h-5 mr-2 text-purple-500" />
+              Individual Skills ({userSkills.length})
+            </h3>
+            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+              {userSkills.map((skill) => (
+                <div key={skill.id} className="flex justify-between items-center text-sm">
+                  <span className="text-gray-300 truncate">{skill.skills?.display_name || skill.skills?.name}</span>
+                  <span className="text-green-400 font-medium">{skill.current_value}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
