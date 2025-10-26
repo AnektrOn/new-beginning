@@ -12,6 +12,7 @@ const ProfilePage = () => {
   const [skills, setSkills] = useState([]) // eslint-disable-line no-unused-vars
   const [masterStats, setMasterStats] = useState([])
   const [userSkills, setUserSkills] = useState([])
+  const [userMasterStats, setUserMasterStats] = useState([])
   const [radarData, setRadarData] = useState({})
   const [currentLevel, setCurrentLevel] = useState(null)
   const [nextLevel, setNextLevel] = useState(null)
@@ -35,40 +36,48 @@ const ProfilePage = () => {
         if (skillsResult.data) setSkills(skillsResult.data);
         if (masterStatsResult.data) setMasterStats(masterStatsResult.data);
 
-        // Load user skills and calculate level if user exists
+        // Load user skills and master stats if user exists
         if (user?.id) {
-          const userSkillsResult = await skillsService.getUserSkills(user.id);
+          const [userSkillsResult, userMasterStatsResult] = await Promise.all([
+            skillsService.getUserSkills(user.id),
+            skillsService.getUserMasterStats(user.id)
+          ]);
+          
           if (userSkillsResult.data) {
             setUserSkills(userSkillsResult.data);
-            
-            // Use current_xp from profiles table (the actual XP system)
-            const totalXP = profile?.current_xp || 0;
-            
-            console.log('🎯 ProfilePage Debug:');
-            console.log('- User skills data:', userSkillsResult.data);
-            console.log('- Total XP from profile.current_xp:', totalXP);
-            console.log('- Profile object:', profile);
-            
-            // Get current and next level based on total XP
-            const levelResult = await levelsService.getCurrentAndNextLevel(totalXP);
-            if (levelResult.data) {
-              console.log('- Current level:', levelResult.data.currentLevel);
-              console.log('- Next level:', levelResult.data.nextLevel);
-              setCurrentLevel(levelResult.data.currentLevel);
-              setNextLevel(levelResult.data.nextLevel);
-            }
-            
-            // Calculate radar chart data from master stats
-            const radarData = {};
-            masterStatsResult.data.forEach(stat => {
-              const statSkills = userSkillsResult.data.filter(us => 
-                us.skills?.master_stat_id === stat.id
-              );
-              const totalPoints = statSkills.reduce((sum, us) => sum + (us.current_value || 0), 0);
-              radarData[stat.display_name] = Math.min(totalPoints, 100); // Cap at 100 for radar
-            });
-            setRadarData(radarData);
           }
+          
+          if (userMasterStatsResult.data) {
+            setUserMasterStats(userMasterStatsResult.data);
+          }
+          
+          // Use current_xp from profiles table (the actual XP system)
+          const totalXP = profile?.current_xp || 0;
+          
+          console.log('🎯 ProfilePage Debug:');
+          console.log('- User skills data:', userSkillsResult.data);
+          console.log('- User master stats data:', userMasterStatsResult.data);
+          console.log('- Total XP from profile.current_xp:', totalXP);
+          console.log('- Profile object:', profile);
+          
+          // Get current and next level based on total XP
+          const levelResult = await levelsService.getCurrentAndNextLevel(totalXP);
+          if (levelResult.data) {
+            console.log('- Current level:', levelResult.data.currentLevel);
+            console.log('- Next level:', levelResult.data.nextLevel);
+            setCurrentLevel(levelResult.data.currentLevel);
+            setNextLevel(levelResult.data.nextLevel);
+          }
+          
+          // Calculate radar chart data from user master stats
+          const radarData = {};
+          if (userMasterStatsResult.data) {
+            userMasterStatsResult.data.forEach(stat => {
+              const currentValue = stat.user_master_stats?.[0]?.current_value || 0;
+              radarData[stat.display_name] = Math.min(currentValue, 100); // Cap at 100 for radar
+            });
+          }
+          setRadarData(radarData);
         }
       } catch (error) {
         console.error('Error loading user data:', error);
@@ -100,14 +109,14 @@ const ProfilePage = () => {
   const userRole = profile?.role || 'Free'
   const displayName = profile?.full_name || user?.email || 'User'
   
-  // Calculate master stats progress
-  const masterStatsProgress = masterStats.map(stat => {
-    const statSkills = userSkills.filter(us => us.skills?.master_stat_id === stat.id);
-    const totalPoints = statSkills.reduce((sum, us) => sum + (us.current_value || 0), 0);
+  // Calculate master stats progress - use user master stats data directly
+  const masterStatsProgress = userMasterStats.map(stat => {
+    const currentValue = stat.user_master_stats?.[0]?.current_value || 0;
+    
     return {
       ...stat,
-      points: totalPoints,
-      maxPoints: 200 // Set a reasonable max for progress bars
+      points: currentValue,
+      maxPoints: 100 // Set a reasonable max for progress bars
     };
   });
 
@@ -177,42 +186,6 @@ const ProfilePage = () => {
             </div>
           </div>
 
-          {/* Daily Stats */}
-          <div className="bg-black/30 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
-            <h3 className="text-lg font-semibold mb-4 flex items-center">
-              <Heart className="w-5 h-5 mr-2 text-red-500" />
-              Daily Stats
-            </h3>
-            <div className="space-y-3">
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Willpower</span>
-                  <span>8/10</span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full" style={{width: '80%'}}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Health</span>
-                  <span>7/10</span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-2">
-                  <div className="bg-green-500 h-2 rounded-full" style={{width: '70%'}}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Mood</span>
-                  <span>8/10</span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-2">
-                  <div className="bg-yellow-500 h-2 rounded-full" style={{width: '80%'}}></div>
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* Bio */}
           <div className="bg-black/30 backdrop-blur-sm rounded-xl p-6 border border-gray-700">

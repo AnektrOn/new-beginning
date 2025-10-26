@@ -304,6 +304,29 @@ class SkillsService {
       return { success: false, error };
     }
   }
+
+  /**
+   * Get user's master stats progress
+   */
+  async getUserMasterStats(userId) {
+    try {
+      const { data, error } = await supabase
+        .from('master_stats')
+        .select(`
+          *,
+          user_master_stats!inner (
+            current_value
+          )
+        `)
+        .eq('user_master_stats.user_id', userId);
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error('Error fetching user master stats:', error);
+      return { data: null, error };
+    }
+  }
 }
 
 // Export singleton instance
