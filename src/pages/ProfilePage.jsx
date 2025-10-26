@@ -41,12 +41,19 @@ const ProfilePage = () => {
           if (userSkillsResult.data) {
             setUserSkills(userSkillsResult.data);
             
-            // Calculate total XP from user skills
-            const totalXP = userSkillsResult.data.reduce((sum, us) => sum + (us.points_earned || 0), 0);
+            // Use total_xp_earned from profiles table (the actual XP system)
+            const totalXP = profile?.total_xp_earned || 0;
+            
+            console.log('🎯 ProfilePage Debug:');
+            console.log('- User skills data:', userSkillsResult.data);
+            console.log('- Total XP from profile.total_xp_earned:', totalXP);
+            console.log('- Profile object:', profile);
             
             // Get current and next level based on total XP
             const levelResult = await levelsService.getCurrentAndNextLevel(totalXP);
             if (levelResult.data) {
+              console.log('- Current level:', levelResult.data.currentLevel);
+              console.log('- Next level:', levelResult.data.nextLevel);
               setCurrentLevel(levelResult.data.currentLevel);
               setNextLevel(levelResult.data.nextLevel);
             }
@@ -104,8 +111,8 @@ const ProfilePage = () => {
     };
   });
 
-  // Calculate total XP from all skills
-  const totalXP = userSkills.reduce((sum, us) => sum + (us.points_earned || 0), 0);
+  // Use total_xp_earned from profiles table (the actual XP system)
+  const totalXP = profile?.total_xp_earned || 0;
   
   // Calculate level progress
   const levelProgress = currentLevel && nextLevel ? {
