@@ -41,12 +41,12 @@ const ProfilePage = () => {
           if (userSkillsResult.data) {
             setUserSkills(userSkillsResult.data);
             
-            // Use total_xp_earned from profiles table (the actual XP system)
-            const totalXP = profile?.total_xp_earned || 0;
+            // Use current_xp from profiles table (the actual XP system)
+            const totalXP = profile?.current_xp || 0;
             
             console.log('🎯 ProfilePage Debug:');
             console.log('- User skills data:', userSkillsResult.data);
-            console.log('- Total XP from profile.total_xp_earned:', totalXP);
+            console.log('- Total XP from profile.current_xp:', totalXP);
             console.log('- Profile object:', profile);
             
             // Get current and next level based on total XP
@@ -64,7 +64,7 @@ const ProfilePage = () => {
               const statSkills = userSkillsResult.data.filter(us => 
                 us.skills?.master_stat_id === stat.id
               );
-              const totalPoints = statSkills.reduce((sum, us) => sum + (us.points_earned || 0), 0);
+              const totalPoints = statSkills.reduce((sum, us) => sum + (us.current_value || 0), 0);
               radarData[stat.display_name] = Math.min(totalPoints, 100); // Cap at 100 for radar
             });
             setRadarData(radarData);
@@ -103,7 +103,7 @@ const ProfilePage = () => {
   // Calculate master stats progress
   const masterStatsProgress = masterStats.map(stat => {
     const statSkills = userSkills.filter(us => us.skills?.master_stat_id === stat.id);
-    const totalPoints = statSkills.reduce((sum, us) => sum + (us.points_earned || 0), 0);
+    const totalPoints = statSkills.reduce((sum, us) => sum + (us.current_value || 0), 0);
     return {
       ...stat,
       points: totalPoints,
@@ -111,8 +111,8 @@ const ProfilePage = () => {
     };
   });
 
-  // Use total_xp_earned from profiles table (the actual XP system)
-  const totalXP = profile?.total_xp_earned || 0;
+  // Use current_xp from profiles table (the actual XP system)
+  const totalXP = profile?.current_xp || 0;
   
   // Calculate level progress
   const levelProgress = currentLevel && nextLevel ? {
