@@ -283,7 +283,7 @@ const ProfilePage = () => {
             <div className="flex justify-center">
               <RadarChart data={radarData} size={350} />
             </div>
-                  </div>
+          </div>
 
           {/* Master Stats Progress - Right */}
           <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-6 border border-slate-600/50 shadow-xl">
@@ -310,7 +310,7 @@ const ProfilePage = () => {
               </div>
             </div>
           </div>
-        </div>
+                  </div>
 
         {/* Bottom Row - Skills & Bio */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
