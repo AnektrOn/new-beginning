@@ -378,24 +378,143 @@ const CommunityPage = () => {
 
           {activeTab === 'leaderboard' && (
             <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-6 border border-slate-600/50 shadow-xl">
-              <h3 className="text-xl font-semibold mb-6 text-white">Top Performers</h3>
-              <div className="space-y-4">
-                {leaderboard.map((user, index) => (
+              <h3 className="text-xl font-semibold mb-6 text-white text-center">Top Performers</h3>
+              
+              {/* Podium for Top 3 */}
+              {leaderboard.length >= 3 && (
+                <div className="mb-8">
+                  {/* Trophy Icon */}
+                  <div className="flex justify-center mb-6">
+                    <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full flex items-center justify-center">
+                      <Award className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
+                  
+                  {/* Podium */}
+                  <div className="flex items-end justify-center space-x-4 mb-6">
+                    {/* 2nd Place */}
+                    <div className="flex flex-col items-center">
+                      <div className="relative mb-2">
+                        <img
+                          src={leaderboard[1]?.avatar_url || `https://images.unsplash.com/photo-${1500000000000 + 1 * 100000000}?w=60&h=60&fit=crop&crop=face`}
+                          alt={leaderboard[1]?.full_name}
+                          className="w-16 h-16 rounded-full border-2 border-slate-400"
+                        />
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-slate-400 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                          2
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-white font-semibold text-sm">{leaderboard[1]?.full_name || 'User'}</p>
+                        <p className="text-emerald-400 text-xs flex items-center justify-center">
+                          <Star className="w-3 h-3 mr-1" />
+                          {leaderboard[1]?.current_xp?.toLocaleString() || 0} XP
+                        </p>
+                      </div>
+                      <div className="w-20 h-16 bg-slate-600/50 rounded-t-lg mt-2 flex items-center justify-center">
+                        <span className="text-white font-bold text-lg">2</span>
+                      </div>
+                    </div>
+
+                    {/* 1st Place */}
+                    <div className="flex flex-col items-center">
+                      <div className="relative mb-2">
+                        <img
+                          src={leaderboard[0]?.avatar_url || `https://images.unsplash.com/photo-${1500000000000 + 0 * 100000000}?w=60&h=60&fit=crop&crop=face`}
+                          alt={leaderboard[0]?.full_name}
+                          className="w-20 h-20 rounded-full border-2 border-yellow-400"
+                        />
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                          1
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-white font-semibold text-sm">{leaderboard[0]?.full_name || 'User'}</p>
+                        <p className="text-emerald-400 text-xs flex items-center justify-center">
+                          <Star className="w-3 h-3 mr-1" />
+                          {leaderboard[0]?.current_xp?.toLocaleString() || 0} XP
+                        </p>
+                      </div>
+                      <div className="w-20 h-24 bg-gradient-to-t from-yellow-400/20 to-yellow-400/40 rounded-t-lg mt-2 flex items-center justify-center">
+                        <span className="text-white font-bold text-lg">1</span>
+                      </div>
+                    </div>
+
+                    {/* 3rd Place */}
+                    <div className="flex flex-col items-center">
+                      <div className="relative mb-2">
+                        <img
+                          src={leaderboard[2]?.avatar_url || `https://images.unsplash.com/photo-${1500000000000 + 2 * 100000000}?w=60&h=60&fit=crop&crop=face`}
+                          alt={leaderboard[2]?.full_name}
+                          className="w-16 h-16 rounded-full border-2 border-orange-400"
+                        />
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                          3
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-white font-semibold text-sm">{leaderboard[2]?.full_name || 'User'}</p>
+                        <p className="text-emerald-400 text-xs flex items-center justify-center">
+                          <Star className="w-3 h-3 mr-1" />
+                          {leaderboard[2]?.current_xp?.toLocaleString() || 0} XP
+                        </p>
+                      </div>
+                      <div className="w-20 h-12 bg-slate-600/50 rounded-t-lg mt-2 flex items-center justify-center">
+                        <span className="text-white font-bold text-lg">3</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* List for remaining users */}
+              <div className="space-y-3">
+                {leaderboard.slice(3).map((user, index) => (
                   <div key={user.id} className="flex items-center space-x-4 p-4 bg-slate-700/30 rounded-xl">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-yellow-400 to-orange-400 text-white font-bold text-sm">
-                      {index + 1}
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-600 text-white font-bold text-sm">
+                      {index + 4}
                     </div>
                     <img
-                      src={user.avatar_url || `https://images.unsplash.com/photo-${1500000000000 + index * 100000000}?w=40&h=40&fit=crop&crop=face`}
+                      src={user.avatar_url || `https://images.unsplash.com/photo-${1500000000000 + (index + 3) * 100000000}?w=40&h=40&fit=crop&crop=face`}
                       alt={user.full_name}
                       className="w-10 h-10 rounded-full"
                     />
                     <div className="flex-1">
                       <h4 className="font-semibold text-white">{user.full_name}</h4>
+                      <p className="text-emerald-400 text-sm flex items-center">
+                        <Star className="w-3 h-3 mr-1" />
+                        {user.current_xp?.toLocaleString() || 0} XP
+                      </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-emerald-400 font-semibold">{user.current_xp?.toLocaleString() || 0} XP</p>
-                      <p className="text-sm text-slate-400">Level {user.level || 1}</p>
+                      <div className="w-12 h-12 relative">
+                        <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 36 36">
+                          <path
+                            className="text-slate-600"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            fill="none"
+                            d="M18 2.0845
+                              a 15.9155 15.9155 0 0 1 0 31.831
+                              a 15.9155 15.9155 0 0 1 0 -31.831"
+                          />
+                          <path
+                            className="text-emerald-400"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            fill="none"
+                            strokeDasharray={`${(user.current_xp || 0) / 100}, 100`}
+                            d="M18 2.0845
+                              a 15.9155 15.9155 0 0 1 0 31.831
+                              a 15.9155 15.9155 0 0 1 0 -31.831"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-white text-xs font-semibold">
+                            {Math.min(Math.round((user.current_xp || 0) / 100), 100)}%
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
