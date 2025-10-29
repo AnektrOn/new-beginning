@@ -182,7 +182,7 @@ const ProfilePage = () => {
           </button>
           <button className="px-4 py-2 bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-violet-500/25">
             Save Point
-          </button>
+              </button>
         </div>
       </div>
 
@@ -192,7 +192,7 @@ const ProfilePage = () => {
         {/* Top Row - Character Info & Key Stats */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Character Card - Left */}
-          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
+          <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-6 border border-slate-600/50 shadow-xl">
             <div className="flex items-center space-x-4">
               <div className="relative">
                 {profile?.avatar_url ? (
@@ -223,7 +223,7 @@ const ProfilePage = () => {
           </div>
 
           {/* XP & Progress - Center */}
-          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
+          <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-6 border border-slate-600/50 shadow-xl">
             <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
               <Star className="w-5 h-5 mr-2 text-yellow-400" />
               Experience
@@ -249,7 +249,7 @@ const ProfilePage = () => {
           </div>
 
           {/* Daily Streak - Right */}
-          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
+          <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-6 border border-slate-600/50 shadow-xl">
             <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
               <Flame className="w-5 h-5 mr-2 text-orange-400" />
               Daily Streak
@@ -278,15 +278,15 @@ const ProfilePage = () => {
         {/* Middle Row - Core Stats & Master Stats */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {/* Radar Chart - Left */}
-          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-8 border border-slate-700/50 shadow-2xl">
+          <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-8 border border-slate-600/50 shadow-xl">
             <h3 className="text-xl font-semibold mb-6 text-center text-white">Core Stats</h3>
             <div className="flex justify-center">
               <RadarChart data={radarData} size={350} />
             </div>
-          </div>
+                  </div>
 
           {/* Master Stats Progress - Right */}
-          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
+          <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-6 border border-slate-600/50 shadow-xl">
             <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
               <Brain className="w-5 h-5 mr-2 text-violet-400" />
               Master Stats
@@ -315,7 +315,7 @@ const ProfilePage = () => {
         {/* Bottom Row - Skills & Bio */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* Skills Tabs - Left (2/3 width) */}
-          <div className="xl:col-span-2 bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
+          <div className="xl:col-span-2 bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-6 border border-slate-600/50 shadow-xl">
             <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
               <Brain className="w-5 h-5 mr-2 text-violet-400" />
               Skills ({userSkills.length})
@@ -336,12 +336,12 @@ const ProfilePage = () => {
                   {tab.label} ({tab.count})
                 </button>
               ))}
-            </div>
-
+                </div>
+                
             {/* Tab Content */}
             <div className="min-h-[300px]">
               {activeSkillTab === 'summary' ? (
-                <div>
+                  <div>
                   <h4 className="text-md font-semibold text-slate-300 mb-4">Top Skills</h4>
                   <div className="grid grid-cols-2 gap-3">
                     {topSkills.map((skill, index) => (
@@ -358,7 +358,7 @@ const ProfilePage = () => {
                   </div>
                 </div>
               ) : (
-                <div>
+                  <div>
                   <h4 className="text-md font-semibold text-slate-300 mb-4">
                     {skillsByMasterStat[activeSkillTab]?.masterStat?.display_name} Skills
                   </h4>
@@ -383,7 +383,7 @@ const ProfilePage = () => {
           {/* Bio & Quest - Right (1/3 width) */}
           <div className="space-y-6">
             {/* Character Bio */}
-            <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
+            <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-6 border border-slate-600/50 shadow-xl">
               <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
                 <BookOpen className="w-5 h-5 mr-2 text-cyan-400" />
                 Character Bio
@@ -414,7 +414,7 @@ const ProfilePage = () => {
             </div>
 
             {/* Current Quest */}
-            <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
+            <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-6 border border-slate-600/50 shadow-xl">
               <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
                 <Target className="w-5 h-5 mr-2 text-yellow-400" />
                 Current Quest
@@ -433,48 +433,48 @@ const ProfilePage = () => {
                   <span className="text-slate-300">Level up skills</span>
                 </div>
               </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
 
       {/* Bottom Section - Edit Profile */}
-      <div className="mt-8 bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-8 border border-slate-700/50 shadow-2xl">
+      <div className="mt-8 bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-8 border border-slate-600/50 shadow-xl">
         <h3 className="text-xl font-semibold mb-6 flex items-center text-white">
           <User className="w-6 h-6 mr-3 text-cyan-400" />
           Edit Character
         </h3>
         
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
+                  <div>
             <label htmlFor="full_name" className="block text-sm font-medium text-slate-300 mb-2">
               Character Name
-            </label>
-            <input
-              type="text"
-              name="full_name"
-              id="full_name"
-              value={formData.full_name}
-              onChange={handleInputChange}
+                    </label>
+                    <input
+                      type="text"
+                      name="full_name"
+                      id="full_name"
+                      value={formData.full_name}
+                      onChange={handleInputChange}
               className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200"
               placeholder="Enter your character name"
-            />
-          </div>
+                    />
+                  </div>
 
-          <div>
+                  <div>
             <label htmlFor="avatar_url" className="block text-sm font-medium text-slate-300 mb-2">
-              Avatar URL
-            </label>
-            <input
-              type="url"
-              name="avatar_url"
-              id="avatar_url"
-              value={formData.avatar_url}
-              onChange={handleInputChange}
+                      Avatar URL
+                    </label>
+                    <input
+                      type="url"
+                      name="avatar_url"
+                      id="avatar_url"
+                      value={formData.avatar_url}
+                      onChange={handleInputChange}
               className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200"
-              placeholder="https://example.com/avatar.jpg"
-            />
-          </div>
+                      placeholder="https://example.com/avatar.jpg"
+                    />
+                  </div>
 
           <div className="md:col-span-2">
             <label htmlFor="bio" className="block text-sm font-medium text-slate-300 mb-2">
@@ -493,38 +493,38 @@ const ProfilePage = () => {
 
           <div className="md:col-span-2">
             <label htmlFor="background_image" className="block text-sm font-medium text-slate-300 mb-2">
-              Background Image URL
-            </label>
-            <input
-              type="url"
-              name="background_image"
-              id="background_image"
-              value={formData.background_image}
-              onChange={handleInputChange}
+                      Background Image URL
+                    </label>
+                    <input
+                      type="url"
+                      name="background_image"
+                      id="background_image"
+                      value={formData.background_image}
+                      onChange={handleInputChange}
               className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200"
-              placeholder="https://example.com/background.jpg"
-            />
-            {formData.background_image && (
+                      placeholder="https://example.com/background.jpg"
+                    />
+                    {formData.background_image && (
               <div className="mt-4">
-                <div 
+                        <div 
                   className="w-full h-32 rounded-xl bg-cover bg-center bg-no-repeat border border-slate-600 shadow-lg"
-                  style={{ backgroundImage: `url(${formData.background_image})` }}
-                />
-              </div>
-            )}
-          </div>
+                          style={{ backgroundImage: `url(${formData.background_image})` }}
+                        />
+                      </div>
+                    )}
+                  </div>
 
           <div className="md:col-span-2 flex justify-end">
-            <button
-              type="submit"
-              disabled={loading}
+                    <button
+                      type="submit"
+                      disabled={loading}
               className="px-8 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-cyan-500/25"
-            >
+                    >
               {loading ? 'Saving...' : 'Save Character'}
-            </button>
-          </div>
-        </form>
-      </div>
+                    </button>
+                  </div>
+                </form>
+              </div>
     </div>
   )
 }
