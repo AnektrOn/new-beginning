@@ -122,6 +122,7 @@
   @apply text-gray-800 dark:text-gray-200;
   @apply overflow-auto;
   margin: 16px;
+  border: none !important;
 }
 
 /* Custom scrollbar for glass panels */
