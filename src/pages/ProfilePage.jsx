@@ -164,7 +164,7 @@ const ProfilePage = () => {
   } : null;
 
   return (
-    <div className="h-full w-full">
+    <div className="w-full">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
