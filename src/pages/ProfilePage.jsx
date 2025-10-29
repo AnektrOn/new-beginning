@@ -302,7 +302,7 @@ const ProfilePage = () => {
                   showValue={true}
                 />
               ))}
-              <div className="pt-3 border-t border-slate-600">
+              <div className="pt-3">
                 <div className="flex justify-between text-sm">
                   <span className="font-medium text-slate-300">Total</span>
                   <span className="text-emerald-400 font-bold">{masterStatsProgress.reduce((sum, stat) => sum + stat.points, 0).toFixed(1)}</span>
