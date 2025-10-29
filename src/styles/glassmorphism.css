@@ -194,7 +194,6 @@
   right: 0;
   bottom: 0;
   border-radius: inherit;
-  padding: 1px;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1));
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask-composite: exclude;
