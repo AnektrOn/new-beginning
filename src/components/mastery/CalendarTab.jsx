@@ -434,6 +434,7 @@ const CalendarTab = () => {
   const currentYear = currentDate.getFullYear();
 
   return (
+    <>
     <div className="h-full flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -516,8 +517,30 @@ const CalendarTab = () => {
         </div>
       </div>
 
+      {/* Error Display */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <p className="text-red-700 dark:text-red-300 text-sm">{error}</p>
+          <button
+            onClick={() => setError(null)}
+            className="mt-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 text-xs"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <span className="ml-2 text-gray-600 dark:text-gray-400">Loading...</span>
+        </div>
+      )}
+
       {/* Main Content Area */}
-      <div className="flex-1 flex gap-6">
+      {!loading && (
+        <div className="flex-1 flex gap-6">
         {/* Calendar Content */}
         <div className="flex-1">
 
@@ -1055,6 +1078,8 @@ const CalendarTab = () => {
         </div>
       </div>
 
+      )}
+
       {/* Completion Popup */}
       {completionPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -1107,6 +1132,7 @@ const CalendarTab = () => {
       )}
 
     </div>
+    </>
   );
 };
 

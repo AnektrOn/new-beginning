@@ -99,11 +99,11 @@ const CommunityPage = () => {
   ]
 
   const mockLeaderboard = [
-    { rank: 1, name: 'Elena Martinez', xp: 12500, level: 18, title: 'Enlightened Sage' },
-    { rank: 2, name: 'David Kim', xp: 11200, level: 17, title: 'Wisdom Keeper' },
-    { rank: 3, name: 'Lisa Wang', xp: 10800, level: 16, title: 'Transformation Master' },
-    { rank: 4, name: 'James Wilson', xp: 9500, level: 15, title: 'Growth Catalyst' },
-    { rank: 5, name: 'Maria Garcia', xp: 8900, level: 14, title: 'Insight Seeker' }
+    { id: '1', full_name: 'Elena Martinez', current_xp: 12500, level: 18, title: 'Enlightened Sage', avatar_url: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face' },
+    { id: '2', full_name: 'David Kim', current_xp: 11200, level: 17, title: 'Wisdom Keeper', avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face' },
+    { id: '3', full_name: 'Lisa Wang', current_xp: 10800, level: 16, title: 'Transformation Master', avatar_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face' },
+    { id: '4', full_name: 'James Wilson', current_xp: 9500, level: 15, title: 'Growth Catalyst', avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face' },
+    { id: '5', full_name: 'Maria Garcia', current_xp: 8900, level: 14, title: 'Insight Seeker', avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face' }
   ]
 
   const mockChallenges = [
@@ -154,10 +154,13 @@ const CommunityPage = () => {
 
       // Load leaderboard
       const leaderboardResult = await socialService.getLeaderboard()
+      console.log('Leaderboard result:', leaderboardResult)
       if (leaderboardResult.data) {
         setLeaderboard(leaderboardResult.data)
+        console.log('Set leaderboard data:', leaderboardResult.data)
       } else {
         setLeaderboard(mockLeaderboard)
+        console.log('Using mock leaderboard data:', mockLeaderboard)
       }
 
       // Load challenges
@@ -381,7 +384,7 @@ const CommunityPage = () => {
               <h3 className="text-xl font-semibold mb-6 text-white text-center">Top Performers</h3>
               
               {/* Podium for Top 3 */}
-              {leaderboard.length >= 3 && (
+              {leaderboard.length >= 3 ? (
                 <div className="mb-8">
                   {/* Trophy Icon */}
                   <div className="flex justify-center mb-6">
@@ -397,7 +400,7 @@ const CommunityPage = () => {
                       <div className="relative mb-2">
                         <img
                           src={leaderboard[1]?.avatar_url || `https://images.unsplash.com/photo-${1500000000000 + 1 * 100000000}?w=60&h=60&fit=crop&crop=face`}
-                          alt={leaderboard[1]?.full_name}
+                          alt={leaderboard[1]?.full_name || 'User'}
                           className="w-16 h-16 rounded-full border-2 border-slate-400"
                         />
                         <div className="absolute -top-2 -right-2 w-6 h-6 bg-slate-400 rounded-full flex items-center justify-center text-white font-bold text-xs">
@@ -421,7 +424,7 @@ const CommunityPage = () => {
                       <div className="relative mb-2">
                         <img
                           src={leaderboard[0]?.avatar_url || `https://images.unsplash.com/photo-${1500000000000 + 0 * 100000000}?w=60&h=60&fit=crop&crop=face`}
-                          alt={leaderboard[0]?.full_name}
+                          alt={leaderboard[0]?.full_name || 'User'}
                           className="w-20 h-20 rounded-full border-2 border-yellow-400"
                         />
                         <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center text-white font-bold text-xs">
@@ -445,7 +448,7 @@ const CommunityPage = () => {
                       <div className="relative mb-2">
                         <img
                           src={leaderboard[2]?.avatar_url || `https://images.unsplash.com/photo-${1500000000000 + 2 * 100000000}?w=60&h=60&fit=crop&crop=face`}
-                          alt={leaderboard[2]?.full_name}
+                          alt={leaderboard[2]?.full_name || 'User'}
                           className="w-16 h-16 rounded-full border-2 border-orange-400"
                         />
                         <div className="absolute -top-2 -right-2 w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center text-white font-bold text-xs">
@@ -464,6 +467,14 @@ const CommunityPage = () => {
                       </div>
                     </div>
                   </div>
+                </div>
+              ) : (
+                /* Fallback for when there are fewer than 3 users */
+                <div className="mb-8 text-center">
+                  <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Award className="w-6 h-6 text-white" />
+                  </div>
+                  <p className="text-slate-400">Not enough users for podium yet</p>
                 </div>
               )}
 
