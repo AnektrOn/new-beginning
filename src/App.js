@@ -13,6 +13,7 @@ import Dashboard from './pages/Dashboard'
 import PricingPage from './pages/PricingPage'
 import ProfilePage from './pages/ProfilePage'
 import Mastery from './pages/Mastery'
+import CommunityPage from './pages/CommunityPage'
 import MasteryTestComponent from './components/test/MasteryTestComponent'
 
 // Import glassmorphism styles
@@ -122,6 +123,14 @@ const AppRoutes = () => {
         <Route path="calendar" element={<Mastery />} />
         <Route path="habits" element={<Mastery />} />
         <Route path="toolbox" element={<Mastery />} />
+      </Route>
+
+      <Route path="/community" element={
+        <ProtectedRoute>
+          <AppShell />
+        </ProtectedRoute>
+      }>
+        <Route index element={<CommunityPage />} />
       </Route>
 
       {/* Default redirect */}
