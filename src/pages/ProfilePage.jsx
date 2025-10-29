@@ -186,105 +186,136 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-8 h-full">
+      {/* Main Content - Reorganized Layout */}
+      <div className="space-y-8">
         
-        {/* Left Column - Character Details */}
-        <div className="xl:col-span-1 space-y-6">
-          {/* Level & Avatar */}
-          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-8 border border-slate-700/50 shadow-2xl">
-            <div className="text-center">
-              <div className="inline-block bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-6 py-3 rounded-2xl font-bold text-xl mb-6 shadow-lg">
-                LEVEL: {currentLevel?.level_number || 0}
-              </div>
+        {/* Top Row - Character Info & Key Stats */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Character Card - Left */}
+          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
+            <div className="flex items-center space-x-4">
               <div className="relative">
                 {profile?.avatar_url ? (
                   <img
                     src={profile.avatar_url}
                     alt={displayName}
-                    className="w-36 h-36 rounded-full mx-auto border-4 border-gradient-to-r from-emerald-400 to-cyan-400 shadow-2xl"
+                    className="w-20 h-20 rounded-full border-4 border-gradient-to-r from-emerald-400 to-cyan-400 shadow-2xl"
                   />
                 ) : (
-                  <div className="w-36 h-36 rounded-full bg-gradient-to-br from-emerald-400 via-cyan-400 to-blue-400 flex items-center justify-center mx-auto border-4 border-gradient-to-r from-emerald-400 to-cyan-400 shadow-2xl">
-                    <User className="w-20 h-20 text-white" />
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-400 via-cyan-400 to-blue-400 flex items-center justify-center border-4 border-gradient-to-r from-emerald-400 to-cyan-400 shadow-2xl">
+                    <User className="w-10 h-10 text-white" />
                   </div>
                 )}
               </div>
-              <h2 className="text-2xl font-bold mt-6 text-white">{displayName}</h2>
-              <p className="text-slate-400 text-sm mt-1">{user?.email}</p>
-              {currentLevel && (
-                <p className="text-emerald-400 text-sm mt-2 font-medium">{currentLevel.title}</p>
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-3 py-1 rounded-xl font-bold text-sm">
+                    LEVEL: {currentLevel?.level_number || 0}
+                  </div>
+                  {currentLevel && (
+                    <span className="text-emerald-400 text-sm font-medium">{currentLevel.title}</span>
+                  )}
+                </div>
+                <h2 className="text-xl font-bold text-white">{displayName}</h2>
+                <p className="text-slate-400 text-sm">{user?.email}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* XP & Progress - Center */}
+          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
+            <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
+              <Star className="w-5 h-5 mr-2 text-yellow-400" />
+              Experience
+            </h3>
+            <div className="text-center">
+              <div className="text-3xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+                {totalXP.toFixed(1)} XP
+              </div>
+              {levelProgress && (
+                <>
+                  <div className="text-sm text-slate-400 mt-2">
+                    To reach {nextLevel?.title}: {levelProgress.neededXP.toFixed(0)} XP needed
+                  </div>
+                  <div className="w-full bg-slate-700 rounded-full h-3 mt-4 shadow-inner">
+                    <div 
+                      className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 h-3 rounded-full transition-all duration-500 shadow-lg"
+                      style={{width: `${Math.min(levelProgress.progressPercentage, 100)}%`}}
+                    ></div>
+                  </div>
+                </>
               )}
             </div>
           </div>
 
-
-          {/* Bio */}
+          {/* Daily Streak - Right */}
           <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
             <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
-              <BookOpen className="w-5 h-5 mr-2 text-cyan-400" />
-              Character Bio
+              <Flame className="w-5 h-5 mr-2 text-orange-400" />
+              Daily Streak
             </h3>
-            <div className="text-sm text-slate-300 space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400">Role:</span>
-                <span className="text-emerald-400 font-medium">{userRole}</span>
+            <div className="text-center">
+              <div className="text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
+                {profile?.completion_streak || 0}
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400">Level:</span>
-                <span className="text-cyan-400 font-medium">{currentLevel?.level_number || 0} - {currentLevel?.title || 'Uninitiated'}</span>
+              <div className="text-sm text-slate-400 mt-1">days in a row</div>
+              <div className="flex justify-center mt-4 space-x-1">
+                {[...Array(7)].map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-6 h-6 rounded-full border-2 shadow-lg transition-all duration-200 ${
+                      i < (profile?.completion_streak || 0) 
+                        ? 'bg-gradient-to-r from-orange-400 to-red-400 border-orange-300 shadow-orange-400/50' 
+                        : 'bg-slate-700 border-slate-600'
+                    }`}
+                  />
+                ))}
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400">Total XP:</span>
-                <span className="text-yellow-400 font-medium">{totalXP.toFixed(1)}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400">Streak:</span>
-                <span className="text-orange-400 font-medium">{profile?.completion_streak || 0} days</span>
-              </div>
-              {formData.bio && (
-                <div className="pt-2 border-t border-slate-600">
-                  <p className="text-slate-300"><strong>Description:</strong> {formData.bio}</p>
-                </div>
-              )}
             </div>
           </div>
         </div>
 
-        {/* Middle Column - Core Stats & Radar Chart */}
-        <div className="xl:col-span-2 space-y-6">
-          {/* Radar Chart */}
+        {/* Middle Row - Core Stats & Master Stats */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {/* Radar Chart - Left */}
           <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-8 border border-slate-700/50 shadow-2xl">
             <h3 className="text-xl font-semibold mb-6 text-center text-white">Core Stats</h3>
             <div className="flex justify-center">
-              <RadarChart data={radarData} size={400} />
+              <RadarChart data={radarData} size={350} />
             </div>
           </div>
 
-          {/* Current Quest */}
+          {/* Master Stats Progress - Right */}
           <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
             <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
-              <Target className="w-5 h-5 mr-2 text-yellow-400" />
-              Current Quest
+              <Brain className="w-5 h-5 mr-2 text-violet-400" />
+              Master Stats
             </h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full mr-3 shadow-lg"></div>
-                <span className="text-slate-300">Complete daily habits</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full mr-3 shadow-lg"></div>
-                <span className="text-slate-300">Use toolbox items</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-gradient-to-r from-cyan-400 to-cyan-500 rounded-full mr-3 shadow-lg"></div>
-                <span className="text-slate-300">Level up skills</span>
+            <div className="space-y-4">
+              {masterStatsProgress.map((stat) => (
+                <ProgressBar
+                  key={stat.id}
+                  label={stat.display_name}
+                  value={stat.points}
+                  maxValue={stat.maxPoints}
+                  color={stat.color}
+                  showValue={true}
+                />
+              ))}
+              <div className="pt-3 border-t border-slate-600">
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium text-slate-300">Total</span>
+                  <span className="text-emerald-400 font-bold">{masterStatsProgress.reduce((sum, stat) => sum + stat.points, 0).toFixed(1)}</span>
+                </div>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Skills Tabs */}
-          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
+        {/* Bottom Row - Skills & Bio */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* Skills Tabs - Left (2/3 width) */}
+          <div className="xl:col-span-2 bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
             <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
               <Brain className="w-5 h-5 mr-2 text-violet-400" />
               Skills ({userSkills.length})
@@ -348,83 +379,58 @@ const ProfilePage = () => {
               )}
             </div>
           </div>
-        </div>
 
-        {/* Right Column - XP, Streaks, Stats */}
-        <div className="xl:col-span-1 space-y-6">
-          {/* XP & Level */}
-          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
-            <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
-              <Star className="w-5 h-5 mr-2 text-yellow-400" />
-              Experience
-            </h3>
-            <div className="text-center">
-              <div className="text-3xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
-                {totalXP.toFixed(1)} XP
-              </div>
-              {levelProgress && (
-                <>
-                  <div className="text-sm text-slate-400 mt-2">
-                    To reach {nextLevel?.title}: {levelProgress.neededXP.toFixed(0)} XP needed
+          {/* Bio & Quest - Right (1/3 width) */}
+          <div className="space-y-6">
+            {/* Character Bio */}
+            <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
+              <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
+                <BookOpen className="w-5 h-5 mr-2 text-cyan-400" />
+                Character Bio
+              </h3>
+              <div className="text-sm text-slate-300 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Role:</span>
+                  <span className="text-emerald-400 font-medium">{userRole}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Level:</span>
+                  <span className="text-cyan-400 font-medium">{currentLevel?.level_number || 0} - {currentLevel?.title || 'Uninitiated'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Total XP:</span>
+                  <span className="text-yellow-400 font-medium">{totalXP.toFixed(1)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Streak:</span>
+                  <span className="text-orange-400 font-medium">{profile?.completion_streak || 0} days</span>
+                </div>
+                {formData.bio && (
+                  <div className="pt-2 border-t border-slate-600">
+                    <p className="text-slate-300"><strong>Description:</strong> {formData.bio}</p>
                   </div>
-                  <div className="w-full bg-slate-700 rounded-full h-4 mt-4 shadow-inner">
-                    <div 
-                      className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 h-4 rounded-full transition-all duration-500 shadow-lg"
-                      style={{width: `${Math.min(levelProgress.progressPercentage, 100)}%`}}
-                    ></div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Daily Streak */}
-          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
-            <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
-              <Flame className="w-5 h-5 mr-2 text-orange-400" />
-              Daily Streak
-            </h3>
-            <div className="text-center">
-              <div className="text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
-                {profile?.completion_streak || 0}
-              </div>
-              <div className="text-sm text-slate-400 mt-1">days in a row</div>
-              <div className="flex justify-center mt-4 space-x-2">
-                {[...Array(7)].map((_, i) => (
-                  <div
-                    key={i}
-                    className={`w-8 h-8 rounded-full border-2 shadow-lg transition-all duration-200 ${
-                      i < (profile?.completion_streak || 0) 
-                        ? 'bg-gradient-to-r from-orange-400 to-red-400 border-orange-300 shadow-orange-400/50' 
-                        : 'bg-slate-700 border-slate-600'
-                    }`}
-                  />
-                ))}
+                )}
               </div>
             </div>
-          </div>
 
-          {/* Master Stats Progress */}
-          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
-            <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
-              <Brain className="w-5 h-5 mr-2 text-violet-400" />
-              Master Stats
-            </h3>
-            <div className="space-y-4">
-              {masterStatsProgress.map((stat) => (
-                <ProgressBar
-                  key={stat.id}
-                  label={stat.display_name}
-                  value={stat.points}
-                  maxValue={stat.maxPoints}
-                  color={stat.color}
-                  showValue={true}
-                />
-              ))}
-              <div className="pt-3 border-t border-slate-600">
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium text-slate-300">Total</span>
-                  <span className="text-emerald-400 font-bold">{masterStatsProgress.reduce((sum, stat) => sum + stat.points, 0).toFixed(1)}</span>
+            {/* Current Quest */}
+            <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
+              <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
+                <Target className="w-5 h-5 mr-2 text-yellow-400" />
+                Current Quest
+              </h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full mr-3 shadow-lg"></div>
+                  <span className="text-slate-300">Complete daily habits</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full mr-3 shadow-lg"></div>
+                  <span className="text-slate-300">Use toolbox items</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-3 h-3 bg-gradient-to-r from-cyan-400 to-cyan-500 rounded-full mr-3 shadow-lg"></div>
+                  <span className="text-slate-300">Level up skills</span>
                 </div>
               </div>
             </div>
