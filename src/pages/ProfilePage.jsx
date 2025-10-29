@@ -72,10 +72,15 @@ const ProfilePage = () => {
           // Calculate radar chart data from user master stats
           const radarData = {};
           if (userMasterStatsResult.data) {
+            console.log('🎯 Radar Chart Debug - User Master Stats:', userMasterStatsResult.data);
             userMasterStatsResult.data.forEach(stat => {
               const currentValue = stat.user_master_stats?.[0]?.current_value || 0;
               radarData[stat.display_name] = Math.min(currentValue, 200); // Cap at 200 for radar
+              console.log(`- ${stat.display_name}: ${currentValue}`);
             });
+            console.log('🎯 Final Radar Data:', radarData);
+          } else {
+            console.log('❌ No user master stats data available for radar chart');
           }
           setRadarData(radarData);
         }
