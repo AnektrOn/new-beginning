@@ -16,6 +16,7 @@ const ProfilePage = () => {
   const [radarData, setRadarData] = useState({})
   const [currentLevel, setCurrentLevel] = useState(null)
   const [nextLevel, setNextLevel] = useState(null)
+  const [activeSkillTab, setActiveSkillTab] = useState('summary')
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || '',
     bio: profile?.bio || '',
@@ -124,6 +125,30 @@ const ProfilePage = () => {
       maxPoints: 200 // Set a reasonable max for progress bars
     };
   });
+
+  // Group skills by master stats for tabbed interface
+  const skillsByMasterStat = masterStats.reduce((acc, masterStat) => {
+    acc[masterStat.id] = {
+      masterStat,
+      skills: userSkills.filter(skill => skill.skills?.master_stat_id === masterStat.id)
+    };
+    return acc;
+  }, {});
+
+  // Get top skills across all categories for summary tab
+  const topSkills = userSkills
+    .sort((a, b) => (b.current_value || 0) - (a.current_value || 0))
+    .slice(0, 12);
+
+  // Create tab data
+  const skillTabs = [
+    { id: 'summary', label: 'Summary', count: topSkills.length },
+    ...masterStats.map(stat => ({
+      id: stat.id,
+      label: stat.display_name,
+      count: skillsByMasterStat[stat.id]?.skills?.length || 0
+    }))
+  ];
 
   // Use current_xp from profiles table (the actual XP system)
   const totalXP = profile?.current_xp || 0;
@@ -258,19 +283,69 @@ const ProfilePage = () => {
             </div>
           </div>
 
-          {/* Individual Skills */}
+          {/* Skills Tabs */}
           <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl">
             <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
               <Brain className="w-5 h-5 mr-2 text-violet-400" />
-              Individual Skills ({userSkills.length})
+              Skills ({userSkills.length})
             </h3>
-            <div className="grid grid-cols-2 gap-3 max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800">
-              {userSkills.map((skill) => (
-                <div key={skill.id} className="flex justify-between items-center text-sm bg-slate-700/30 rounded-lg p-2 hover:bg-slate-600/30 transition-colors">
-                  <span className="text-slate-300 truncate">{skill.skills?.display_name || skill.skills?.name}</span>
-                  <span className="text-emerald-400 font-medium bg-slate-800/50 px-2 py-1 rounded">{skill.current_value}</span>
-                </div>
+            
+            {/* Tab Navigation */}
+            <div className="flex flex-wrap gap-2 mb-6">
+              {skillTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveSkillTab(tab.id)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    activeSkillTab === tab.id
+                      ? 'bg-gradient-to-r from-violet-600 to-violet-700 text-white shadow-lg'
+                      : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
+                  }`}
+                >
+                  {tab.label} ({tab.count})
+                </button>
               ))}
+            </div>
+
+            {/* Tab Content */}
+            <div className="min-h-[300px]">
+              {activeSkillTab === 'summary' ? (
+                <div>
+                  <h4 className="text-md font-semibold text-slate-300 mb-4">Top Skills</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {topSkills.map((skill, index) => (
+                      <div key={skill.id} className="flex justify-between items-center text-sm bg-slate-700/30 rounded-lg p-3 hover:bg-slate-600/30 transition-colors">
+                        <div className="flex items-center">
+                          <span className="text-slate-400 text-xs mr-2">#{index + 1}</span>
+                          <span className="text-slate-300 truncate">{skill.skills?.display_name || skill.skills?.name}</span>
+                        </div>
+                        <span className="text-emerald-400 font-medium bg-slate-800/50 px-2 py-1 rounded">
+                          {skill.current_value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <h4 className="text-md font-semibold text-slate-300 mb-4">
+                    {skillsByMasterStat[activeSkillTab]?.masterStat?.display_name} Skills
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {skillsByMasterStat[activeSkillTab]?.skills?.map((skill) => (
+                      <div key={skill.id} className="flex justify-between items-center text-sm bg-slate-700/30 rounded-lg p-3 hover:bg-slate-600/30 transition-colors">
+                        <span className="text-slate-300 truncate">{skill.skills?.display_name || skill.skills?.name}</span>
+                        <span 
+                          className="font-medium bg-slate-800/50 px-2 py-1 rounded"
+                          style={{ color: skillsByMasterStat[activeSkillTab]?.masterStat?.color || '#10b981' }}
+                        >
+                          {skill.current_value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
