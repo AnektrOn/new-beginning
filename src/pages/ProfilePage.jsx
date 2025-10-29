@@ -310,7 +310,7 @@ const ProfilePage = () => {
               </div>
             </div>
           </div>
-                  </div>
+        </div>
 
         {/* Bottom Row - Skills & Bio */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
