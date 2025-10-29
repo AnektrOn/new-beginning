@@ -1,5 +1,17 @@
 # CRITICAL PROJECT RULES - NEVER BREAK THESE
 
+## 🚨 RULE #0: DEBUGGING METHODOLOGY (NEW - HIGHEST PRIORITY)
+
+**ALWAYS follow the systematic debugging process defined in `DEBUGGING_METHODOLOGY_RULES.md`**
+
+**NEVER debug visual issues without:**
+- Checking ALL CSS rules (including pseudo-elements)
+- Using browser dev tools to inspect the actual element
+- Following the systematic investigation order
+- Documenting the debugging process
+
+**IF you can't find the issue after 3 attempts, ask the user for help with browser dev tools inspection.**
+
 ## 🚨 RULE #1: ALWAYS READ USER PROMPTS CAREFULLY AND FOLLOW EXACTLY
 
 **NEVER:**
