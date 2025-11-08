@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Target, Star, BookOpen, Dumbbell, Flame, Trash2, CheckCircle } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMasteryRefresh } from '../../pages/Mastery';
 import skillsService from '../../services/skillsService';
+import masteryService from '../../services/masteryService';
 
 // Helper function to calculate current streak from completion dates
 const calculateCurrentStreak = (completedDates) => {
@@ -55,7 +57,7 @@ const getHabitIconAndColor = (title) => {
 };
 
 const HabitsTabCompact = () => {
-  const { user } = useAuth();
+  const { user, fetchProfile } = useAuth();
   const { triggerRefresh } = useMasteryRefresh();
   const [activeTab, setActiveTab] = useState('library');
   const [personalHabits, setPersonalHabits] = useState([]);
@@ -273,38 +275,54 @@ const HabitsTabCompact = () => {
     try {
       console.log('📝 HabitsTabCompact: Toggling habit completion:', habitId, date);
       
-      // Try to toggle completion in database
-      try {
-        // Check if completion exists for this date
-        const { data: existing } = await supabase
-          .from('user_habit_completions')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('habit_id', habitId)
-          .gte('completed_at', `${date}T00:00:00`)
-          .lte('completed_at', `${date}T23:59:59`)
-          .maybeSingle();
-
-        if (existing) {
-          // Delete if exists (toggle off)
-          await supabase
-            .from('user_habit_completions')
-            .delete()
-            .eq('id', existing.id);
-          console.log('✅ HabitsTabCompact: Completion removed from database');
-        } else {
-          // Insert if doesn't exist (toggle on)
-          await supabase
-            .from('user_habit_completions')
-            .insert({
-              user_id: user.id,
-              habit_id: habitId,
-              completed_at: new Date(date).toISOString()
-            });
-          console.log('✅ HabitsTabCompact: Completion added to database');
+      // Get habit info for toast notification
+      const habit = personalHabits.find(h => h.id === habitId);
+      const xpReward = habit?.xp_reward || 10;
+      
+      // Use masteryService to properly award XP
+      const isCompleted = habit.completedDates.includes(date);
+      
+      if (isCompleted) {
+        // Remove completion
+        const result = await masteryService.removeHabitCompletion(user.id, habitId, date);
+        if (result.error) {
+          console.error('❌ HabitsTabCompact: Error removing completion:', result.error);
+          toast.error('Failed to remove completion. Please try again.');
+          return;
         }
-      } catch (dbError) {
-        console.log('📝 HabitsTabCompact: Database toggle failed, using local state only', dbError);
+        console.log('✅ HabitsTabCompact: Completion removed');
+      } else {
+        // Complete habit (this will award XP)
+        const result = await masteryService.completeHabit(user.id, habitId, date);
+        if (result.error) {
+          console.error('❌ HabitsTabCompact: Error completing habit:', result.error);
+          toast.error('Failed to complete habit. Please try again.');
+          return;
+        }
+        console.log('✅ HabitsTabCompact: Completion added and XP awarded');
+        
+        // Show success notification with XP reward
+        console.log('✅ Showing completion toast for:', habit?.title, '+', xpReward, 'XP');
+        toast.success(
+          `Habit Completed! 🔥 ${habit?.title || 'Habit'} • +${xpReward} XP earned`,
+          {
+            duration: 4000,
+            style: {
+              background: 'rgba(30, 41, 59, 0.95)',
+              color: '#fff',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: '12px',
+              padding: '16px 20px',
+              fontSize: '14px',
+              fontWeight: '500',
+              zIndex: 9999,
+            },
+            iconTheme: {
+              primary: '#10B981',
+              secondary: '#fff',
+            },
+          }
+        );
       }
 
       // Update local state immediately for responsive UI
@@ -330,10 +348,20 @@ const HabitsTabCompact = () => {
         triggerRefresh();
       }
       
+      // Refresh profile to update XP, level, and streak - wait a bit for DB to update
+      if (user?.id) {
+        setTimeout(async () => {
+          console.log('🔄 Refreshing profile after completion...');
+          await fetchProfile(user.id);
+          console.log('✅ Profile refreshed');
+        }, 500);
+      }
+      
       console.log('✅ HabitsTabCompact: Habit toggled successfully');
     } catch (error) {
       console.error('❌ HabitsTabCompact: Exception during habit toggle:', error);
       setError('Failed to update habit');
+      toast.error('Failed to update habit. Please try again.');
     }
   };
 

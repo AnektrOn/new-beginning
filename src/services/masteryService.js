@@ -218,6 +218,15 @@ class MasteryService {
         await skillsService.awardSkillPoints(userId, skillTags, 0.1);
       }
 
+      // Update profile completion statistics
+      const statsResult = await this.updateProfileCompletionStats(userId, completionDate);
+      if (statsResult.error) {
+        console.error('⚠️ Failed to update profile completion stats:', statsResult.error);
+        // Don't fail the whole operation, but log the error
+      } else {
+        console.log('✅ Profile completion stats updated:', statsResult.data);
+      }
+
       return { data, error: null };
     } catch (error) {
       console.error('Error completing habit:', error);
@@ -247,6 +256,9 @@ class MasteryService {
 
       // Update habit completion count
       await this.updateHabitCompletionCount(habitId);
+
+      // Update profile completion statistics (recalculate after removal)
+      await this.updateProfileCompletionStats(userId, completionDate);
 
       return { data, error: null };
     } catch (error) {
@@ -403,6 +415,170 @@ class MasteryService {
       return { data, error: null };
     } catch (error) {
       console.error('Error awarding XP:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Update profile completion statistics (streak, counts, etc.)
+   */
+  async updateProfileCompletionStats(userId, completionDate = null) {
+    try {
+      // Always use actual current date for streak calculation, not the completion date
+      const actualToday = new Date();
+      actualToday.setHours(0, 0, 0, 0);
+      const today = actualToday.toISOString().split('T')[0];
+      const todayDate = new Date(today);
+      
+      // Calculate date ranges
+      const startOfWeek = new Date(todayDate);
+      startOfWeek.setDate(todayDate.getDate() - todayDate.getDay());
+      const startOfWeekStr = startOfWeek.toISOString().split('T')[0];
+      
+      const startOfMonth = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
+      const startOfMonthStr = startOfMonth.toISOString().split('T')[0];
+      
+      // Get completion counts from user_habit_completions
+      const { data: allCompletions, error: completionsError } = await supabase
+        .from('user_habit_completions')
+        .select('completed_at')
+        .eq('user_id', userId);
+
+      if (completionsError) throw completionsError;
+
+      // Calculate counts
+      const totalCompletions = allCompletions?.length || 0;
+      const todayCompletions = allCompletions?.filter(c => 
+        c.completed_at.split('T')[0] === today
+      ).length || 0;
+      
+      const weekCompletions = allCompletions?.filter(c => {
+        const completionDate = c.completed_at.split('T')[0];
+        return completionDate >= startOfWeekStr && completionDate <= today;
+      }).length || 0;
+      
+      const monthCompletions = allCompletions?.filter(c => {
+        const completionDate = c.completed_at.split('T')[0];
+        return completionDate >= startOfMonthStr && completionDate <= today;
+      }).length || 0;
+
+      // Calculate completion streak
+      const completionDates = [...new Set(
+        (allCompletions || []).map(c => {
+          const dateStr = c.completed_at.split('T')[0];
+          return dateStr;
+        })
+      )].sort().reverse(); // Sort descending (most recent first)
+
+      console.log(`📊 All completion dates (${completionDates.length} unique days):`, completionDates.slice(0, 10));
+
+      let streak = 0;
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      let checkDate = new Date(now);
+      
+      // Start checking from today, or yesterday if not completed today
+      const todayStr = now.toISOString().split('T')[0];
+      const yesterdayDate = new Date(now);
+      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+      const yesterdayStrFormatted = yesterdayDate.toISOString().split('T')[0];
+      
+      console.log(`📊 Checking streak from today (${todayStr}) or yesterday (${yesterdayStrFormatted})`);
+      
+      // If not completed today, start from yesterday
+      if (!completionDates.includes(todayStr)) {
+        checkDate = new Date(yesterdayDate);
+        console.log(`📊 Not completed today, starting from yesterday`);
+      }
+
+      // Count consecutive days with completions (going backwards)
+      let daysChecked = 0;
+      while (daysChecked < 365) { // Safety limit
+        const checkDateStr = checkDate.toISOString().split('T')[0];
+        if (completionDates.includes(checkDateStr)) {
+          streak++;
+          console.log(`📊 Day ${streak}: ${checkDateStr} ✓`);
+          checkDate.setDate(checkDate.getDate() - 1);
+        } else {
+          console.log(`📊 Streak broken at: ${checkDateStr} (no completion)`);
+          break;
+        }
+        daysChecked++;
+      }
+
+      console.log(`📊 Final streak calculation: ${streak} days`);
+
+      // Get current profile to preserve longest_streak
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('longest_streak')
+        .eq('id', userId)
+        .single();
+
+      const longestStreak = Math.max(
+        streak,
+        currentProfile?.longest_streak || 0
+      );
+
+      // Update profile with all statistics
+      console.log(`📊 Updating profile stats for user ${userId}:`, {
+        streak,
+        longestStreak,
+        todayCompletions,
+        weekCompletions,
+        monthCompletions,
+        totalCompletions
+      });
+
+      // Build update object - only include fields that exist
+      const updateData = {
+        last_activity_date: new Date().toISOString()
+      };
+
+      // Try to update completion_streak (may not exist in older schemas)
+      try {
+        updateData.completion_streak = streak;
+        updateData.longest_streak = longestStreak;
+        updateData.habits_completed_today = todayCompletions;
+        updateData.habits_completed_week = weekCompletions;
+        updateData.habits_completed_month = monthCompletions;
+        updateData.habits_completed_total = totalCompletions;
+      } catch (e) {
+        console.warn('⚠️ Some completion stat columns may not exist:', e);
+      }
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', userId);
+
+      if (updateError) {
+        console.error('❌ Error updating profile completion stats:', updateError);
+        console.error('❌ Update error details:', updateError.message, updateError.code, updateError.details);
+        
+        // If columns don't exist, provide helpful error message
+        if (updateError.message && (updateError.message.includes('does not exist') || updateError.code === 'PGRST204')) {
+          console.error('❌ ============================================');
+          console.error('❌ MISSING DATABASE COLUMNS!');
+          console.error('❌ The profiles table is missing required columns.');
+          console.error('❌');
+          console.error('❌ SOLUTION: Run this SQL in Supabase SQL Editor:');
+          console.error('❌ File: ADD_PROFILE_COMPLETION_STATS.sql');
+          console.error('❌');
+          console.error('❌ This will add: completion_streak, longest_streak,');
+          console.error('❌ habits_completed_today/week/month/total, last_activity_date');
+          console.error('❌ ============================================');
+        }
+        
+        // Don't throw - this is a non-critical update
+        return { data: null, error: updateError };
+      }
+
+      console.log('✅ Profile completion stats updated successfully');
+      return { data: { streak, totalCompletions }, error: null };
+    } catch (error) {
+      console.error('Error updating profile completion stats:', error);
+      // Don't throw - this is a non-critical update
       return { data: null, error };
     }
   }

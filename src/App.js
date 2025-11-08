@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { Toaster } from 'react-hot-toast'
 
 // Components
-import AppShell from './components/AppShell'
+import AppShellMobile from './components/AppShellMobile'
 
 // Auth Components
 import LoginPage from './pages/LoginPage'
@@ -16,8 +16,9 @@ import Mastery from './pages/Mastery'
 import CommunityPage from './pages/CommunityPage'
 import MasteryTestComponent from './components/test/MasteryTestComponent'
 
-// Import glassmorphism styles
+// Import glassmorphism and mobile styles
 import './styles/glassmorphism.css'
+import './styles/mobile-responsive.css'
 
 // Loading component
 const LoadingScreen = () => {
@@ -97,10 +98,10 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
 
-      {/* Protected Routes (With AppShell) */}
+      {/* Protected Routes (With AppShellMobile) */}
       <Route path="/dashboard" element={
         <ProtectedRoute>
-          <AppShell />
+          <AppShellMobile />
         </ProtectedRoute>
       }>
         <Route index element={<Dashboard />} />
@@ -108,7 +109,7 @@ const AppRoutes = () => {
       
       <Route path="/profile" element={
         <ProtectedRoute>
-          <AppShell />
+          <AppShellMobile />
         </ProtectedRoute>
       }>
         <Route index element={<ProfilePage />} />
@@ -116,7 +117,7 @@ const AppRoutes = () => {
 
       <Route path="/mastery/*" element={
         <ProtectedRoute>
-          <AppShell />
+          <AppShellMobile />
         </ProtectedRoute>
       }>
         <Route index element={<Mastery />} />
@@ -127,7 +128,7 @@ const AppRoutes = () => {
 
       <Route path="/community" element={
         <ProtectedRoute>
-          <AppShell />
+          <AppShellMobile />
         </ProtectedRoute>
       }>
         <Route index element={<CommunityPage />} />
@@ -143,12 +144,22 @@ const AppRoutes = () => {
 }
 
 function App() {
+  const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 767px)').matches
   return (
     <AuthProvider>
       <Router>
         <div className="App">
           <AppRoutes />
-          <Toaster position="top-right" />
+          <Toaster 
+            position={isMobile ? 'top-center' : 'top-right'} 
+            toastOptions={{ 
+              style: isMobile ? { marginTop: '64px', zIndex: 10000 } : { zIndex: 10000 },
+            }}
+            containerStyle={{
+              zIndex: 10000,
+              position: 'fixed',
+            }}
+          />
         </div>
       </Router>
     </AuthProvider>

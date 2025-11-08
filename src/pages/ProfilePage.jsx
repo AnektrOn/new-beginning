@@ -166,23 +166,23 @@ const ProfilePage = () => {
   return (
     <div className="w-full">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
+      <div className="profile-header flex justify-between items-center mb-6 sm:mb-8">
+        <div className="flex-1">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
             {displayName}
           </h1>
-          <p className="text-slate-300 text-sm mt-1">Character Profile</p>
+          <p className="text-slate-300 text-xs sm:text-sm mt-1">Character Profile</p>
         </div>
-        <div className="flex space-x-3">
-          <button className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-emerald-500/25">
+        <div className="profile-header-actions flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+          <button className="hidden md:block px-3 py-2 sm:px-4 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-emerald-500/25">
             Character Lore
           </button>
-          <button className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-cyan-500/25">
+          <button className="hidden md:block px-3 py-2 sm:px-4 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-cyan-500/25">
             Achievement Book
           </button>
-          <button className="px-4 py-2 bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-violet-500/25">
+          <button className="hidden md:block px-3 py-2 sm:px-4 bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-violet-500/25">
             Save Point
-              </button>
+          </button>
         </div>
       </div>
 
@@ -190,42 +190,42 @@ const ProfilePage = () => {
       <div className="space-y-8">
         
         {/* Top Row - Character Info & Key Stats */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="profile-stats-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Character Card - Left */}
-          <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-6 border border-slate-600/50 shadow-xl">
-            <div className="flex items-center space-x-4">
-              <div className="relative">
+          <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-slate-600/50 shadow-xl sm:col-span-2 lg:col-span-1">
+            <div className="flex items-center space-x-3 sm:space-x-4">
+              <div className="relative flex-shrink-0">
                 {profile?.avatar_url ? (
                   <img
                     src={profile.avatar_url}
                     alt={displayName}
-                    className="w-20 h-20 rounded-full border-4 border-gradient-to-r from-emerald-400 to-cyan-400 shadow-2xl"
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-gradient-to-r from-emerald-400 to-cyan-400 shadow-2xl"
                   />
                 ) : (
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-400 via-cyan-400 to-blue-400 flex items-center justify-center border-4 border-gradient-to-r from-emerald-400 to-cyan-400 shadow-2xl">
-                    <User className="w-10 h-10 text-white" />
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-emerald-400 via-cyan-400 to-blue-400 flex items-center justify-center border-4 border-gradient-to-r from-emerald-400 to-cyan-400 shadow-2xl">
+                    <User className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                   </div>
                 )}
               </div>
-              <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-2">
-                  <div className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-3 py-1 rounded-xl font-bold text-sm">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 mb-2">
+                  <div className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-2 sm:px-3 py-1 rounded-xl font-bold text-xs sm:text-sm inline-block">
                     LEVEL: {currentLevel?.level_number || 0}
                   </div>
                   {currentLevel && (
-                    <span className="text-emerald-400 text-sm font-medium">{currentLevel.title}</span>
+                    <span className="text-emerald-400 text-xs sm:text-sm font-medium mt-1 sm:mt-0">{currentLevel.title}</span>
                   )}
                 </div>
-                <h2 className="text-xl font-bold text-white">{displayName}</h2>
-                <p className="text-slate-400 text-sm">{user?.email}</p>
+                <h2 className="text-lg sm:text-xl font-bold text-white truncate">{displayName}</h2>
+                <p className="text-slate-400 text-xs sm:text-sm truncate">{user?.email}</p>
               </div>
             </div>
           </div>
 
           {/* XP & Progress - Center */}
-          <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-6 border border-slate-600/50 shadow-xl">
-            <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
-              <Star className="w-5 h-5 mr-2 text-yellow-400" />
+          <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-slate-600/50 shadow-xl">
+            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center text-white">
+              <Star className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-yellow-400" />
               Experience
             </h3>
             <div className="text-center">
@@ -249,21 +249,21 @@ const ProfilePage = () => {
           </div>
 
           {/* Daily Streak - Right */}
-          <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-6 border border-slate-600/50 shadow-xl">
-            <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
-              <Flame className="w-5 h-5 mr-2 text-orange-400" />
+          <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-slate-600/50 shadow-xl">
+            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center text-white">
+              <Flame className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-orange-400" />
               Daily Streak
             </h3>
             <div className="text-center">
               <div className="text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
                 {profile?.completion_streak || 0}
               </div>
-              <div className="text-sm text-slate-400 mt-1">days in a row</div>
-              <div className="flex justify-center mt-4 space-x-1">
+              <div className="text-xs sm:text-sm text-slate-400 mt-1">days in a row</div>
+              <div className="flex justify-center mt-3 sm:mt-4 space-x-1">
                 {[...Array(7)].map((_, i) => (
                   <div
                     key={i}
-                    className={`w-6 h-6 rounded-full border-2 shadow-lg transition-all duration-200 ${
+                    className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 shadow-lg transition-all duration-200 ${
                       i < (profile?.completion_streak || 0) 
                         ? 'bg-gradient-to-r from-orange-400 to-red-400 border-orange-300 shadow-orange-400/50' 
                         : 'bg-slate-700 border-slate-600'
@@ -276,19 +276,19 @@ const ProfilePage = () => {
         </div>
 
         {/* Middle Row - Core Stats & Master Stats */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Radar Chart - Left */}
-          <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-8 border border-slate-600/50 shadow-xl">
-            <h3 className="text-xl font-semibold mb-6 text-center text-white">Core Stats</h3>
-            <div className="flex justify-center">
-              <RadarChart data={radarData} size={350} />
+          <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-4 sm:p-6 lg:p-8 border border-slate-600/50 shadow-xl">
+            <h3 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 text-center text-white">Core Stats</h3>
+            <div className="profile-radar-chart flex justify-center">
+              <RadarChart data={radarData} size={Math.min(350, window.innerWidth - 100)} />
             </div>
           </div>
 
           {/* Master Stats Progress - Right */}
-          <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-6 border border-slate-600/50 shadow-xl">
-            <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
-              <Brain className="w-5 h-5 mr-2 text-violet-400" />
+          <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-slate-600/50 shadow-xl">
+            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center text-white">
+              <Brain className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-violet-400" />
               Master Stats
             </h3>
             <div className="space-y-4">
@@ -313,16 +313,16 @@ const ProfilePage = () => {
         </div>
 
         {/* Bottom Row - Skills & Bio */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Skills Tabs - Left (2/3 width) */}
-          <div className="xl:col-span-2 bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-6 border border-slate-600/50 shadow-xl">
-            <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
-              <Brain className="w-5 h-5 mr-2 text-violet-400" />
+          <div className="lg:col-span-2 bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-slate-600/50 shadow-xl">
+            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center text-white">
+              <Brain className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-violet-400" />
               Skills ({userSkills.length})
             </h3>
             
             {/* Tab Navigation */}
-            <div className="flex flex-wrap gap-2 mb-6">
+            <div className="profile-skills-tabs flex flex-wrap gap-1 sm:gap-2 mb-4 sm:mb-6">
               {skillTabs.map((tab) => (
                 <button
                   key={tab.id}

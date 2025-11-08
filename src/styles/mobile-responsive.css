@@ -1,0 +1,756 @@
+/* ==================== MOBILE-RESPONSIVE DESIGN SYSTEM ==================== */
+
+/* 
+ * Comprehensive mobile design adjustments for the entire app
+ * Breakpoints:
+ * - xs: 0-479px (small phones)
+ * - sm: 480-767px (phones)
+ * - md: 768-1023px (tablets)
+ * - lg: 1024-1279px (small desktops)
+ * - xl: 1280px+ (desktops)
+ */
+
+/* ==================== BASE MOBILE STYLES ==================== */
+
+/* Touch-friendly tap targets (minimum 44x44px) */
+@media (max-width: 767px) {
+  button,
+  a,
+  input[type="button"],
+  input[type="submit"],
+  .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Remove hover effects on touch devices */
+@media (hover: none) {
+  .hover\:scale-105:hover {
+    transform: none;
+  }
+  
+  .hover\:shadow-lg:hover {
+    box-shadow: inherit;
+  }
+}
+
+/* ==================== TYPOGRAPHY ==================== */
+
+@media (max-width: 767px) {
+  /* Reduce heading sizes on mobile */
+  h1, .text-3xl {
+    font-size: 1.5rem !important; /* 24px */
+    line-height: 2rem !important;
+  }
+  
+  h2, .text-2xl {
+    font-size: 1.25rem !important; /* 20px */
+    line-height: 1.75rem !important;
+  }
+  
+  h3, .text-xl {
+    font-size: 1.125rem !important; /* 18px */
+    line-height: 1.75rem !important;
+  }
+  
+  /* Adjust base font size for better readability */
+  body {
+    font-size: 0.938rem; /* 15px */
+  }
+}
+
+/* ==================== LAYOUT & SPACING ==================== */
+
+@media (max-width: 767px) {
+  /* Reduce padding on mobile */
+  .p-8 { padding: 1rem !important; }
+  .p-6 { padding: 0.75rem !important; }
+  .px-8 { padding-left: 1rem !important; padding-right: 1rem !important; }
+  .py-8 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+  
+  /* Adjust spacing */
+  .space-y-8 > * + * { margin-top: 1.5rem !important; }
+  .space-y-6 > * + * { margin-top: 1rem !important; }
+  .gap-8 { gap: 1.5rem !important; }
+  .gap-6 { gap: 1rem !important; }
+  
+  /* Full-width mobile containers */
+  .container,
+  .max-w-7xl,
+  .max-w-6xl,
+  .max-w-5xl,
+  .max-w-4xl {
+    max-width: 100% !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+}
+
+/* ==================== GRID SYSTEM ==================== */
+
+@media (max-width: 767px) {
+  /* Force single column on mobile */
+  .grid-cols-2,
+  .grid-cols-3,
+  .grid-cols-4,
+  .md\:grid-cols-2,
+  .lg\:grid-cols-3,
+  .xl\:grid-cols-4 {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+  
+  /* Profile page specific adjustments */
+  .profile-grid-mobile {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (min-width: 480px) and (max-width: 767px) {
+  /* 2 columns for small tablets */
+  .mobile-2-col {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* ==================== APP SHELL MOBILE ==================== */
+
+@media (max-width: 1023px) {
+  /* Hide desktop sidebar */
+  aside.glass-sidebar-panel {
+    display: none !important;
+  }
+  
+  /* Adjust header for mobile */
+  .glass-header-browser {
+    width: 100% !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 0.75rem 1rem !important;
+  }
+  
+  /* Adjust main content area */
+  main.glass-main-panel {
+    left: 0 !important;
+    right: 0 !important;
+    top: 60px !important;
+    bottom: calc(70px + env(safe-area-inset-bottom)) !important; /* Space for bottom nav + safe area */
+    margin: 0 !important;
+    border-radius: 0 !important;
+    padding: 1rem !important;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom)) !important;
+  }
+  
+  /* Mobile bottom navigation */
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 -4px 16px 0 rgba(31, 38, 135, 0.2);
+    padding: 0.5rem 0;
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+  
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    min-width: 60px;
+    min-height: 44px;
+    color: rgba(107, 114, 128, 1);
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  
+  .mobile-nav-item.active {
+    color: rgba(251, 146, 60, 1);
+  }
+  
+  .mobile-nav-item span {
+    font-size: 0.625rem;
+    margin-top: 0.25rem;
+  }
+  
+  /* Mobile hamburger menu */
+  .mobile-menu-button {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .mobile-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding-top: 60px;
+  }
+  
+  .mobile-menu-panel {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    width: 80%;
+    max-width: 300px;
+    height: calc(100vh - 60px);
+    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.2);
+    padding: 1.5rem;
+    overflow-y: auto;
+  }
+  
+  .dark .mobile-menu-panel {
+    background: rgba(0, 0, 0, 0.95);
+  }
+}
+
+/* ==================== DASHBOARD MOBILE ==================== */
+
+@media (max-width: 767px) {
+  .dashboard-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem;
+  }
+  
+  .dashboard-header-actions {
+    width: 100%;
+    flex-direction: column !important;
+    gap: 0.5rem;
+  }
+  
+  .dashboard-header-actions button {
+    width: 100%;
+  }
+  
+  /* Dashboard cards */
+  .dashboard-card {
+    padding: 1rem !important;
+  }
+  
+  .dashboard-quick-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* ==================== PROFILE PAGE MOBILE ==================== */
+
+@media (max-width: 767px) {
+  .profile-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem;
+  }
+  
+  .profile-header-actions {
+    width: 100%;
+    flex-direction: column !important;
+    gap: 0.5rem;
+  }
+  
+  .profile-header-actions button {
+    width: 100%;
+    font-size: 0.875rem !important;
+  }
+  
+  /* Profile stats cards */
+  .profile-stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  
+  /* Radar chart sizing */
+  .profile-radar-chart {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  
+  /* Skills tabs */
+  .profile-skills-tabs {
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+  
+  .profile-skills-tabs button {
+    font-size: 0.75rem !important;
+    padding: 0.5rem 0.75rem !important;
+  }
+  
+  /* Profile edit form */
+  .profile-edit-form {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Tablet adjustments */
+  .profile-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* ==================== MASTERY PAGE MOBILE ==================== */
+
+@media (max-width: 1023px) {
+  /* Sticky tab header */
+  .mastery-tab-header {
+    flex-direction: column !important;
+    padding: 1rem !important;
+    gap: 1rem;
+  }
+  
+  .mastery-tab-navigation {
+    width: 100%;
+    justify-content: center !important;
+  }
+  
+  .mastery-tab-navigation button {
+    font-size: 0.875rem !important;
+    padding: 0.5rem 0.75rem !important;
+  }
+  
+  /* Calendar view */
+  .mastery-calendar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .mastery-calendar-grid {
+    min-width: 100%;
+  }
+  
+  .mastery-calendar-day {
+    min-height: 80px !important;
+    font-size: 0.75rem !important;
+  }
+  
+  /* Habits list */
+  .mastery-habit-card {
+    padding: 1rem !important;
+  }
+  
+  .mastery-habit-card h3 {
+    font-size: 1rem !important;
+  }
+  
+  /* Toolbox grid */
+  .mastery-toolbox-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (min-width: 480px) and (max-width: 767px) {
+  .mastery-toolbox-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* ==================== COMMUNITY PAGE MOBILE ==================== */
+
+@media (max-width: 1279px) {
+  /* Hide sidebars on tablet/mobile */
+  .community-left-sidebar,
+  .community-right-sidebar {
+    display: none !important;
+  }
+  
+  .community-main-content {
+    grid-column: span 4 !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .community-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem;
+  }
+  
+  .community-search-filter {
+    flex-direction: column !important;
+    gap: 0.75rem;
+  }
+  
+  .community-search-filter input {
+    width: 100% !important;
+  }
+  
+  /* Community posts */
+  .community-post {
+    padding: 1rem !important;
+  }
+  
+  .community-post-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.5rem;
+  }
+  
+  .community-post-actions {
+    flex-wrap: wrap;
+    gap: 0.75rem !important;
+  }
+  
+  /* Leaderboard */
+  .leaderboard-podium {
+    transform: scale(0.9);
+  }
+  
+  /* Challenges */
+  .challenge-card {
+    padding: 1rem !important;
+  }
+  
+  .challenge-card-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem;
+  }
+  
+  .challenge-card-stats {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+}
+
+/* ==================== AUTH PAGES MOBILE ==================== */
+
+@media (max-width: 767px) {
+  .auth-container {
+    padding: 1rem !important;
+  }
+  
+  .auth-card {
+    padding: 1.5rem !important;
+    margin: 1rem !important;
+  }
+  
+  .auth-form {
+    gap: 1rem !important;
+  }
+  
+  .auth-button {
+    width: 100% !important;
+    padding: 0.875rem !important;
+    min-height: 44px;
+  }
+  
+  .auth-social-buttons {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+  
+  .auth-social-buttons button {
+    width: 100% !important;
+  }
+}
+
+/* ==================== GLASSMORPHISM MOBILE ==================== */
+
+@media (max-width: 767px) {
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.2) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+  }
+  
+  .dark .glass-effect {
+    background: rgba(0, 0, 0, 0.3) !important;
+  }
+  
+  .glass-card {
+    padding: 1rem !important;
+    border-radius: 1rem !important;
+  }
+  
+  .glass-main-panel {
+    padding: 1rem !important;
+  }
+}
+
+/* ==================== FORMS & INPUTS ==================== */
+
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+  ::placeholder { font-size: 16px !important; }
+  
+  .form-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .form-actions {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+  
+  .form-actions button {
+    width: 100% !important;
+  }
+}
+
+/* ==================== MODALS & DIALOGS ==================== */
+
+@media (max-width: 767px) {
+  .modal-overlay {
+    padding: 0 !important;
+  }
+  
+  .modal-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .modal-header {
+    padding: 1rem !important;
+    padding-top: calc(1rem + env(safe-area-inset-top)) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .modal-body {
+    padding: 1rem !important;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .modal-footer {
+    padding: 1rem !important;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom)) !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* iOS fallback when 100dvh unsupported */
+@supports not (height: 100dvh) {
+  @media (max-width: 767px) {
+    .modal-content {
+      height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+      max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+    }
+  }
+}
+
+/* ==================== TABLES ==================== */
+
+@media (max-width: 767px) {
+  /* Convert tables to card layout on mobile */
+  .responsive-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .responsive-table thead {
+    display: none;
+  }
+  
+  .responsive-table tbody tr {
+    display: block;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    padding: 1rem;
+  }
+  
+  .responsive-table tbody td {
+    display: block;
+    text-align: right;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+  
+  .responsive-table tbody td:before {
+    content: attr(data-label);
+    float: left;
+    font-weight: bold;
+  }
+  
+  .responsive-table tbody td:last-child {
+    border-bottom: none;
+  }
+}
+
+/* ==================== UTILITY CLASSES ==================== */
+
+/* Hide on mobile */
+.mobile-hidden {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .mobile-hidden {
+    display: block !important;
+  }
+}
+
+/* Show only on mobile */
+.mobile-only {
+  display: block !important;
+}
+
+@media (min-width: 768px) {
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+/* Tablet only */
+.tablet-only {
+  display: none !important;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .tablet-only {
+    display: block !important;
+  }
+}
+
+/* Desktop only */
+.desktop-only {
+  display: none !important;
+}
+
+@media (min-width: 1024px) {
+  .desktop-only {
+    display: block !important;
+  }
+}
+
+/* ==================== ANIMATIONS & TRANSITIONS ==================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ==================== SCROLLING ==================== */
+
+/* Smooth scrolling for mobile */
+@media (max-width: 1023px) {
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Hide scrollbar but keep functionality */
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* ==================== SAFE AREAS (iOS notch support) ==================== */
+
+@supports (padding: max(0px)) {
+  .safe-area-top {
+    padding-top: max(env(safe-area-inset-top), 0.5rem);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+  }
+  
+  .safe-area-left {
+    padding-left: max(env(safe-area-inset-left), 0.5rem);
+  }
+  
+  .safe-area-right {
+    padding-right: max(env(safe-area-inset-right), 0.5rem);
+  }
+}
+
+/* ==================== PERFORMANCE OPTIMIZATIONS ==================== */
+
+/* GPU acceleration for smoother animations */
+@media (max-width: 1023px) {
+  .glass-effect,
+  .mobile-bottom-nav,
+  .modal-content,
+  .mobile-menu-panel {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+}
+
+/* ==================== PRINT STYLES ==================== */
+
+@media print {
+  .mobile-bottom-nav,
+  .mobile-menu-button,
+  .glass-sidebar-panel,
+  button,
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .glass-effect {
+    background: white !important;
+    backdrop-filter: none !important;
+    border: 1px solid #ccc !important;
+  }
+}
+
+/* ==================== TOAST NOTIFICATIONS ==================== */
+
+/* Ensure react-hot-toast appears above all other elements */
+[data-sonner-toaster],
+[data-sonner-toast],
+.react-hot-toast,
+.react-hot-toast-container {
+  z-index: 10000 !important;
+}
+
+/* Toast container positioning */
+.react-hot-toast-container {
+  position: fixed !important;
+  pointer-events: none;
+}
+
+.react-hot-toast {
+  pointer-events: auto;
+}
+

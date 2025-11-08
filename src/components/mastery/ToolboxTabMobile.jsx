@@ -1,0 +1,224 @@
+import React, { useState, useEffect } from 'react';
+import { Wrench, Plus, CheckCircle } from 'lucide-react';
+import { supabase } from '../../lib/supabaseClient';
+import { useAuth } from '../../contexts/AuthContext';
+import { useMasteryRefresh } from '../../pages/Mastery';
+import masteryService from '../../services/masteryService';
+
+/**
+ * Modern Mobile-First Toolbox Component
+ * Clean card-based layout
+ */
+const ToolboxTabMobile = () => {
+  const { user } = useAuth();
+  const { triggerRefresh } = useMasteryRefresh();
+  const [activeTab, setActiveTab] = useState('my-tools');
+  const [toolboxLibrary, setToolboxLibrary] = useState([]);
+  const [userToolbox, setUserToolbox] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadToolbox = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        // Load library
+        const { data: library } = await supabase.from('toolbox_library').select('*');
+        setToolboxLibrary(library || []);
+
+        // Load user toolbox
+        const { data: userTools } = await masteryService.getUserToolboxItems(user.id);
+        setUserToolbox(userTools || []);
+      } catch (err) {
+        console.error('Error loading toolbox:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadToolbox();
+  }, [user]);
+
+  const handleUseToolItem = async (toolId) => {
+    if (!user) return;
+
+    try {
+      await masteryService.useToolboxItem(user.id, toolId);
+      
+      setUserToolbox(prev =>
+        prev.map(tool => {
+          if (tool.id === toolId) {
+            return {
+              ...tool,
+              last_used: new Date().toISOString(),
+              usage_count: (tool.usage_count || 0) + 1
+            };
+          }
+          return tool;
+        })
+      );
+
+      triggerRefresh();
+    } catch (err) {
+      console.error('Error using tool:', err);
+    }
+  };
+
+  const addToolFromLibrary = async (libraryTool) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await masteryService.addToolboxItem(user.id, libraryTool.id);
+      if (error) throw error;
+
+      setUserToolbox(prev => [
+        ...prev,
+        {
+          ...data,
+          toolbox_library: libraryTool,
+          usage_count: 0
+        }
+      ]);
+
+      setActiveTab('my-tools');
+    } catch (err) {
+      console.error('Error adding tool:', err);
+    }
+  };
+
+  const getToolColor = (title) => {
+    const lower = title?.toLowerCase() || '';
+    if (lower.includes('pomodoro')) return '#8B5CF6';
+    if (lower.includes('mind') || lower.includes('map')) return '#A78BFA';
+    if (lower.includes('meditation')) return '#10B981';
+    return '#6B7280';
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pb-8">
+      {/* Tab Switcher */}
+      <div className="flex bg-slate-800/60 backdrop-blur-md rounded-2xl p-1.5 mb-6 shadow-xl">
+        <button
+          onClick={() => setActiveTab('my-tools')}
+          className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all min-h-[48px] ${
+            activeTab === 'my-tools' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400'
+          }`}
+        >
+          <Wrench size={18} />
+          <span>My Tools</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('library')}
+          className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all min-h-[48px] ${
+            activeTab === 'library' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400'
+          }`}
+        >
+          <Plus size={18} />
+          <span>Library</span>
+        </button>
+      </div>
+
+      {/* Content */}
+      {activeTab === 'my-tools' ? (
+        <div className="space-y-4">
+          {userToolbox.length === 0 ? (
+            <div className="text-center py-12">
+              <Wrench size={48} className="mx-auto mb-4 text-slate-600" />
+              <p className="text-slate-400 mb-4">No tools yet</p>
+              <button
+                onClick={() => setActiveTab('library')}
+                className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-indigo-500 transition-all min-h-[48px]"
+              >
+                Add from Library
+              </button>
+            </div>
+          ) : (
+            userToolbox.map(tool => {
+              const toolData = tool.toolbox_library || tool;
+              return (
+                <div
+                  key={tool.id}
+                  className="bg-slate-800/50 backdrop-blur-md rounded-2xl p-5 border border-slate-700/30 shadow-xl"
+                >
+                  <h3 className="text-lg font-bold text-white mb-2">{toolData.title}</h3>
+                  {toolData.description && (
+                    <p className="text-sm text-slate-400 mb-4">{toolData.description}</p>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-slate-400">
+                      <span className="text-yellow-400 font-semibold">+{toolData.xp_reward || 15} XP</span>
+                      {tool.usage_count > 0 && (
+                        <>
+                          <span className="mx-2">•</span>
+                          <span>Used {tool.usage_count}x</span>
+                        </>
+                      )}
+                    </div>
+
+                    <button
+                    onClick={() => handleUseToolItem(tool.id)}
+                      className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-indigo-500 transition-all min-h-[44px]"
+                    >
+                      Use Tool
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {toolboxLibrary.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-slate-400">No tools in library</p>
+            </div>
+          ) : (
+            toolboxLibrary.map(tool => (
+              <div
+                key={tool.id}
+                className="bg-slate-800/50 backdrop-blur-md rounded-2xl p-5 border border-slate-700/30 shadow-xl"
+              >
+                <h3 className="text-lg font-bold text-white mb-2">{tool.title}</h3>
+                {tool.description && (
+                  <p className="text-sm text-slate-400 mb-4">{tool.description}</p>
+                )}
+                
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-slate-400">
+                    <span className="text-yellow-400 font-semibold">+{tool.xp_reward || 15} XP</span>
+                  </div>
+                  
+                  <button
+                    onClick={() => addToolFromLibrary(tool)}
+                    className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-indigo-500 transition-all min-h-[44px]"
+                  >
+                    + Add
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ToolboxTabMobile;
+

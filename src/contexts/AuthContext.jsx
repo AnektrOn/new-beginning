@@ -47,22 +47,12 @@ export const AuthProvider = ({ children }) => {
 
       console.log('🆕 createDefaultProfile: Creating new profile...')
 
-      // Create new profile
+      // Create new profile (insert only safe, guaranteed columns to avoid schema mismatches)
       const { data, error } = await supabase
         .from('profiles')
         .insert({
           id: userId,
-          email: user.email, // Required field - must not be null
-          full_name: user.user_metadata?.full_name || 'User',
-          role: 'Free',
-          level: 1,
-          current_xp: 0,
-          total_xp_earned: 0,
-          daily_streak: 0,
-          rank: 'New Catalyst',
-          xp_to_next_level: 1,
-          level_progress_percentage: 0.00,
-          is_premium: false
+          email: user.email
         })
         .select()
         .single()
@@ -86,11 +76,21 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('📥 fetchProfile: Starting profile fetch for user:', userId)
       
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
+      // Guard against long-hanging requests by racing with a timeout
+      const withTimeout = (promise, ms = 5000) => {
+        return Promise.race([
+          promise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('PROFILE_FETCH_TIMEOUT')), ms))
+        ])
+      }
+
+      const { data, error } = await withTimeout(
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single()
+      )
 
       if (error) {
         if (error.code === 'PGRST116') {
@@ -108,19 +108,17 @@ export const AuthProvider = ({ children }) => {
       console.log('✅ fetchProfile: Profile fetched successfully:', data)
       setProfile(data)
     } catch (error) {
-      console.error('❌ fetchProfile: Exception during profile fetch:', error)
+      if (error && error.message === 'PROFILE_FETCH_TIMEOUT') {
+        console.warn('⏳ fetchProfile: Timed out; proceeding without blocking UI')
+      } else {
+        console.error('❌ fetchProfile: Exception during profile fetch:', error)
+      }
       setProfile(null)
     }
   }, [createDefaultProfile])
 
   useEffect(() => {
     console.log('🔍 AuthContext: Starting authentication check...')
-    
-    // Force timeout to prevent infinite loading
-    const forceTimeout = setTimeout(() => {
-      console.log('⏰ AuthContext: Force timeout reached, setting loading to false')
-      setLoading(false)
-    }, 3000) // 3 second timeout
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -131,17 +129,14 @@ export const AuthProvider = ({ children }) => {
         fetchProfile(session.user.id).finally(() => {
           console.log('✅ AuthContext: Profile fetch completed, setting loading to false')
           setLoading(false)
-          clearTimeout(forceTimeout)
         })
       } else {
         console.log('✅ AuthContext: No user, setting loading to false')
         setLoading(false)
-        clearTimeout(forceTimeout)
       }
     }).catch((error) => {
       console.error('❌ AuthContext: Error getting session:', error)
       setLoading(false)
-      clearTimeout(forceTimeout)
     })
 
     // Listen for auth changes
@@ -157,14 +152,12 @@ export const AuthProvider = ({ children }) => {
         }
         console.log('✅ AuthContext: Auth state change completed, setting loading to false')
         setLoading(false)
-        clearTimeout(forceTimeout)
       }
     )
 
     return () => {
       console.log('🧹 AuthContext: Cleaning up auth subscription and timeout')
       subscription.unsubscribe()
-      clearTimeout(forceTimeout)
     }
   }, [fetchProfile])
 

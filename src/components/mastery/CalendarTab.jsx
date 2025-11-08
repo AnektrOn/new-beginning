@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Grid3X3, Clock, Trash2, CheckCircle, Target } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Grid3X3, Clock, Trash2, CheckCircle, Target, Brain, Star } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import { supabase } from '../../lib/supabaseClient';
 import masteryService from '../../services/masteryService';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMasteryRefresh } from '../../pages/Mastery';
 
 const CalendarTab = () => {
-  const { user } = useAuth();
+  const { user, fetchProfile } = useAuth();
   const { triggerRefresh } = useMasteryRefresh();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState([]);
@@ -209,6 +211,8 @@ const CalendarTab = () => {
 
   // Calculate events for the selected day using virtual events
   const selectedDayEvents = getEventsForDate(selectedDay);
+  const today = new Date();
+  const isSelectedToday = selectedDay.toDateString() === today.toDateString();
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
@@ -264,12 +268,12 @@ const CalendarTab = () => {
       const daysDiff = Math.floor((today - targetDate) / (1000 * 60 * 60 * 24));
       
       if (daysDiff > 2) {
-        alert('You can only complete habits for today and up to 2 days prior.');
+        toast.error('You can only complete habits for today and up to 2 days prior.');
         return;
       }
       
       if (daysDiff < 0) {
-        alert('You cannot complete habits for future dates.');
+        toast.error('You cannot complete habits for future dates.');
         return;
       }
       
@@ -277,6 +281,7 @@ const CalendarTab = () => {
         // Check if habit is already completed for this date
         const habit = habits.find(h => h.id === habitId);
         const isAlreadyCompleted = habit?.completed_dates?.includes(fullDateString);
+        const xpReward = habit?.xp_reward || 10;
         
         let result;
         if (isAlreadyCompleted) {
@@ -288,20 +293,67 @@ const CalendarTab = () => {
           setCompletionPopup({
             habit: habit?.title || 'Habit',
             date: fullDateString,
-            xp: habit?.xp_reward || 10,
+            xp: xpReward,
             action: 'uncompleted'
+          });
+          toast('Completion undone', {
+            icon: '↺',
+            duration: 3000,
+            style: {
+              background: 'rgba(30, 41, 59, 0.95)',
+              color: '#fff',
+              border: '1px solid rgba(251, 191, 36, 0.35)',
+              borderRadius: '12px',
+              padding: '14px 18px',
+              fontSize: '13px',
+              fontWeight: 500,
+            },
           });
         } else {
           // Complete the habit
           result = await masteryService.completeHabit(user.id, habitId, fullDateString);
           if (result.error) throw result.error;
           
-          // Show completion popup
+          // Get habit details including skill tags for popup
+          const { data: habitDetails } = await supabase
+            .from('user_habits')
+            .select(`
+              title,
+              xp_reward,
+              habits_library (
+                skill_tags
+              )
+            `)
+            .eq('id', habitId)
+            .single();
+          
+          const skillTags = habitDetails?.habits_library?.skill_tags || [];
+          const statsPoints = skillTags.length > 0 ? (skillTags.length * 0.1).toFixed(1) : 0;
+          
+          // Show completion popup with XP and stats
           setCompletionPopup({
             habit: habit?.title || 'Habit',
             date: fullDateString,
-            xp: habit?.xp_reward || 10,
+            xp: xpReward,
+            statsPoints: parseFloat(statsPoints),
+            skillTags: skillTags,
             action: 'completed'
+          });
+          toast.success(`Task Completed! ${habit?.title || 'Task'} • +${xpReward} XP earned`, {
+            duration: 4000,
+            style: {
+              background: 'rgba(30, 41, 59, 0.95)',
+              color: '#fff',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: '12px',
+              padding: '16px 20px',
+              fontSize: '14px',
+              fontWeight: 500,
+            },
+            iconTheme: {
+              primary: '#10B981',
+              secondary: '#fff',
+            },
           });
         }
 
@@ -337,9 +389,28 @@ const CalendarTab = () => {
         
         // Trigger refresh to update other tabs
         triggerRefresh();
+        
+        // Refresh profile to update XP, level, and streak - wait a bit for DB to update
+        if (user?.id) {
+          setTimeout(async () => {
+            console.log('🔄 Refreshing profile after completion...');
+            await fetchProfile(user.id);
+            console.log('✅ Profile refreshed');
+          }, 500); // Small delay to ensure DB updates are complete
+        }
       } catch (error) {
         console.error('Error completing habit:', error);
         setError(error.message);
+        toast.error('Failed to update habit. Please try again.', {
+          duration: 3000,
+          style: {
+            background: 'rgba(239, 68, 68, 0.95)',
+            color: '#fff',
+            borderRadius: '12px',
+            padding: '14px 18px',
+            fontSize: '13px',
+          },
+        });
       }
     } else {
       // Handle regular events (find in events array)
@@ -436,84 +507,69 @@ const CalendarTab = () => {
   return (
     <>
     <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={
-                view === 'month' ? handlePrevMonth : 
-                view === 'week' ? handlePrevWeek : 
-                handlePrevDay
-              }
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <button
-              onClick={
-                view === 'month' ? handleNextMonth : 
-                view === 'week' ? handleNextWeek : 
-                handleNextDay
-              }
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {view === 'month' 
-                ? `${currentMonth} ${currentYear}`
-                : view === 'week'
-                ? `Week of ${getWeekDays(currentDate)[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-                : `${selectedDay.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}`
-              }
+      {/* Mobile Header - Simplified */}
+      <div className="mb-4">
+        {/* Month/Year Header with Navigation */}
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={view === 'month' ? handlePrevMonth : view === 'week' ? handlePrevWeek : handlePrevDay}
+            className="p-2 hover:bg-slate-800/50 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+          >
+            <ChevronLeft size={20} className="text-white" />
+          </button>
+          
+          <div className="text-center">
+            <h2 className="text-xl sm:text-2xl font-bold text-white">
+              {view === 'month' ? currentMonth : view === 'week' ? 'Week' : 'Day'}
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              {view === 'month' ? `${totalEvents} events` : 
-               view === 'week' ? `${getWeekDays(currentDate).map(day => getEventsForDate(day)).flat().length} events` :
-               `${selectedDayEvents.length} events`}
+            <p className="text-sm text-slate-400">
+              {currentYear}
             </p>
           </div>
+          
+          <button
+            onClick={view === 'month' ? handleNextMonth : view === 'week' ? handleNextWeek : handleNextDay}
+            className="p-2 hover:bg-slate-800/50 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+          >
+            <ChevronRight size={20} className="text-white" />
+          </button>
         </div>
-        
-        <div className="flex items-center space-x-4">
-          <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-            <button
-              onClick={() => setView('month')}
-              className={`flex items-center space-x-1 px-3 py-1 rounded-md text-sm transition-colors ${
-                view === 'month' 
-                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' 
-                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              <Grid3X3 size={16} />
-              <span>Month</span>
-            </button>
-            <button
-              onClick={() => setView('week')}
-              className={`flex items-center space-x-1 px-3 py-1 rounded-md text-sm transition-colors ${
-                view === 'week' 
-                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' 
-                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              <CalendarIcon size={16} />
-              <span>Week</span>
-            </button>
-            <button
-              onClick={() => setView('day')}
-              className={`flex items-center space-x-1 px-3 py-1 rounded-md text-sm transition-colors ${
-                view === 'day' 
-                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' 
-                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              <Clock size={16} />
-              <span>Day</span>
-            </button>
-          </div>
+
+        {/* View Switcher - Mobile Optimized */}
+        <div className="flex bg-slate-800/60 backdrop-blur-sm rounded-2xl p-1.5 shadow-xl">
+          <button
+            onClick={() => setView('month')}
+            className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all min-h-[44px] ${
+              view === 'month' 
+                ? 'bg-indigo-600 text-white shadow-lg' 
+                : 'text-slate-300 hover:text-white'
+            }`}
+          >
+            <Grid3X3 size={16} />
+            <span className="hidden sm:inline">Month</span>
+          </button>
+          <button
+            onClick={() => setView('week')}
+            className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all min-h-[44px] ${
+              view === 'week' 
+                ? 'bg-indigo-600 text-white shadow-lg' 
+                : 'text-slate-300 hover:text-white'
+            }`}
+          >
+            <CalendarIcon size={16} />
+            <span className="hidden sm:inline">Week</span>
+          </button>
+          <button
+            onClick={() => setView('day')}
+            className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all min-h-[44px] ${
+              view === 'day' 
+                ? 'bg-indigo-600 text-white shadow-lg' 
+                : 'text-slate-300 hover:text-white'
+            }`}
+          >
+            <Clock size={16} />
+            <span className="hidden sm:inline">Day</span>
+          </button>
         </div>
       </div>
 
@@ -540,16 +596,16 @@ const CalendarTab = () => {
 
       {/* Main Content Area */}
       {!loading && (
-        <div className="flex-1 flex gap-6">
+        <div className="flex-1 flex flex-col lg:flex-row gap-6">
         {/* Calendar Content */}
         <div className="flex-1">
 
           {/* Calendar Content */}
           {view === 'month' ? (
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="grid grid-cols-7 border-b border-gray-200 dark:border-gray-700">
+        <div className="bg-slate-800/40 backdrop-blur-sm rounded-2xl border border-slate-700/50 overflow-hidden shadow-xl">
+          <div className="grid grid-cols-7 border-b border-slate-700/50 bg-slate-900/50">
             {dayNames.map(day => (
-              <div key={day} className="p-4 text-center text-sm font-medium text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700 last:border-r-0">
+              <div key={day} className="p-2 sm:p-4 text-center text-xs sm:text-sm font-medium text-slate-400 border-r border-slate-700/50 last:border-r-0">
                 {day}
               </div>
             ))}
@@ -564,106 +620,39 @@ const CalendarTab = () => {
               return (
                 <div
                   key={index}
-                  className={`min-h-[120px] p-2 border-r border-b border-gray-200 dark:border-gray-700 last:border-r-0 cursor-pointer ${
-                    !isCurrentMonth ? 'bg-gray-50 dark:bg-gray-800 text-gray-400' : ''
-                  } ${isToday ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                  className={`min-h-[80px] sm:min-h-[120px] p-1 sm:p-2 border-r border-b border-slate-700/50 last:border-r-0 cursor-pointer ${
+                    !isCurrentMonth ? 'bg-slate-900/30 text-slate-600' : ''
+                  } ${isToday ? 'bg-indigo-600/20 ring-1 ring-indigo-500' : ''} hover:bg-slate-700/30 transition-colors`}
                   onClick={() => day && handleDayClick(day)}
                 >
                   {day && (
                     <>
-                      <div className={`text-sm font-medium mb-2 ${
-                        isToday ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'
+                      <div className={`text-xs sm:text-sm font-semibold mb-1 ${
+                        isToday ? 'text-indigo-400' : 'text-white'
                       }`}>
                         {day.getDate()}
                       </div>
-                      <div className="space-y-1">
-                        {dayEvents.map(event => (
+                      <div className="space-y-0.5 sm:space-y-1">
+                        {dayEvents.slice(0, 2).map(event => (
                           <div
                             key={event.id}
-                            className="p-2 rounded text-xs cursor-pointer transition-colors relative group"
+                            className="p-1 sm:p-2 rounded-lg text-[10px] sm:text-xs cursor-pointer transition-colors relative group"
                             style={{
-                              backgroundColor: event.completed ? `${event.color}40` : event.color,
-                              borderLeft: `3px solid ${event.color}`
+                              backgroundColor: event.completed ? `${event.color}60` : `${event.color}`,
                             }}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <div className="flex items-center space-x-1">
-                              {event.source === 'habit' && (
-                                <Target size={10} className="text-white/80" />
-                              )}
-                              <div className={`font-medium truncate ${
-                                event.completed 
-                                  ? 'text-white line-through' 
-                                  : 'text-white'
-                              }`}>
-                                {event.title}
-                              </div>
+                            <div className={`font-medium truncate ${event.completed ? 'line-through' : ''} text-white`}>
+                              {event.title}
                             </div>
-                            <div className="text-xs text-white/80">
-                              {event.source === 'habit' ? `+${event.xp_reward} XP` : formatTime(event.startTime, event.endTime)}
-                            </div>
-                            
-                            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (event.isClickable !== false) {
-                                    toggleEventCompletion(event.id);
-                                  }
-                                }}
-                                className={`p-1 rounded text-xs ${
-                                  event.isClickable === false
-                                    ? 'bg-gray-400 cursor-not-allowed text-white'
-                                    : event.completed 
-                                      ? 'bg-yellow-500 hover:bg-yellow-600 text-white' 
-                                      : 'bg-green-500 hover:bg-green-600 text-white'
-                                }`}
-                                title={
-                                  event.isClickable === false
-                                    ? 'Cannot complete - too far in the past'
-                                    : event.completed 
-                                      ? 'Click to uncomplete' 
-                                      : 'Click to complete'
-                                }
-                                disabled={event.isClickable === false}
-                              >
-                                <CheckCircle size={12} />
-                              </button>
-                              {event.source !== 'habit' && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    deleteEvent(event.id);
-                                  }}
-                                  className="p-1 rounded bg-red-500 hover:bg-red-600 text-white text-xs"
-                                  title="Delete event"
-                                >
-                                  <Trash2 size={12} />
-                                </button>
-                              )}
+                            <div className="text-[9px] sm:text-xs text-white/80">
+                              +{event.xp_reward} XP
                             </div>
                           </div>
                         ))}
-                        
-                        {/* Add habit completion for today */}
-                        {day && day.toDateString() === new Date().toDateString() && (
-                          <div className="mt-2">
-                            {habits.filter(habit => {
-                              const today = new Date().toISOString().split('T')[0];
-                              return !habit.completed_dates.includes(today);
-                            }).map(habit => (
-                              <button
-                                key={habit.id}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  addHabitCompletion(habit.id, day.toISOString().split('T')[0]);
-                                }}
-                                className="w-full p-1 rounded text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center space-x-1"
-                              >
-                                <Target size={10} />
-                                <span>+ {habit.title}</span>
-                              </button>
-                            ))}
+                        {dayEvents.length > 2 && (
+                          <div className="text-[9px] sm:text-xs text-slate-400 text-center">
+                            +{dayEvents.length - 2} more
                           </div>
                         )}
                       </div>
@@ -809,9 +798,11 @@ const CalendarTab = () => {
               </button>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">Today</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                {isSelectedToday ? 'Today' : selectedDay.toLocaleDateString('en-US', { weekday: 'long' })}
+              </div>
               <div className="text-sm text-gray-500 dark:text-gray-400">
-                {selectedDay.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+                {selectedDay.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
               </div>
             </div>
             <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
@@ -876,9 +867,14 @@ const CalendarTab = () => {
 
                 const getLastUpdated = (event) => {
                   if (event.completed) {
-                        return `Completed: ${new Date(event.completed_at || new Date()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-                      }
-                      return `Last Updated: ${new Date(event.updated_at || new Date()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+                    return `Completed: ${new Date(event.completed_at || new Date()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+                  }
+
+                  if (event.last_completed_at) {
+                    return `Last completed: ${new Date(event.last_completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+                  }
+
+                  return 'Not completed yet';
                 };
 
                 return (
@@ -892,6 +888,20 @@ const CalendarTab = () => {
                           {getEventIcon(event)}
                         </div>
                         <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <span
+                              className="inline-flex h-2.5 w-2.5 rounded-full"
+                              style={{ backgroundColor: event.color }}
+                            />
+                            <span className={`text-xs font-medium ${event.completed ? 'text-emerald-400' : 'text-slate-400'}`}>
+                              {event.completed ? 'Completed' : 'Pending'}
+                            </span>
+                            {event.source === 'habit' && (
+                              <span className="text-xs font-semibold text-yellow-400">
+                                +{event.xp_reward} XP
+                              </span>
+                            )}
+                          </div>
                           <h3 className={`font-semibold text-lg ${
                             event.completed 
                               ? 'text-gray-500 dark:text-gray-400 line-through' 
@@ -900,7 +910,7 @@ const CalendarTab = () => {
                             {event.title}
                           </h3>
                           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            {event.description || (event.source === 'habit' ? `Earn ${event.xp_reward} XP` : 'Complete this activity')}
+                            {event.description || 'Complete this activity'}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
                             {getLastUpdated(event)}
@@ -914,41 +924,19 @@ const CalendarTab = () => {
                             e.stopPropagation();
                             toggleEventCompletion(event.id);
                           }}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors border ${
                             event.completed 
-                              ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600' 
-                              : 'bg-green-500 hover:bg-green-600 text-white'
+                              ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-600/30' 
+                              : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500/60'
                           }`}
                         >
-                          {event.completed ? 'Completed' : 'Start'}
+                          {event.completed ? '✓ Done' : 'Complete'}
                         </button>
                       </div>
                     </div>
                   </div>
                 );
               })
-            )}
-            
-            {/* Add habit completion for today */}
-            {selectedDay.toDateString() === new Date().toDateString() && (
-              <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Complete habits for today:</div>
-                <div className="space-y-2">
-                  {habits.filter(habit => {
-                    const today = new Date().toISOString().split('T')[0];
-                    return !habit.completed_dates.includes(today);
-                  }).map(habit => (
-                    <button
-                      key={habit.id}
-                      onClick={() => addHabitCompletion(habit.id, selectedDay.toISOString().split('T')[0])}
-                      className="w-full p-3 rounded-lg text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors flex items-center space-x-2"
-                    >
-                      <Target size={16} />
-                      <span>+ {habit.title}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
             )}
           </div>
         </div>
@@ -1096,10 +1084,30 @@ const CalendarTab = () => {
                   <p className="text-gray-600 dark:text-gray-300 mb-4">
                     <span className="font-medium">{completionPopup.habit}</span> completed on {completionPopup.date}
                   </p>
-                  <div className="bg-yellow-100 dark:bg-yellow-900 rounded-lg p-3 mb-4">
-                    <p className="text-yellow-800 dark:text-yellow-200 font-medium">
-                      +{completionPopup.xp} XP Earned!
-                    </p>
+                  <div className="space-y-2 mb-4">
+                    <div className="bg-yellow-100 dark:bg-yellow-900 rounded-lg p-3">
+                      <div className="flex items-center justify-center space-x-2">
+                        <Star className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                        <p className="text-yellow-800 dark:text-yellow-200 font-semibold text-lg">
+                          +{completionPopup.xp} XP Earned!
+                        </p>
+                      </div>
+                    </div>
+                    {completionPopup.statsPoints > 0 && (
+                      <div className="bg-violet-100 dark:bg-violet-900 rounded-lg p-3">
+                        <div className="flex items-center justify-center space-x-2">
+                          <Brain className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                          <p className="text-violet-800 dark:text-violet-200 font-semibold text-lg">
+                            +{completionPopup.statsPoints} Stats Points
+                          </p>
+                        </div>
+                        {completionPopup.skillTags && completionPopup.skillTags.length > 0 && (
+                          <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">
+                            Applied to {completionPopup.skillTags.length} skill{completionPopup.skillTags.length !== 1 ? 's' : ''}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </>
               ) : (

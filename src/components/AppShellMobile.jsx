@@ -1,0 +1,313 @@
+import React, { useState } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { 
+  Grid3X3, 
+  Calendar, 
+  Clock, 
+  User, 
+  Settings, 
+  Sun, 
+  Moon,
+  Upload,
+  Plus,
+  Square,
+  ArrowLeft,
+  ArrowRight,
+  Type,
+  Users,
+  Target,
+  Menu,
+  X,
+  Home,
+  LogOut
+} from 'lucide-react';
+
+const AppShellMobile = () => {
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { profile, signOut } = useAuth();
+
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+  };
+
+  const sidebarItems = [
+    { icon: Grid3X3, label: 'Dashboard', path: '/dashboard' },
+    { icon: Target, label: 'Mastery', path: '/mastery' },
+    { icon: User, label: 'Profile', path: '/profile' },
+    { icon: Users, label: 'Community', path: '/community' },
+    { icon: Settings, label: 'Settings', path: '/settings' }
+  ];
+
+  const bottomNavItems = [
+    { icon: Home, label: 'Home', path: '/dashboard' },
+    { icon: Target, label: 'Mastery', path: '/mastery' },
+    { icon: Users, label: 'Community', path: '/community' },
+    { icon: User, label: 'Profile', path: '/profile' }
+  ];
+
+  const handleNavigation = (path) => {
+    navigate(path);
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
+
+  return (
+    <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`}>
+      {/* Background - User's custom background or default */}
+      <div 
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: profile?.background_image 
+            ? `url(${profile.background_image})` 
+            : `url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><filter id="blur"><feGaussianBlur stdDeviation="8"/></filter></defs><rect width="1200" height="800" fill="%23f5f3f0"/><rect x="0" y="0" width="400" height="800" fill="%23e8e4d8"/><rect x="400" y="200" width="200" height="400" fill="%23d4c4a8"/><rect x="600" y="100" width="300" height="600" fill="%23c9b99a"/><rect x="900" y="0" width="300" height="800" fill="%23b8a082"/></svg>')`
+        }}
+      >
+        <div className="absolute inset-0 backdrop-blur-sm"></div>
+      </div>
+
+      {/* Mobile Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 safe-area-top">
+        <div className="glass-header-browser flex items-center justify-between">
+          {/* Left side - Menu button */}
+          <button 
+            className="glass-icon-btn lg:hidden"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+
+          {/* Desktop left navigation */}
+          <div className="hidden lg:flex items-center space-x-2">
+            <button className="glass-icon-btn">
+              <Grid3X3 size={16} />
+            </button>
+            <button className="glass-icon-btn">
+              <ArrowLeft size={16} />
+            </button>
+            <button className="glass-icon-btn">
+              <ArrowRight size={16} />
+            </button>
+            <button className="glass-icon-btn">
+              <Type size={16} />
+            </button>
+          </div>
+
+          {/* Center - Logo/Title */}
+          <div className="flex items-center">
+            <h1 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+              HC University
+            </h1>
+          </div>
+
+          {/* Right side actions */}
+          <div className="flex items-center space-x-2">
+            <button 
+              onClick={toggleTheme}
+              className="glass-icon-btn"
+              title={isDarkMode ? 'Light mode' : 'Dark mode'}
+            >
+              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <button className="glass-icon-btn hidden sm:flex">
+              <Upload size={16} />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Desktop Sidebar - Only show on large screens */}
+      <aside className="hidden lg:block fixed left-4 top-20 bottom-4 z-40 w-24">
+        <div className="glass-sidebar-panel">
+          {/* Top section - Toggle and active indicator */}
+          <div className="flex flex-col items-center pt-6 pb-4">
+            {/* Toggle button */}
+            <div className="glass-toggle-btn mb-4">
+              <div className="w-4 h-3 bg-orange-400 rounded-sm"></div>
+              <div className="flex space-x-1 mt-1">
+                <div className="w-1 h-1 bg-orange-400 rounded-full"></div>
+                <div className="w-1 h-1 bg-orange-400 rounded-full"></div>
+              </div>
+            </div>
+            
+            {/* Active dashboard icon */}
+            <button className="glass-nav-btn-active mb-6">
+              <Grid3X3 size={20} />
+            </button>
+          </div>
+
+          {/* Navigation items */}
+          <nav className="flex-1 flex flex-col items-center space-y-4">
+            {sidebarItems.slice(1).map((item, index) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+              
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleNavigation(item.path)}
+                  className={`glass-nav-btn ${isActive ? 'glass-nav-btn-active' : ''}`}
+                  title={item.label}
+                >
+                  <Icon size={20} />
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Theme toggle - Circular switch */}
+          <div className="flex flex-col items-center pb-6">
+            <div className="glass-theme-toggle">
+              <button 
+                onClick={toggleTheme}
+                className={`glass-theme-btn ${!isDarkMode ? 'glass-theme-btn-active' : ''}`}
+                title="Light mode"
+              >
+                <Sun size={14} />
+              </button>
+              <button 
+                onClick={toggleTheme}
+                className={`glass-theme-btn ${isDarkMode ? 'glass-theme-btn-active' : ''}`}
+                title="Dark mode"
+              >
+                <Moon size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Mobile Slide-out Menu */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 z-50 lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div 
+            className="absolute top-0 left-0 bottom-0 w-80 max-w-[80vw] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Menu Header */}
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Menu</h2>
+                <button 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              
+              {/* User info */}
+              {profile && (
+                <div className="flex items-center space-x-3 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                  {profile.avatar_url ? (
+                    <img 
+                      src={profile.avatar_url} 
+                      alt={profile.full_name}
+                      className="w-10 h-10 rounded-full"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-400 flex items-center justify-center">
+                      <User size={20} className="text-white" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-white text-sm">
+                      {profile.full_name || 'User'}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Level {profile.level || 1}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Menu Items */}
+            <nav className="p-4 space-y-2">
+              {sidebarItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+                
+                return (
+                  <button
+                    key={item.path}
+                    onClick={() => handleNavigation(item.path)}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      isActive
+                        ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    <Icon size={20} />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* Menu Footer */}
+            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-slate-900/95">
+              <button
+                onClick={handleSignOut}
+                className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
+              >
+                <LogOut size={20} />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content Area */}
+      <main className="fixed lg:left-32 left-0 top-[52px] lg:top-20 right-0 bottom-[70px] lg:bottom-4 z-30 lg:right-4"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="glass-main-panel h-full overflow-auto">
+          <Outlet />
+        </div>
+      </main>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden safe-area-bottom mobile-bottom-nav">
+        <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-gray-200 dark:border-gray-700 shadow-lg">
+          <div className="flex items-center justify-around px-2 py-2">
+            {bottomNavItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path || 
+                               (item.path === '/mastery' && location.pathname.startsWith('/mastery'));
+              
+              return (
+                <button
+                  key={item.path}
+                  onClick={() => handleNavigation(item.path)}
+                  className={`mobile-nav-item flex flex-col items-center justify-center px-3 py-2 rounded-xl min-w-[60px] transition-all duration-200 ${
+                    isActive
+                      ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20'
+                      : 'text-gray-600 dark:text-gray-400'
+                  }`}
+                >
+                  <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                  <span className="text-[10px] mt-1 font-medium">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </nav>
+    </div>
+  );
+};
+
+export default AppShellMobile;
+

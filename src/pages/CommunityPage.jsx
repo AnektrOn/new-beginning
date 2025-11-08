@@ -222,40 +222,41 @@ const CommunityPage = () => {
   return (
     <div className="h-full w-full">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
+      <div className="community-header flex justify-between items-center mb-4 sm:mb-6 lg:mb-8">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
             Community
           </h1>
-          <p className="text-slate-300 text-sm mt-1">Connect, learn, and grow together</p>
+          <p className="text-slate-300 text-xs sm:text-sm mt-1">Connect, learn, and grow together</p>
         </div>
-        <div className="flex space-x-3">
+        <div className="flex-shrink-0">
           <button 
             onClick={() => setShowCreatePost(true)}
-            className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-emerald-500/25 flex items-center space-x-2"
+            className="px-3 py-2 sm:px-4 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-emerald-500/25 flex items-center space-x-1 sm:space-x-2"
           >
             <Plus className="w-4 h-4" />
-            <span>Create Post</span>
+            <span className="hidden sm:inline">Create Post</span>
+            <span className="sm:hidden">New</span>
           </button>
         </div>
       </div>
 
       {/* Search and Filter Bar */}
-      <div className="flex items-center space-x-4 mb-8">
+      <div className="community-search-filter flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6 lg:mb-8">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4 sm:w-5 sm:h-5" />
           <input
             type="text"
             placeholder="Search posts, users, or topics..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50"
+            className="w-full pl-9 sm:pl-10 pr-4 py-2.5 sm:py-3 bg-slate-800/50 border border-slate-600/50 rounded-xl text-white text-sm sm:text-base placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50"
           />
         </div>
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
-          className="px-4 py-3 bg-slate-800/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+          className="w-full sm:w-auto px-3 sm:px-4 py-2.5 sm:py-3 bg-slate-800/50 border border-slate-600/50 rounded-xl text-white text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
         >
           <option value="all">All Posts</option>
           <option value="text">Text Posts</option>
@@ -264,11 +265,31 @@ const CommunityPage = () => {
         </select>
       </div>
 
+      {/* Mobile Tab Navigation - Show only on mobile */}
+      <div className="xl:hidden mb-6 bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-2 border border-slate-600/50 shadow-xl">
+        <div className="flex space-x-2 overflow-x-auto hide-scrollbar">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                activeTab === tab.id
+                  ? 'bg-gradient-to-r from-violet-600 to-violet-700 text-white shadow-lg'
+                  : 'text-slate-300'
+              }`}
+            >
+              <tab.icon className="w-4 h-4" />
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Main Content */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
         
-        {/* Left Sidebar - Navigation */}
-        <div className="xl:col-span-1">
+        {/* Left Sidebar - Navigation - Hidden on mobile */}
+        <div className="community-left-sidebar hidden xl:block xl:col-span-1">
           <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-6 border border-slate-600/50 shadow-xl">
             <h3 className="text-lg font-semibold mb-4 text-white">Navigation</h3>
             <nav className="space-y-2">
@@ -291,31 +312,31 @@ const CommunityPage = () => {
         </div>
 
         {/* Main Content Area */}
-        <div className="xl:col-span-2">
+        <div className="community-main-content xl:col-span-2">
           {activeTab === 'feed' && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400"></div>
                 </div>
               ) : (
                 posts.map((post) => (
-                  <div key={post.id} className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-6 border border-slate-600/50 shadow-xl">
+                  <div key={post.id} className="community-post bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-slate-600/50 shadow-xl">
                     {/* Post Header */}
-                    <div className="flex items-center space-x-3 mb-4">
+                    <div className="community-post-header flex items-start space-x-3 mb-3 sm:mb-4">
                       <img
                         src={post.profiles?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'}
                         alt={post.profiles?.full_name || 'User'}
-                        className="w-12 h-12 rounded-full border-2 border-emerald-400/50"
+                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-emerald-400/50 flex-shrink-0"
                       />
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2">
-                          <h4 className="font-semibold text-white">{post.profiles?.full_name || 'User'}</h4>
-                          <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                          <h4 className="font-semibold text-white text-sm sm:text-base truncate">{post.profiles?.full_name || 'User'}</h4>
+                          <span className="text-[10px] sm:text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 sm:py-1 rounded-full inline-block w-fit mt-1 sm:mt-0">
                             Level {post.profiles?.level || 1}
                           </span>
                         </div>
-                        <p className="text-sm text-slate-400">{new Date(post.created_at).toLocaleDateString()}</p>
+                        <p className="text-xs sm:text-sm text-slate-400">{new Date(post.created_at).toLocaleDateString()}</p>
                       </div>
                       <button className="text-slate-400 hover:text-white">
                         <MoreHorizontal className="w-5 h-5" />
@@ -324,18 +345,18 @@ const CommunityPage = () => {
 
                     {/* Post Title */}
                     {post.title && (
-                      <h3 className="text-lg font-semibold text-white mb-2">{post.title}</h3>
+                      <h3 className="text-base sm:text-lg font-semibold text-white mb-2">{post.title}</h3>
                     )}
 
                     {/* Post Content */}
-                    <div className="mb-4">
-                      <p className="text-slate-200 leading-relaxed">{post.content}</p>
+                    <div className="mb-3 sm:mb-4">
+                      <p className="text-sm sm:text-base text-slate-200 leading-relaxed">{post.content}</p>
                       {post.tags && post.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-3">
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 sm:mt-3">
                           {post.tags.map((tag, index) => (
                             <span
                               key={index}
-                              className="text-xs bg-slate-700/50 text-slate-300 px-2 py-1 rounded-full"
+                              className="text-[10px] sm:text-xs bg-slate-700/50 text-slate-300 px-2 py-0.5 sm:py-1 rounded-full"
                             >
                               #{tag}
                             </span>
@@ -345,30 +366,30 @@ const CommunityPage = () => {
                     </div>
 
                     {/* Post Actions */}
-                    <div className="flex items-center justify-between pt-4 border-t border-slate-600/50">
-                      <div className="flex items-center space-x-6">
+                    <div className="community-post-actions flex flex-col sm:flex-row items-stretch sm:items-center justify-between pt-3 sm:pt-4 border-t border-slate-600/50 gap-3 sm:gap-0">
+                      <div className="flex items-center space-x-4 sm:space-x-6 justify-around sm:justify-start">
                         <button
                           onClick={() => handleLike(post.id)}
-                          className={`flex items-center space-x-2 transition-colors ${
+                          className={`flex items-center space-x-1.5 sm:space-x-2 transition-colors min-w-0 ${
                             post.isLiked ? 'text-red-400' : 'text-slate-400 hover:text-red-400'
                           }`}
                         >
-                          <Heart className={`w-5 h-5 ${post.isLiked ? 'fill-current' : ''}`} />
-                          <span className="text-sm">{post.likes_count || 0}</span>
+                          <Heart className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${post.isLiked ? 'fill-current' : ''}`} />
+                          <span className="text-xs sm:text-sm">{post.likes_count || 0}</span>
                         </button>
-                        <button className="flex items-center space-x-2 text-slate-400 hover:text-blue-400 transition-colors">
-                          <Reply className="w-5 h-5" />
-                          <span className="text-sm">{post.comments_count || 0}</span>
+                        <button className="flex items-center space-x-1.5 sm:space-x-2 text-slate-400 hover:text-blue-400 transition-colors min-w-0">
+                          <Reply className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                          <span className="text-xs sm:text-sm">{post.comments_count || 0}</span>
                         </button>
                         <button
                           onClick={() => handleShare(post.id)}
-                          className="flex items-center space-x-2 text-slate-400 hover:text-green-400 transition-colors"
+                          className="flex items-center space-x-1.5 sm:space-x-2 text-slate-400 hover:text-green-400 transition-colors min-w-0"
                         >
-                          <Share2 className="w-5 h-5" />
-                          <span className="text-sm">{post.shares_count || 0}</span>
+                          <Share2 className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                          <span className="text-xs sm:text-sm">{post.shares_count || 0}</span>
                         </button>
                       </div>
-                      <div className="flex items-center space-x-2 text-slate-400">
+                      <div className="hidden sm:flex items-center space-x-2 text-slate-400">
                         <Eye className="w-4 h-4" />
                         <span className="text-sm">1.2k views</span>
                       </div>
@@ -579,8 +600,8 @@ const CommunityPage = () => {
           )}
         </div>
 
-        {/* Right Sidebar - Quick Stats */}
-        <div className="xl:col-span-1">
+        {/* Right Sidebar - Quick Stats - Hidden on mobile */}
+        <div className="community-right-sidebar hidden xl:block xl:col-span-1">
           <div className="space-y-6">
             {/* Your Stats */}
             <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-6 border border-slate-600/50 shadow-xl">
