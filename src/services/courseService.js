@@ -1,0 +1,739 @@
+import { supabase } from '../lib/supabaseClient';
+
+class CourseService {
+  // ===== COURSE METADATA =====
+  
+  /**
+   * Get all published courses with optional filters
+   * Only returns courses from unlocked schools
+   * @param {Object} filters - Optional filters (school, difficulty, status, userId)
+   * @param {string} filters.userId - User ID to check school unlock status
+   * @returns {Promise<{data: Array, error: Error|null}>}
+   */
+  async getAllCourses(filters = {}) {
+    try {
+      let query = supabase
+        .from('course_metadata')
+        .select('*')
+        .eq('status', 'published')
+        .order('masterschool', { ascending: true })
+        .order('xp_threshold', { ascending: true });
+
+      if (filters.masterschool) {
+        query = query.eq('masterschool', filters.masterschool);
+      }
+
+      // Filter by unlocked schools if userId is provided
+      if (filters.userId) {
+        // Get user's XP and unlocked schools
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('current_xp')
+          .eq('id', filters.userId)
+          .single();
+
+        const userXp = profile?.current_xp || 0;
+
+        // Get unlocked school names
+        const { data: schools } = await supabase
+          .from('schools')
+          .select('name')
+          .lte('unlock_xp', userXp);
+
+        const unlockedSchoolNames = schools?.map(s => s.name) || ['Ignition'];
+
+        // Filter courses to only show unlocked schools
+        query = query.in('masterschool', unlockedSchoolNames);
+      }
+
+      if (filters.difficulty_level) {
+        query = query.eq('difficulty_level', filters.difficulty_level);
+      }
+
+      if (filters.topic) {
+        query = query.ilike('topic', `%${filters.topic}%`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Get courses grouped by masterschool
+   * @returns {Promise<{data: Object, error: Error|null}>}
+   */
+  async getCoursesBySchool() {
+    try {
+      const { data, error } = await this.getAllCourses();
+      
+      if (error) throw error;
+
+      // Group courses by masterschool (normalize to capitalize first letter)
+      const grouped = {};
+      if (data) {
+        data.forEach(course => {
+          // Normalize masterschool name: capitalize first letter
+          let school = course.masterschool || 'Other';
+          
+          // Handle special case "God Mode" (two words)
+          if (school.toLowerCase() === 'god mode' || school.toLowerCase() === 'godmode') {
+            school = 'God Mode';
+          } else if (school) {
+            // Capitalize first letter, lowercase rest
+            school = school.charAt(0).toUpperCase() + school.slice(1).toLowerCase();
+          }
+          
+          if (!grouped[school]) {
+            grouped[school] = [];
+          }
+          grouped[school].push(course);
+        });
+      }
+
+      return { data: grouped, error: null };
+    } catch (error) {
+      console.error('Error grouping courses by school:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Get a single course by UUID or course_id
+   * @param {string|number} courseId - UUID or course_id (integer) of the course
+   * @returns {Promise<{data: Object, error: Error|null}>}
+   */
+  async getCourseById(courseId) {
+    try {
+      // Try UUID first, then course_id
+      let query = supabase
+        .from('course_metadata')
+        .select('*');
+
+      // Check if it's a UUID or integer
+      if (typeof courseId === 'string' && courseId.includes('-')) {
+        query = query.eq('id', courseId);
+      } else {
+        query = query.eq('course_id', parseInt(courseId));
+      }
+
+      const { data, error } = await query.single();
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error('Error fetching course:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Get course structure (denormalized)
+   * @param {number} courseId - course_id (integer) from course_metadata
+   * @returns {Promise<{data: Object, error: Error|null}>}
+   */
+  async getCourseStructure(courseId) {
+    try {
+      const { data, error } = await supabase
+        .from('course_structure')
+        .select('*')
+        .eq('course_id', parseInt(courseId))
+        .single();
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error('Error fetching course structure:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Parse denormalized course structure into normalized format
+   * @param {Object} structure - The course_structure row
+   * @returns {Array} Array of chapters with lessons
+   */
+  parseCourseStructure(structure) {
+    if (!structure) return [];
+
+    const chapters = [];
+    const chapterCount = structure.chapter_count || 0;
+
+    for (let i = 1; i <= Math.min(chapterCount, 5); i++) {
+      const chapterTitle = structure[`chapter_title_${i}`];
+      const chapterId = structure[`chapter_id_${i}`];
+
+      if (!chapterTitle) continue;
+
+      const lessons = [];
+      for (let j = 1; j <= 4; j++) {
+        const lessonTitle = structure[`lesson_${i}_${j}`];
+        if (lessonTitle) {
+          lessons.push({
+            chapter_number: i,
+            lesson_number: j,
+            lesson_title: lessonTitle,
+            lesson_id: `${i}_${j}`, // Composite ID for reference
+            chapter_id: chapterId
+          });
+        }
+      }
+
+      if (lessons.length > 0) {
+        chapters.push({
+          chapter_number: i,
+          chapter_title: chapterTitle,
+          chapter_id: chapterId,
+          lessons: lessons
+        });
+      }
+    }
+
+    return chapters;
+  }
+
+  /**
+   * Get full course structure (metadata + parsed structure)
+   * @param {string|number} courseId - UUID or course_id
+   * @returns {Promise<{data: Object, error: Error|null}>}
+   */
+  async getFullCourseStructure(courseId) {
+    try {
+      // Get course metadata
+      const { data: course, error: courseError } = await this.getCourseById(courseId);
+      if (courseError) throw courseError;
+
+      if (!course || !course.course_id) {
+        return { data: { ...course, chapters: [] }, error: null };
+      }
+
+      // Get course structure
+      const { data: structure, error: structureError } = await this.getCourseStructure(course.course_id);
+      if (structureError) {
+        // Structure might not exist yet, return course with empty chapters
+        return { data: { ...course, chapters: [] }, error: null };
+      }
+
+      // Parse structure into chapters
+      const chapters = this.parseCourseStructure(structure);
+
+      return {
+        data: {
+          ...course,
+          chapters: chapters,
+          structure: structure
+        },
+        error: null
+      };
+    } catch (error) {
+      console.error('Error fetching full course structure:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Get lesson content
+   * @param {number} courseId - course_id (integer)
+   * @param {number} chapterNumber - Chapter number (1-5)
+   * @param {number} lessonNumber - Lesson number (1-4)
+   * @returns {Promise<{data: Object, error: Error|null}>}
+   */
+  async getLessonContent(courseId, chapterNumber, lessonNumber) {
+    try {
+      const { data, error } = await supabase
+        .from('course_content')
+        .select('*')
+        .eq('course_id', parseInt(courseId))
+        .eq('chapter_number', chapterNumber)
+        .eq('lesson_number', lessonNumber)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error; // PGRST116 = not found
+      return { data: data || null, error: null };
+    } catch (error) {
+      console.error('Error fetching lesson content:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Get course descriptions (denormalized)
+   * @param {number} courseId - course_id (integer) from course_metadata
+   * @returns {Promise<{data: Object, error: Error|null}>}
+   */
+  async getCourseDescriptions(courseId) {
+    try {
+      const { data, error } = await supabase
+        .from('course_description')
+        .select('*')
+        .eq('course_id', parseInt(courseId))
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return { data: data || null, error: null };
+    } catch (error) {
+      console.error('Error fetching course descriptions:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Parse denormalized course descriptions into normalized format
+   * @param {Object} descriptions - The course_description row
+   * @returns {Object} Object with chapter and lesson descriptions
+   */
+  parseCourseDescriptions(descriptions) {
+    if (!descriptions) return { chapters: {}, lessons: {} };
+
+    const chapterDescriptions = {};
+    const lessonDescriptions = {};
+
+    for (let i = 1; i <= 5; i++) {
+      const chapterDesc = descriptions[`chapter_${i}_description`];
+      if (chapterDesc) {
+        chapterDescriptions[i] = chapterDesc;
+      }
+
+      for (let j = 1; j <= 4; j++) {
+        const lessonDesc = descriptions[`lesson_${i}_${j}_description`];
+        if (lessonDesc) {
+          if (!lessonDescriptions[i]) {
+            lessonDescriptions[i] = {};
+          }
+          lessonDescriptions[i][j] = lessonDesc;
+        }
+      }
+    }
+
+    return {
+      chapters: chapterDescriptions,
+      lessons: lessonDescriptions
+    };
+  }
+
+  /**
+   * Get lesson description
+   * @param {string|number} courseId - UUID or course_id
+   * @param {number} chapterNumber - Chapter number
+   * @param {number} lessonNumber - Lesson number
+   * @returns {Promise<{data: Object, error: Error|null}>}
+   */
+  async getLessonDescription(courseId, chapterNumber, lessonNumber) {
+    try {
+      // First get the course to find the course_id
+      const { data: course, error: courseError } = await this.getCourseById(courseId);
+      if (courseError) throw courseError;
+
+      if (!course?.course_id) {
+        return { data: null, error: null };
+      }
+
+      // Get course descriptions
+      const { data: descriptions, error: descError } = await this.getCourseDescriptions(course.course_id);
+      if (descError) throw descError;
+
+      if (!descriptions) {
+        return { data: null, error: null };
+      }
+
+      // Extract specific chapter and lesson descriptions
+      const chapterDescription = descriptions[`chapter_${chapterNumber}_description`] || null;
+      const lessonDescription = descriptions[`lesson_${chapterNumber}_${lessonNumber}_description`] || null;
+
+      return {
+        data: {
+          chapter_description: chapterDescription,
+          lesson_description: lessonDescription
+        },
+        error: null
+      };
+    } catch (error) {
+      console.error('Error fetching lesson description:', error);
+      return { data: null, error };
+    }
+  }
+
+  // ===== USER PROGRESS =====
+
+  /**
+   * Get user's course progress
+   * @param {string} userId - UUID of the user
+   * @param {number} courseId - course_id (integer) from course_metadata
+   * @returns {Promise<{data: Object, error: Error|null}>}
+   */
+  async getUserCourseProgress(userId, courseId) {
+    try {
+      const { data, error } = await supabase
+        .from('user_course_progress')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('course_id', parseInt(courseId))
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error; // PGRST116 = not found, which is OK
+      return { data: data || null, error: null };
+    } catch (error) {
+      console.error('Error fetching user course progress:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Get all courses user has started
+   * @param {string} userId - UUID of the user
+   * @returns {Promise<{data: Array, error: Error|null}>}
+   */
+  async getUserCourses(userId) {
+    try {
+      const { data, error } = await supabase
+        .from('user_course_progress')
+        .select(`
+          *,
+          course_metadata!inner (
+            id,
+            course_title,
+            school_name,
+            masterschool,
+            difficulty_level,
+            xp_threshold
+          )
+        `)
+        .eq('user_id', userId)
+        .order('last_accessed_at', { ascending: false });
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error('Error fetching user courses:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Initialize or update user course progress
+   * @param {string} userId - UUID of the user
+   * @param {number} courseId - course_id (integer) from course_metadata
+   * @param {Object} progressData - Progress data (status, progress_percentage)
+   * @returns {Promise<{data: Object, error: Error|null}>}
+   */
+  async updateCourseProgress(userId, courseId, progressData = {}) {
+    try {
+      // Check if progress exists
+      const { data: existing } = await this.getUserCourseProgress(userId, courseId);
+
+      const progressUpdate = {
+        user_id: userId,
+        course_id: parseInt(courseId),
+        last_accessed_at: new Date().toISOString(),
+        ...progressData
+      };
+
+      let result;
+      if (existing) {
+        // Update existing progress
+        const { data, error } = await supabase
+          .from('user_course_progress')
+          .update(progressUpdate)
+          .eq('id', existing.id)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+      } else {
+        // Create new progress
+        const { data, error } = await supabase
+          .from('user_course_progress')
+          .insert(progressUpdate)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+      }
+
+      return { data: result, error: null };
+    } catch (error) {
+      console.error('Error updating course progress:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Get user's lesson progress
+   * @param {string} userId - UUID of the user
+   * @param {number} courseId - course_id (integer)
+   * @param {number} chapterNumber - Chapter number
+   * @param {number} lessonNumber - Lesson number
+   * @returns {Promise<{data: Object, error: Error|null}>}
+   */
+  async getUserLessonProgress(userId, courseId, chapterNumber, lessonNumber) {
+    try {
+      const { data, error } = await supabase
+        .from('user_lesson_progress')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('course_id', parseInt(courseId))
+        .eq('chapter_number', chapterNumber)
+        .eq('lesson_number', lessonNumber)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return { data: data || null, error: null };
+    } catch (error) {
+      console.error('Error fetching user lesson progress:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Mark lesson as completed and award XP
+   * @param {string} userId - UUID of the user
+   * @param {number} courseId - course_id (integer)
+   * @param {number} chapterNumber - Chapter number
+   * @param {number} lessonNumber - Lesson number
+   * @param {number} xpAmount - XP to award (default 50)
+   * @returns {Promise<{data: Object, error: Error|null}>}
+   */
+  async completeLesson(userId, courseId, chapterNumber, lessonNumber, xpAmount = 50) {
+    try {
+      // Check if already completed
+      const { data: existing } = await this.getUserLessonProgress(userId, courseId, chapterNumber, lessonNumber);
+
+      const progressData = {
+        user_id: userId,
+        course_id: parseInt(courseId),
+        chapter_number: chapterNumber,
+        lesson_number: lessonNumber,
+        is_completed: true,
+        completed_at: new Date().toISOString()
+      };
+
+      let lessonProgress;
+      if (existing) {
+        // Update existing progress
+        const { data, error } = await supabase
+          .from('user_lesson_progress')
+          .update(progressData)
+          .eq('id', existing.id)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        lessonProgress = data;
+      } else {
+        // Create new progress
+        const { data, error } = await supabase
+          .from('user_lesson_progress')
+          .insert(progressData)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        lessonProgress = data;
+      }
+
+      // Award XP using the database function
+      const { data: xpResult, error: xpError } = await supabase.rpc('award_lesson_xp', {
+        user_id: userId,
+        course_id: parseInt(courseId),
+        chapter_number: chapterNumber,
+        lesson_number: lessonNumber,
+        xp_amount: xpAmount
+      });
+
+      if (xpError) {
+        console.warn('Error awarding XP (non-critical):', xpError);
+        // Continue even if XP award fails
+      }
+
+      return { data: { lessonProgress, xpAwarded: xpAmount }, error: null };
+    } catch (error) {
+      console.error('Error completing lesson:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Calculate course progress percentage
+   * @param {string} userId - UUID of the user
+   * @param {number} courseId - course_id (integer)
+   * @returns {Promise<{data: Object, error: Error|null}>}
+   */
+  async calculateCourseProgress(userId, courseId) {
+    try {
+      // Get course structure
+      const { data: structure, error: structureError } = await this.getCourseStructure(courseId);
+      if (structureError) {
+        return { data: { progressPercentage: 0, completedLessons: 0, totalLessons: 0 }, error: null };
+      }
+
+      // Parse structure to get total lessons
+      const chapters = this.parseCourseStructure(structure);
+      let totalLessons = 0;
+      chapters.forEach(chapter => {
+        totalLessons += (chapter.lessons || []).length;
+      });
+
+      if (totalLessons === 0) {
+        return { data: { progressPercentage: 0, completedLessons: 0, totalLessons: 0 }, error: null };
+      }
+
+      // Get completed lessons
+      const { data: completedLessons, error: progressError } = await supabase
+        .from('user_lesson_progress')
+        .select('chapter_number, lesson_number')
+        .eq('user_id', userId)
+        .eq('course_id', parseInt(courseId))
+        .eq('is_completed', true);
+
+      if (progressError) throw progressError;
+
+      const completedCount = (completedLessons || []).length;
+      const progressPercentage = Math.round((completedCount / totalLessons) * 100);
+
+      // Update course progress
+      const status = completedCount === totalLessons ? 'completed' : 
+                     completedCount > 0 ? 'in_progress' : 'not_started';
+
+      await this.updateCourseProgress(userId, courseId, {
+        status,
+        progress_percentage: progressPercentage
+      });
+
+      return {
+        data: {
+          progressPercentage,
+          completedLessons: completedCount,
+          totalLessons,
+          status
+        },
+        error: null
+      };
+    } catch (error) {
+      console.error('Error calculating course progress:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Get next lesson for user in a course
+   * @param {string} userId - UUID of the user
+   * @param {number} courseId - course_id (integer)
+   * @returns {Promise<{data: Object, error: Error|null}>}
+   */
+  async getNextLesson(userId, courseId) {
+    try {
+      // Get course structure
+      const { data: structure, error: structureError } = await this.getCourseStructure(courseId);
+      if (structureError) {
+        return { data: null, error: null };
+      }
+
+      // Get completed lessons
+      const { data: completed, error: completedError } = await supabase
+        .from('user_lesson_progress')
+        .select('chapter_number, lesson_number')
+        .eq('user_id', userId)
+        .eq('course_id', parseInt(courseId))
+        .eq('is_completed', true);
+
+      if (completedError) throw completedError;
+
+      const completedSet = new Set(
+        (completed || []).map(c => `${c.chapter_number}_${c.lesson_number}`)
+      );
+
+      // Parse structure and find first incomplete lesson
+      const chapters = this.parseCourseStructure(structure);
+      for (const chapter of chapters) {
+        for (const lesson of chapter.lessons) {
+          const key = `${lesson.chapter_number}_${lesson.lesson_number}`;
+          if (!completedSet.has(key)) {
+            return {
+              data: {
+                chapter_number: lesson.chapter_number,
+                lesson_number: lesson.lesson_number,
+                lesson_title: lesson.lesson_title,
+                lesson_id: lesson.lesson_id
+              },
+              error: null
+            };
+          }
+        }
+      }
+
+      return { data: null, error: null }; // All lessons completed
+    } catch (error) {
+      console.error('Error getting next lesson:', error);
+      return { data: null, error };
+    }
+  }
+
+  /**
+   * Check if user has enough XP to unlock a course
+   * @param {string} userId - UUID of the user
+   * @param {string|number} courseId - UUID or course_id
+   * @returns {Promise<{data: {isUnlocked: boolean, userXp: number, requiredXp: number}, error: Error|null}>}
+   */
+  async checkCourseUnlock(userId, courseId) {
+    try {
+      // Get user's current XP
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('current_xp')
+        .eq('id', userId)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Get course XP threshold
+      const { data: course, error: courseError } = await this.getCourseById(courseId);
+      if (courseError) throw courseError;
+
+      const userXp = profile?.current_xp || 0;
+      const requiredXp = course?.xp_threshold || 0;
+      
+      // Check if the school itself is unlocked first
+      const { data: school } = await supabase
+        .from('schools')
+        .select('unlock_xp')
+        .eq('name', course?.masterschool)
+        .single();
+
+      const schoolUnlockXp = school?.unlock_xp || 0;
+      const isSchoolUnlocked = userXp >= schoolUnlockXp;
+
+      // Course is unlocked only if:
+      // 1. The school is unlocked AND
+      // 2. Either it's an Ignition course (no XP threshold) OR user has enough XP for the course
+      const isIgnition = course?.masterschool === 'Ignition';
+      const meetsCourseThreshold = isIgnition || userXp >= requiredXp;
+      const isUnlocked = isSchoolUnlocked && meetsCourseThreshold;
+
+      return {
+        data: {
+          isUnlocked,
+          userXp,
+          requiredXp: isIgnition ? 0 : requiredXp // Show 0 for Ignition courses
+        },
+        error: null
+      };
+    } catch (error) {
+      console.error('Error checking course unlock:', error);
+      return { data: null, error };
+    }
+  }
+
+  // ===== COURSE CREATION (TEACHER) =====
+  // Note: Course creation would need to be updated to work with denormalized structure
+  // This is a placeholder for future implementation
+}
+
+const courseService = new CourseService();
+export default courseService;

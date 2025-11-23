@@ -15,6 +15,10 @@ import ProfilePage from './pages/ProfilePage'
 import Mastery from './pages/Mastery'
 import CommunityPage from './pages/CommunityPage'
 import MasteryTestComponent from './components/test/MasteryTestComponent'
+import CourseCatalogPage from './pages/CourseCatalogPage'
+import CourseDetailPage from './pages/CourseDetailPage'
+import CoursePlayerPage from './pages/CoursePlayerPage'
+import CourseCreationPage from './pages/CourseCreationPage'
 
 // Import glassmorphism and mobile styles
 import './styles/glassmorphism.css'
@@ -132,6 +136,17 @@ const AppRoutes = () => {
         </ProtectedRoute>
       }>
         <Route index element={<CommunityPage />} />
+      </Route>
+
+      <Route path="/courses" element={
+        <ProtectedRoute>
+          <AppShellMobile />
+        </ProtectedRoute>
+      }>
+        <Route index element={<CourseCatalogPage />} />
+        <Route path="create" element={<CourseCreationPage />} />
+        <Route path=":courseId" element={<CourseDetailPage />} />
+        <Route path=":courseId/chapters/:chapterNumber/lessons/:lessonNumber" element={<CoursePlayerPage />} />
       </Route>
 
       {/* Default redirect */}

@@ -20,7 +20,8 @@ import {
   Menu,
   X,
   Home,
-  LogOut
+  LogOut,
+  BookOpen
 } from 'lucide-react';
 
 const AppShellMobile = () => {
@@ -37,6 +38,7 @@ const AppShellMobile = () => {
   const sidebarItems = [
     { icon: Grid3X3, label: 'Dashboard', path: '/dashboard' },
     { icon: Target, label: 'Mastery', path: '/mastery' },
+    { icon: BookOpen, label: 'Courses', path: '/courses' },
     { icon: User, label: 'Profile', path: '/profile' },
     { icon: Users, label: 'Community', path: '/community' },
     { icon: Settings, label: 'Settings', path: '/settings' }
@@ -45,6 +47,7 @@ const AppShellMobile = () => {
   const bottomNavItems = [
     { icon: Home, label: 'Home', path: '/dashboard' },
     { icon: Target, label: 'Mastery', path: '/mastery' },
+    { icon: BookOpen, label: 'Courses', path: '/courses' },
     { icon: Users, label: 'Community', path: '/community' },
     { icon: User, label: 'Profile', path: '/profile' }
   ];
@@ -147,7 +150,9 @@ const AppShellMobile = () => {
           <nav className="flex-1 flex flex-col items-center space-y-4">
             {sidebarItems.slice(1).map((item, index) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.path;
+              const isActive = location.pathname === item.path || 
+                               (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
+                               (item.path === '/courses' && location.pathname.startsWith('/courses'));
               
               return (
                 <button
@@ -237,7 +242,9 @@ const AppShellMobile = () => {
             <nav className="p-4 space-y-2">
               {sidebarItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path;
+                const isActive = location.pathname === item.path || 
+                                 (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
+                                 (item.path === '/courses' && location.pathname.startsWith('/courses'));
                 
                 return (
                   <button
@@ -285,7 +292,8 @@ const AppShellMobile = () => {
             {bottomNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path || 
-                               (item.path === '/mastery' && location.pathname.startsWith('/mastery'));
+                               (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
+                               (item.path === '/courses' && location.pathname.startsWith('/courses'));
               
               return (
                 <button

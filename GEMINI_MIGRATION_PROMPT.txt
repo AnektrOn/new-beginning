@@ -1,0 +1,61 @@
+I need help migrating course content data from my previous database to a new Supabase PostgreSQL database. Here's the context:
+
+**Task**: Convert CSV course content data into SQL INSERT statements with proper course/chapter/lesson mappings.
+
+**Data Format**: CSV with columns: id, lesson_id, lesson_title, the_hook, key_terms_1, key_terms_1_def, key_terms_2, key_terms_2_def, core_concepts_1, core_concepts_1_def, core_concepts_2, core_concepts_2_def, synthesis, connect_to_your_life, key_takeaways_1, key_takeaways_2, attached_to_chapter, attached_to_course, created_at, updated_at, chapter_id
+
+**Course ID Mappings**:
+- "Introduction to Computer Science" → 33
+- "Media Ecology and the Transformation of Public Discourse in America" → 2043436001
+- "The Foundations and Practice of Hermetic Philosophy: An Analytical Study of The Kybalion" → -1048589509
+- "The Mindful Path to Self-Compassion: Integrating Mindfulness, Acceptance, and Loving-Kindness for Emotional Healing" → -211735735
+- "The Politics of Ecstasy: Psychedelics, Consciousness, and Society" → -1211732545
+- "The Power of Assumption: Consciousness, Imagination, and Manifestation in Neville Goddard's Teachings" → -744437687
+- "The Shock Doctrine: The Rise of Disaster Capitalism" → 498493852
+
+**Process**:
+1. Parse CSV data (handle quoted fields with commas)
+2. For each entry:
+   - Map `attached_to_course` → `course_id` using the mappings above
+   - Map `lesson_title` → `(chapter_number, lesson_number)` using a lesson mapping structure
+   - Handle edge cases like "(Part 1)" suffixes by stripping them before matching
+3. Generate SQL INSERT with dollar-quoting ($$...$$) for all text fields
+4. Process in batches of 20 entries per file
+5. Output format: `MIGRATE_COURSE_CONTENT_DATA_BATCH_N.sql`
+
+**SQL Column Order**:
+id, lesson_id, course_id, chapter_number, lesson_number, lesson_title, the_hook, key_terms_1, key_terms_1_def, key_terms_2, key_terms_2_def, core_concepts_1, core_concepts_1_def, core_concepts_2, core_concepts_2_def, synthesis, connect_to_your_life, key_takeaways_1, key_takeaways_2, attached_to_chapter, attached_to_course, chapter_id, created_at, updated_at
+
+**Requirements**:
+- Use dollar-quoting ($$...$$) for all text fields to handle apostrophes
+- Include SQL comment headers with batch number and entry range
+- Skip entries where course_id or chapter/lesson mapping is not found (with warning)
+- No debug output in final SQL file
+- Each batch file should be ready to execute directly
+
+**Example SQL Output**:
+```sql
+-- =====================================================
+-- MIGRATE COURSE CONTENT DATA - BATCH N (Entries X-Y)
+-- =====================================================
+INSERT INTO course_content (
+    id, lesson_id, course_id, chapter_number, lesson_number, lesson_title,
+    the_hook, key_terms_1, key_terms_1_def, key_terms_2, key_terms_2_def,
+    core_concepts_1, core_concepts_1_def, core_concepts_2, core_concepts_2_def,
+    synthesis, connect_to_your_life, key_takeaways_1, key_takeaways_2,
+    attached_to_chapter, attached_to_course, chapter_id, created_at, updated_at
+) VALUES
+(id, $$lesson_id$$, course_id, chapter_num, lesson_num, $$lesson_title$$, ...),
+...
+;
+-- Generated 20 entries
+```
+
+I have existing Python scripts (`generate_migration_batch.py` and `create_batch3_final.py`) that do this, but I need help processing the remaining batches. Please help me:
+1. Process batch N (entries X-Y) from the CSV data I provide
+2. Ensure all mappings are correct
+3. Generate a clean SQL file ready to execute
+
+Here's the CSV data for batch N:
+[PASTE CSV DATA HERE]
+
