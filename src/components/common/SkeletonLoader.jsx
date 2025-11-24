@@ -1,29 +1,72 @@
 import React from 'react';
+import { cn } from '../../lib/utils';
 
 /**
- * Skeleton loading component for better perceived performance
+ * Enhanced Skeleton loading component with design system integration
+ * Provides consistent loading states across the application
  */
-const SkeletonLoader = ({ type = 'card', count = 1 }) => {
+const SkeletonLoader = ({ 
+  type = 'card', 
+  count = 1, 
+  className,
+  variant = 'default' // default, glass, minimal
+}) => {
+  const baseClasses = 'animate-pulse';
+  const glassClasses = variant === 'glass' ? 'glass-effect-enhanced' : '';
+  
   const renderSkeleton = () => {
     switch (type) {
       case 'card':
         return (
-          <div className="bg-blue-900 rounded-lg p-4 shadow-sm w-80 animate-pulse">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-4 h-4 bg-gray-700 rounded"></div>
-                <div className="h-4 bg-gray-700 rounded w-24"></div>
-                <div className="w-6 h-6 bg-gray-700 rounded-full"></div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-4 h-4 bg-gray-700 rounded"></div>
-                <div className="grid grid-cols-7 gap-0.5">
-                  {Array.from({ length: 42 }).map((_, i) => (
-                    <div key={i} className="w-2.5 h-2.5 bg-gray-700 rounded-sm"></div>
-                  ))}
+          <div className={cn(
+            'rounded-xl p-6 border',
+            variant === 'glass' ? 'glass-effect-enhanced' : 'bg-muted/50',
+            className
+          )}>
+            <div className="space-y-4">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-muted rounded-full"></div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-muted rounded w-32"></div>
+                    <div className="h-3 bg-muted rounded w-24"></div>
+                  </div>
                 </div>
-                <div className="w-6 h-6 bg-gray-700 rounded-full"></div>
               </div>
+              {/* Content */}
+              <div className="space-y-2">
+                <div className="h-4 bg-muted rounded w-full"></div>
+                <div className="h-4 bg-muted rounded w-5/6"></div>
+                <div className="h-4 bg-muted rounded w-4/6"></div>
+              </div>
+              {/* Footer */}
+              <div className="flex items-center justify-between pt-4">
+                <div className="h-6 bg-muted rounded w-20"></div>
+                <div className="h-8 bg-muted rounded w-24"></div>
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'course-card':
+        return (
+          <div className={cn(
+            'rounded-xl p-5 border',
+            variant === 'glass' ? 'glass-effect-enhanced' : 'bg-muted/50',
+            className
+          )}>
+            <div className="space-y-4">
+              <div className="h-6 bg-muted rounded w-3/4"></div>
+              <div className="flex items-center gap-2">
+                <div className="h-5 bg-muted rounded-full w-16"></div>
+                <div className="h-5 bg-muted rounded-full w-20"></div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-3 bg-muted rounded w-full"></div>
+                <div className="h-3 bg-muted rounded w-2/3"></div>
+              </div>
+              <div className="h-10 bg-muted rounded-lg w-full"></div>
             </div>
           </div>
         );
@@ -32,11 +75,18 @@ const SkeletonLoader = ({ type = 'card', count = 1 }) => {
         return (
           <div className="space-y-3">
             {Array.from({ length: count }).map((_, i) => (
-              <div key={i} className="flex items-center space-x-3 p-3 bg-gray-100 rounded-lg animate-pulse">
-                <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
-                <div className="flex-1">
-                  <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
-                  <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+              <div 
+                key={i} 
+                className={cn(
+                  'flex items-center space-x-3 p-4 rounded-lg border',
+                  variant === 'glass' ? 'glass-effect-enhanced' : 'bg-muted/50',
+                  className
+                )}
+              >
+                <div className="w-10 h-10 bg-muted rounded-full flex-shrink-0"></div>
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                  <div className="h-3 bg-muted rounded w-1/2"></div>
                 </div>
               </div>
             ))}
@@ -45,22 +95,46 @@ const SkeletonLoader = ({ type = 'card', count = 1 }) => {
       
       case 'calendar':
         return (
-          <div className="grid grid-cols-7 gap-1 animate-pulse">
-            {Array.from({ length: 42 }).map((_, i) => (
-              <div key={i} className="h-20 bg-gray-200 rounded"></div>
+          <div className={cn('grid grid-cols-7 gap-2', className)}>
+            {Array.from({ length: 35 }).map((_, i) => (
+              <div 
+                key={i} 
+                className={cn(
+                  'h-20 rounded-lg border',
+                  variant === 'glass' ? 'glass-effect-enhanced' : 'bg-muted/30'
+                )}
+              ></div>
             ))}
           </div>
         );
       
+      case 'text':
+        return (
+          <div className={cn('space-y-2', className)}>
+            <div className="h-4 bg-muted rounded w-full"></div>
+            <div className="h-4 bg-muted rounded w-5/6"></div>
+            <div className="h-4 bg-muted rounded w-4/6"></div>
+          </div>
+        );
+      
+      case 'avatar':
+        return (
+          <div className={cn('rounded-full bg-muted', className)} style={{ width: 'var(--size, 40px)', height: 'var(--size, 40px)' }}></div>
+        );
+      
       default:
         return (
-          <div className="animate-pulse">
-            <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
-            <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+          <div className={cn('space-y-2', className)}>
+            <div className="h-4 bg-muted rounded w-3/4"></div>
+            <div className="h-4 bg-muted rounded w-1/2"></div>
           </div>
         );
     }
   };
+
+  if (type === 'list' || type === 'calendar') {
+    return renderSkeleton();
+  }
 
   return (
     <div className="space-y-3">

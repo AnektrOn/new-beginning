@@ -2,9 +2,14 @@ import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { Toaster } from 'react-hot-toast'
+import { toastConfig } from './utils/toastConfig'
 
 // Components
 import AppShellMobile from './components/AppShellMobile'
+import PageTransition from './components/common/PageTransition'
+import LoadingSpinner from './components/common/LoadingSpinner'
+import SkipLinks from './components/common/SkipLinks'
+import CommandPalette from './components/common/CommandPalette'
 
 // Auth Components
 import LoginPage from './pages/LoginPage'
@@ -29,11 +34,7 @@ const LoadingScreen = () => {
   console.log('🔄 LoadingScreen: Rendering loading screen')
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading...</p>
-        <p className="text-sm text-gray-400 mt-2">If this takes too long, check the console for errors</p>
-      </div>
+      <LoadingSpinner size="lg" text="Loading..." />
     </div>
   )
 }
@@ -108,7 +109,7 @@ const AppRoutes = () => {
           <AppShellMobile />
         </ProtectedRoute>
       }>
-        <Route index element={<Dashboard />} />
+        <Route index element={<PageTransition><Dashboard /></PageTransition>} />
       </Route>
       
       <Route path="/profile" element={
@@ -116,7 +117,7 @@ const AppRoutes = () => {
           <AppShellMobile />
         </ProtectedRoute>
       }>
-        <Route index element={<ProfilePage />} />
+        <Route index element={<PageTransition><ProfilePage /></PageTransition>} />
       </Route>
 
       <Route path="/mastery/*" element={
@@ -124,10 +125,10 @@ const AppRoutes = () => {
           <AppShellMobile />
         </ProtectedRoute>
       }>
-        <Route index element={<Mastery />} />
-        <Route path="calendar" element={<Mastery />} />
-        <Route path="habits" element={<Mastery />} />
-        <Route path="toolbox" element={<Mastery />} />
+        <Route index element={<PageTransition><Mastery /></PageTransition>} />
+        <Route path="calendar" element={<PageTransition><Mastery /></PageTransition>} />
+        <Route path="habits" element={<PageTransition><Mastery /></PageTransition>} />
+        <Route path="toolbox" element={<PageTransition><Mastery /></PageTransition>} />
       </Route>
 
       <Route path="/community" element={
@@ -135,7 +136,7 @@ const AppRoutes = () => {
           <AppShellMobile />
         </ProtectedRoute>
       }>
-        <Route index element={<CommunityPage />} />
+        <Route index element={<PageTransition><CommunityPage /></PageTransition>} />
       </Route>
 
       <Route path="/courses" element={
@@ -143,10 +144,10 @@ const AppRoutes = () => {
           <AppShellMobile />
         </ProtectedRoute>
       }>
-        <Route index element={<CourseCatalogPage />} />
-        <Route path="create" element={<CourseCreationPage />} />
-        <Route path=":courseId" element={<CourseDetailPage />} />
-        <Route path=":courseId/chapters/:chapterNumber/lessons/:lessonNumber" element={<CoursePlayerPage />} />
+        <Route index element={<PageTransition><CourseCatalogPage /></PageTransition>} />
+        <Route path="create" element={<PageTransition><CourseCreationPage /></PageTransition>} />
+        <Route path=":courseId" element={<PageTransition><CourseDetailPage /></PageTransition>} />
+        <Route path=":courseId/chapters/:chapterNumber/lessons/:lessonNumber" element={<PageTransition><CoursePlayerPage /></PageTransition>} />
       </Route>
 
       {/* Default redirect */}
@@ -164,11 +165,18 @@ function App() {
     <AuthProvider>
       <Router>
         <div className="App">
+          <SkipLinks />
+          <CommandPalette />
           <AppRoutes />
           <Toaster 
-            position={isMobile ? 'top-center' : 'top-right'} 
+            position={isMobile ? 'top-center' : toastConfig.position} 
             toastOptions={{ 
-              style: isMobile ? { marginTop: '64px', zIndex: 10000 } : { zIndex: 10000 },
+              ...toastConfig,
+              style: {
+                ...toastConfig.style,
+                ...(isMobile ? { marginTop: '64px' } : {}),
+                zIndex: 10000,
+              },
             }}
             containerStyle={{
               zIndex: 10000,

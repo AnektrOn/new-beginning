@@ -1,6 +1,9 @@
 import React, { useState, createContext, useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Calendar, Target, Wrench, Clock } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import Breadcrumbs from '../components/common/Breadcrumbs';
+import { Home } from 'lucide-react';
 
 // Import components
 import CalendarTab from '../components/mastery/CalendarTab';
@@ -78,6 +81,16 @@ const Mastery = () => {
 
   return (
     <div className="min-h-full w-full pb-safe">
+      {/* Breadcrumbs - Hidden on mobile */}
+      <div className="mb-4 hidden lg:block">
+        <Breadcrumbs
+          customItems={[
+            { label: 'Home', path: '/dashboard', icon: Home },
+            { label: 'Mastery', path: '/mastery' }
+          ]}
+        />
+      </div>
+
       {/* Mobile-First Header - Clean & Minimal */}
       <div className="mb-6">
         {/* Tab Navigation - Clean Pills */}
@@ -86,10 +99,11 @@ const Mastery = () => {
             const Icon = tab.icon;
             const isActive = location.pathname === tab.path || (tab.path === '/mastery/calendar' && location.pathname === '/mastery');
             return (
-              <button
+              <Button
                 key={tab.id}
                 onClick={() => handleTabClick(tab.path)}
-                className={`flex-1 flex items-center justify-center space-x-2 px-3 py-3 rounded-xl font-semibold transition-all min-h-[48px] ${
+                variant={isActive ? 'default' : 'ghost'}
+                className={`flex-1 flex items-center justify-center space-x-2 min-h-[48px] ${
                   isActive 
                     ? 'bg-indigo-600 text-white shadow-lg' 
                     : 'text-slate-400 hover:text-white'
@@ -97,7 +111,7 @@ const Mastery = () => {
               >
                 <Icon size={20} />
                 <span className="text-sm">{tab.label}</span>
-              </button>
+              </Button>
             );
           })}
         </nav>

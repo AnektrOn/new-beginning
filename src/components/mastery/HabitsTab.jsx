@@ -3,6 +3,8 @@ import { Plus, Target, CheckCircle, Star, Laptop, BookOpen, Dumbbell, Flame, Tra
 import masteryService from '../../services/masteryService';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleError } from '../../utils/errorHandler';
+import LoadingSpinner from '../common/LoadingSpinner';
+import ErrorDisplay from '../common/ErrorDisplay';
 
 // Helper function to calculate current streak from completion dates
 const calculateCurrentStreak = (completedDates) => {
@@ -399,26 +401,19 @@ const HabitsTab = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2 text-gray-600">Loading habits...</span>
+        <LoadingSpinner size="lg" text="Loading habits..." />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="text-red-600 mb-2">Error loading habits</div>
-          <div className="text-sm text-gray-600">{error}</div>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
+      <ErrorDisplay
+        title="Error loading habits"
+        message={error}
+        variant="card"
+        onRetry={() => window.location.reload()}
+      />
     );
   }
 

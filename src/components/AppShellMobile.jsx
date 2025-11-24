@@ -17,16 +17,17 @@ import {
   Type,
   Users,
   Target,
-  Menu,
-  X,
   Home,
   LogOut,
-  BookOpen
+  BookOpen,
+  Bell
 } from 'lucide-react';
+import SearchBar from './common/SearchBar';
+import NotificationCenter from './common/NotificationCenter';
+import ColoredIcon from './common/ColoredIcon';
 
 const AppShellMobile = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { profile, signOut } = useAuth();
@@ -54,7 +55,6 @@ const AppShellMobile = () => {
 
   const handleNavigation = (path) => {
     navigate(path);
-    setIsMobileMenuOpen(false);
   };
 
   const handleSignOut = async () => {
@@ -63,7 +63,7 @@ const AppShellMobile = () => {
   };
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`}>
+    <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`} style={{ position: 'relative' }}>
       {/* Background - User's custom background or default */}
       <div 
         className="fixed inset-0 bg-cover bg-center bg-no-repeat"
@@ -76,51 +76,43 @@ const AppShellMobile = () => {
         <div className="absolute inset-0 backdrop-blur-sm"></div>
       </div>
 
-      {/* Mobile Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 safe-area-top">
+      {/* Desktop Header - Hidden on mobile, shown on lg+ */}
+      <header className="hidden lg:block fixed top-0 left-0 right-0 z-50 safe-area-top">
         <div className="glass-header-browser flex items-center justify-between">
-          {/* Left side - Menu button */}
-          <button 
-            className="glass-icon-btn lg:hidden"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-
           {/* Desktop left navigation */}
-          <div className="hidden lg:flex items-center space-x-2">
-            <button className="glass-icon-btn">
-              <Grid3X3 size={16} />
+          <div className="flex items-center space-x-2">
+            <button className="glass-icon-btn focus-ring" aria-label="Dashboard">
+              <Grid3X3 size={16} aria-hidden="true" />
             </button>
-            <button className="glass-icon-btn">
-              <ArrowLeft size={16} />
+            <button className="glass-icon-btn focus-ring" aria-label="Go back">
+              <ArrowLeft size={16} aria-hidden="true" />
             </button>
-            <button className="glass-icon-btn">
-              <ArrowRight size={16} />
+            <button className="glass-icon-btn focus-ring" aria-label="Go forward">
+              <ArrowRight size={16} aria-hidden="true" />
             </button>
-            <button className="glass-icon-btn">
-              <Type size={16} />
+            <button className="glass-icon-btn focus-ring" aria-label="Search">
+              <Type size={16} aria-hidden="true" />
             </button>
           </div>
 
-          {/* Center - Logo/Title */}
-          <div className="flex items-center">
-            <h1 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-              HC University
-            </h1>
+          {/* Center - Search */}
+          <div className="flex-1 flex items-center justify-center px-2 max-w-2xl mx-auto">
+            <SearchBar variant="compact" placeholder="Search courses..." />
           </div>
 
           {/* Right side actions */}
           <div className="flex items-center space-x-2">
+            <NotificationCenter />
             <button 
               onClick={toggleTheme}
-              className="glass-icon-btn"
+              className="glass-icon-btn focus-ring"
+              aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
               title={isDarkMode ? 'Light mode' : 'Dark mode'}
             >
-              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+              {isDarkMode ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
             </button>
-            <button className="glass-icon-btn hidden sm:flex">
-              <Upload size={16} />
+            <button className="glass-icon-btn focus-ring" aria-label="Upload">
+              <Upload size={16} aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -158,10 +150,12 @@ const AppShellMobile = () => {
                 <button
                   key={index}
                   onClick={() => handleNavigation(item.path)}
-                  className={`glass-nav-btn ${isActive ? 'glass-nav-btn-active' : ''}`}
+                  aria-label={`Navigate to ${item.label}`}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`glass-nav-btn focus-ring ${isActive ? 'glass-nav-btn-active' : ''}`}
                   title={item.label}
                 >
-                  <Icon size={20} />
+                  <Icon size={20} aria-hidden="true" />
                 </button>
               );
             })}
@@ -189,124 +183,133 @@ const AppShellMobile = () => {
         </div>
       </aside>
 
-      {/* Mobile Slide-out Menu */}
-      {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 z-50 lg:hidden"
-          onClick={() => setIsMobileMenuOpen(false)}
-        >
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          <div 
-            className="absolute top-0 left-0 bottom-0 w-80 max-w-[80vw] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Menu Header */}
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Menu</h2>
-                <button 
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-              
-              {/* User info */}
-              {profile && (
-                <div className="flex items-center space-x-3 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                  {profile.avatar_url ? (
-                    <img 
-                      src={profile.avatar_url} 
-                      alt={profile.full_name}
-                      className="w-10 h-10 rounded-full"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-400 flex items-center justify-center">
-                      <User size={20} className="text-white" />
-                    </div>
-                  )}
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white text-sm">
-                      {profile.full_name || 'User'}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Level {profile.level || 1}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Menu Items */}
-            <nav className="p-4 space-y-2">
-              {sidebarItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.path || 
-                                 (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
-                                 (item.path === '/courses' && location.pathname.startsWith('/courses'));
-                
-                return (
-                  <button
-                    key={item.path}
-                    onClick={() => handleNavigation(item.path)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                      isActive
-                        ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                    }`}
-                  >
-                    <Icon size={20} />
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
-
-            {/* Menu Footer */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-slate-900/95">
-              <button
-                onClick={handleSignOut}
-                className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
-              >
-                <LogOut size={20} />
-                <span>Sign Out</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Main Content Area */}
-      <main className="fixed lg:left-32 left-0 top-[52px] lg:top-20 right-0 bottom-[70px] lg:bottom-4 z-30 lg:right-4"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <main 
+        id="main-content"
+        role="main"
+        className="fixed lg:left-32 left-0 top-0 lg:top-20 right-0 bottom-[72px] lg:bottom-4 z-30 lg:right-4"
+        style={{ 
+          paddingBottom: 'calc(72px + env(safe-area-inset-bottom))',
+          WebkitOverflowScrolling: 'touch'
+        }}
+      >
         <div className="glass-main-panel h-full overflow-auto">
           <Outlet />
         </div>
       </main>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden safe-area-bottom mobile-bottom-nav">
-        <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-gray-200 dark:border-gray-700 shadow-lg">
-          <div className="flex items-center justify-around px-2 py-2">
+      {/* Mobile Bottom Navigation - Optimized UX/UI */}
+      <nav 
+        id="main-navigation"
+        role="navigation"
+        aria-label="Main navigation"
+        className="fixed bottom-0 left-0 right-0 w-full z-[9999] lg:hidden mobile-bottom-nav"
+        style={{ 
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          width: '100%',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          WebkitTransform: 'translateZ(0)',
+          transform: 'translateZ(0)',
+          pointerEvents: 'auto'
+        }}
+      >
+        <div 
+          className="w-full backdrop-blur-xl border-t mobile-bottom-nav-container"
+          style={{
+            backgroundColor: isDarkMode 
+              ? '#203837'  /* Dark theme: Dark teal - palette-dark-surface */
+              : '#F7F1E1', /* Light theme: Old lace - palette-light-bg */
+            borderColor: isDarkMode
+              ? '#5A8F76'  /* Dark theme: Medium green - palette-dark-primary */
+              : '#81754B',  /* Light theme: Coyote - palette-light-border */
+            borderTopWidth: '1px',
+            boxShadow: isDarkMode
+              ? '0 -4px 20px rgba(8, 24, 24, 0.4)'
+              : '0 -4px 20px rgba(63, 63, 44, 0.15)'
+          }}
+        >
+          <div className="flex items-center justify-around w-full px-2 py-2">
             {bottomNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path || 
                                (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
                                (item.path === '/courses' && location.pathname.startsWith('/courses'));
               
+              // Color palette mapping - Following palette system
+              // Dark theme: Active = Light green (#96CDB0), Inactive = Medium green (#5A8F76)
+              // Light theme: Active = Dark goldenrod (#B4833D), Inactive = Coyote (#81754B)
+              const activeColor = isDarkMode 
+                ? '#96CDB0'  // Light green - palette-dark-secondary
+                : '#B4833D'; // Dark goldenrod - palette-light-accent
+              const inactiveColor = isDarkMode 
+                ? '#5A8F76'  // Medium green - palette-dark-primary
+                : '#81754B';  // Coyote - palette-light-border
+              const activeBg = isDarkMode 
+                ? 'rgba(90, 143, 118, 0.2)'      // Medium green with opacity (dark) - more visible
+                : 'rgba(180, 131, 61, 0.2)';     // Dark goldenrod with opacity (light) - more visible
+              
               return (
                 <button
                   key={item.path}
                   onClick={() => handleNavigation(item.path)}
-                  className={`mobile-nav-item flex flex-col items-center justify-center px-3 py-2 rounded-xl min-w-[60px] transition-all duration-200 ${
-                    isActive
-                      ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20'
-                      : 'text-gray-600 dark:text-gray-400'
-                  }`}
+                  aria-label={`Navigate to ${item.label}`}
+                  aria-current={isActive ? 'page' : undefined}
+                  className="mobile-nav-button relative flex-1 flex flex-col items-center justify-center min-h-[56px] py-2 px-1 rounded-xl transition-all duration-200 focus-ring touch-manipulation"
+                  style={{
+                    color: isActive ? activeColor : inactiveColor,
+                    backgroundColor: isActive ? activeBg : 'transparent',
+                    WebkitTapHighlightColor: 'transparent',
+                    touchAction: 'manipulation'
+                  }}
+                  data-active={isActive}
+                  data-theme={isDarkMode ? 'dark' : 'light'}
+                  onTouchStart={(e) => {
+                    const target = e.currentTarget;
+                    if (target) {
+                      target.style.transform = 'scale(0.95)';
+                      target.style.opacity = '0.8';
+                    }
+                  }}
+                  onTouchEnd={(e) => {
+                    const target = e.currentTarget;
+                    if (target) {
+                      setTimeout(() => {
+                        if (target && target.style) {
+                          target.style.transform = '';
+                          target.style.opacity = '';
+                        }
+                      }, 150);
+                    }
+                  }}
                 >
-                  <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-                  <span className="text-[10px] mt-1 font-medium">{item.label}</span>
+                  {/* Solution 5: Custom ColoredIcon Component */}
+                  <ColoredIcon
+                    Icon={Icon}
+                    size={22}
+                    strokeWidth={isActive ? 2.5 : 2}
+                    color={isActive ? activeColor : inactiveColor}
+                    isActive={isActive}
+                    className="transition-all duration-200 mobile-nav-icon"
+                    style={{
+                      transform: isActive ? 'scale(1.1)' : 'scale(1)',
+                      filter: isActive ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' : 'none',
+                    }}
+                  />
+                  {/* Active indicator - Underline bar instead of dot */}
+                  <div 
+                    className="absolute bottom-0 left-1/2 transform -translate-x-1/2 transition-all duration-200"
+                    style={{
+                      width: isActive ? '60%' : '0%',
+                      height: '3px',
+                      backgroundColor: activeColor,
+                      borderRadius: '3px 3px 0 0',
+                      opacity: isActive ? 1 : 0
+                    }}
+                  />
                 </button>
               );
             })}

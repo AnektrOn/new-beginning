@@ -9,9 +9,18 @@ import {
   ChevronRight,
   ChevronLeft,
   BookOpen,
-  Clock
+  Clock,
+  Home
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import Breadcrumbs from '../components/common/Breadcrumbs';
+import SkeletonLoader from '../components/common/SkeletonLoader';
+import ErrorDisplay from '../components/common/ErrorDisplay';
+import EmptyState from '../components/common/EmptyState';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 
 const CoursePlayerPage = () => {
   const { courseId, chapterNumber, lessonNumber } = useParams();
@@ -197,10 +206,13 @@ const CoursePlayerPage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading lesson...</p>
+      <div className="p-4 lg:p-8 max-w-6xl mx-auto">
+        <div className="mb-6">
+          <SkeletonLoader type="text" count={1} variant="glass" />
+        </div>
+        <div className="space-y-6">
+          <SkeletonLoader type="card" count={1} variant="glass" />
+          <SkeletonLoader type="card" count={1} variant="glass" />
         </div>
       </div>
     );
@@ -208,111 +220,122 @@ const CoursePlayerPage = () => {
 
   if (error || !currentLesson) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p className="text-red-400 mb-4">{error || 'Lesson not found'}</p>
-          <button
-            onClick={() => navigate(`/courses/${courseId}`)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Back to Course
-          </button>
-        </div>
+      <div className="p-4 lg:p-8 max-w-6xl mx-auto">
+        <ErrorDisplay
+          title="Failed to load lesson"
+          message={error || 'Lesson not found'}
+          onRetry={() => loadLessonData()}
+          variant="card"
+        />
       </div>
     );
   }
 
   return (
     <div className="p-4 lg:p-8 max-w-6xl mx-auto">
+      {/* Breadcrumbs - Hidden on mobile */}
+      <div className="mb-6 hidden lg:block">
+        <Breadcrumbs
+          customItems={[
+            { label: 'Home', path: '/dashboard', icon: Home },
+            { label: 'Courses', path: '/courses' },
+            { label: course?.course_title || 'Course', path: `/courses/${courseId}` },
+            { label: `Chapter ${chapterNum} - Lesson ${lessonNum}`, path: `/courses/${courseId}/chapters/${chapterNum}/lessons/${lessonNum}` }
+          ]}
+        />
+      </div>
+
       {/* Navigation Header */}
       <div className="flex items-center justify-between mb-6">
-        <button
+        <Button
+          variant="ghost"
           onClick={() => navigate(`/courses/${courseId}`)}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+          className="text-slate-400 hover:text-white"
         >
-          <ArrowLeft size={20} />
-          <span>Back to Course</span>
-        </button>
+          <ArrowLeft size={20} className="mr-2" />
+          Back to Course
+        </Button>
 
         <div className="flex items-center gap-2">
           {previousLesson && (
-            <button
+            <Button
+              variant="outline"
               onClick={() => handleNavigateLesson(previousLesson.lesson.chapter_number, previousLesson.lesson.lesson_number)}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+              className="hidden md:flex"
             >
-              <ChevronLeft size={20} />
-              <span className="hidden md:inline">Previous</span>
-            </button>
+              <ChevronLeft size={20} className="mr-2" />
+              Previous
+            </Button>
           )}
           {nextLesson && (
-            <button
+            <Button
               onClick={() => handleNavigateLesson(nextLesson.lesson.chapter_number, nextLesson.lesson.lesson_number)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 hidden md:flex"
             >
-              <span className="hidden md:inline">Next</span>
-              <ChevronRight size={20} />
-            </button>
+              Next
+              <ChevronRight size={20} className="ml-2" />
+            </Button>
           )}
         </div>
       </div>
 
       {/* Lesson Header */}
-      <div className="glass-effect rounded-2xl p-6 mb-6">
-        <div className="mb-4">
-          <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
-            <BookOpen size={16} />
-            <span>Chapter {chapterNum}</span>
-            <span>•</span>
-            <span>Lesson {lessonNum}</span>
-          </div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">
-            {currentLesson.lesson_title}
-          </h1>
-          {lessonDescription?.lesson_description && (
-            <p className="text-gray-400 mt-2">{lessonDescription.lesson_description}</p>
-          )}
-          {lessonDescription?.chapter_description && (
-            <p className="text-sm text-gray-500 mt-1 italic">{lessonDescription.chapter_description}</p>
-          )}
-        </div>
-
-        {/* Completion Status */}
-        <div className="flex items-center justify-between">
-          {isCompleted ? (
-            <div className="flex items-center gap-2 text-green-400">
-              <CheckCircle size={20} />
-              <span className="font-medium">Lesson Completed</span>
+      <Card className="glass-effect-enhanced border-slate-600/50 mb-6">
+        <CardContent className="p-6">
+          <div className="mb-4">
+            <div className="flex items-center gap-2 text-sm text-slate-400 mb-2 flex-wrap">
+              <BookOpen size={16} />
+              <Badge variant="outline">Chapter {chapterNum}</Badge>
+              <span>•</span>
+              <Badge variant="outline">Lesson {lessonNum}</Badge>
             </div>
-          ) : (
-            <button
-              onClick={handleCompleteLesson}
-              disabled={isCompleting || isCompleted}
-              className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-                isCompleted
-                  ? 'bg-green-600 text-white cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
-              }`}
-            >
-              {isCompleting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Completing...
-                </>
-              ) : (
-                <>
-                  <CheckCircle size={20} />
-                  Mark as Complete
-                </>
-              )}
-            </button>
-          )}
-        </div>
-      </div>
+            <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">
+              {currentLesson.lesson_title}
+            </h1>
+            {lessonDescription?.lesson_description && (
+              <p className="text-slate-400 mt-2">{lessonDescription.lesson_description}</p>
+            )}
+            {lessonDescription?.chapter_description && (
+              <p className="text-sm text-slate-500 mt-1 italic">{lessonDescription.chapter_description}</p>
+            )}
+          </div>
+
+          {/* Completion Status */}
+          <div className="flex items-center justify-between">
+            {isCompleted ? (
+              <div className="flex items-center gap-2 text-emerald-400">
+                <CheckCircle size={20} />
+                <span className="font-medium">Lesson Completed</span>
+              </div>
+            ) : (
+              <Button
+                onClick={handleCompleteLesson}
+                disabled={isCompleting || isCompleted}
+                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+              >
+                {isCompleting ? (
+                  <>
+                    <LoadingSpinner size="sm" className="mr-2" />
+                    Completing...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle size={20} className="mr-2" />
+                    Mark as Complete
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Lesson Content */}
-      <div className="glass-effect rounded-2xl p-6 mb-6">
-        <h2 className="text-xl font-bold text-white mb-4">Lesson Content</h2>
-        
+      <Card className="glass-effect-enhanced border-slate-600/50 mb-6">
+        <CardHeader>
+          <CardTitle className="text-xl">Lesson Content</CardTitle>
+        </CardHeader>
+        <CardContent>
         {lessonContent ? (
           <div className="space-y-6">
             {/* The Hook */}
@@ -329,16 +352,20 @@ const CoursePlayerPage = () => {
                 <h3 className="text-lg font-semibold text-white mb-3">Key Terms</h3>
                 <div className="space-y-3">
                   {lessonContent.key_terms_1 && (
-                    <div className="bg-slate-800 rounded-lg p-4">
-                      <h4 className="font-semibold text-blue-400 mb-1">{lessonContent.key_terms_1}</h4>
-                      <p className="text-gray-300 text-sm">{lessonContent.key_terms_1_def}</p>
-                    </div>
+                    <Card className="bg-slate-800/50 border-slate-700">
+                      <CardContent className="p-4">
+                        <h4 className="font-semibold text-blue-400 mb-1">{lessonContent.key_terms_1}</h4>
+                        <p className="text-slate-300 text-sm">{lessonContent.key_terms_1_def}</p>
+                      </CardContent>
+                    </Card>
                   )}
                   {lessonContent.key_terms_2 && (
-                    <div className="bg-slate-800 rounded-lg p-4">
-                      <h4 className="font-semibold text-blue-400 mb-1">{lessonContent.key_terms_2}</h4>
-                      <p className="text-gray-300 text-sm">{lessonContent.key_terms_2_def}</p>
-                    </div>
+                    <Card className="bg-slate-800/50 border-slate-700">
+                      <CardContent className="p-4">
+                        <h4 className="font-semibold text-blue-400 mb-1">{lessonContent.key_terms_2}</h4>
+                        <p className="text-slate-300 text-sm">{lessonContent.key_terms_2_def}</p>
+                      </CardContent>
+                    </Card>
                   )}
                 </div>
               </div>
@@ -350,16 +377,20 @@ const CoursePlayerPage = () => {
                 <h3 className="text-lg font-semibold text-white mb-3">Core Concepts</h3>
                 <div className="space-y-3">
                   {lessonContent.core_concepts_1 && (
-                    <div className="bg-slate-800 rounded-lg p-4">
-                      <h4 className="font-semibold text-purple-400 mb-1">{lessonContent.core_concepts_1}</h4>
-                      <p className="text-gray-300 text-sm">{lessonContent.core_concepts_1_def}</p>
-                    </div>
+                    <Card className="bg-slate-800/50 border-slate-700">
+                      <CardContent className="p-4">
+                        <h4 className="font-semibold text-purple-400 mb-1">{lessonContent.core_concepts_1}</h4>
+                        <p className="text-slate-300 text-sm">{lessonContent.core_concepts_1_def}</p>
+                      </CardContent>
+                    </Card>
                   )}
                   {lessonContent.core_concepts_2 && (
-                    <div className="bg-slate-800 rounded-lg p-4">
-                      <h4 className="font-semibold text-purple-400 mb-1">{lessonContent.core_concepts_2}</h4>
-                      <p className="text-gray-300 text-sm">{lessonContent.core_concepts_2_def}</p>
-                    </div>
+                    <Card className="bg-slate-800/50 border-slate-700">
+                      <CardContent className="p-4">
+                        <h4 className="font-semibold text-purple-400 mb-1">{lessonContent.core_concepts_2}</h4>
+                        <p className="text-slate-300 text-sm">{lessonContent.core_concepts_2_def}</p>
+                      </CardContent>
+                    </Card>
                   )}
                 </div>
               </div>
@@ -387,14 +418,14 @@ const CoursePlayerPage = () => {
                 <h3 className="text-lg font-semibold text-white mb-3">Key Takeaways</h3>
                 <ul className="space-y-2">
                   {lessonContent.key_takeaways_1 && (
-                    <li className="flex items-start gap-2 text-gray-300">
-                      <CheckCircle size={18} className="text-green-400 mt-0.5 flex-shrink-0" />
+                    <li className="flex items-start gap-2 text-slate-300">
+                      <CheckCircle size={18} className="text-emerald-400 mt-0.5 flex-shrink-0" />
                       <span>{lessonContent.key_takeaways_1}</span>
                     </li>
                   )}
                   {lessonContent.key_takeaways_2 && (
-                    <li className="flex items-start gap-2 text-gray-300">
-                      <CheckCircle size={18} className="text-green-400 mt-0.5 flex-shrink-0" />
+                    <li className="flex items-start gap-2 text-slate-300">
+                      <CheckCircle size={18} className="text-emerald-400 mt-0.5 flex-shrink-0" />
                       <span>{lessonContent.key_takeaways_2}</span>
                     </li>
                   )}
@@ -403,44 +434,51 @@ const CoursePlayerPage = () => {
             )}
           </div>
         ) : (
-          <div className="text-center py-12">
-            <p className="text-gray-400">Lesson content is being prepared. Check back soon!</p>
-          </div>
+          <EmptyState
+            icon={BookOpen}
+            title="Content coming soon"
+            description="This lesson content is being prepared. Check back soon!"
+            variant="default"
+          />
         )}
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Navigation Footer */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         {previousLesson ? (
-          <button
+          <Button
+            variant="outline"
             onClick={() => handleNavigateLesson(previousLesson.lesson.chapter_number, previousLesson.lesson.lesson_number)}
-            className="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+            className="flex items-center gap-2 flex-1 md:flex-initial"
           >
             <ChevronLeft size={20} />
-            <div className="text-left">
-              <div className="text-xs text-gray-400">Previous</div>
-              <div className="text-sm font-medium text-white">
+            <div className="text-left hidden sm:block">
+              <div className="text-xs text-slate-400">Previous</div>
+              <div className="text-sm font-medium">
                 {previousLesson.lesson.lesson_title}
               </div>
             </div>
-          </button>
+            <span className="sm:hidden">Previous</span>
+          </Button>
         ) : (
           <div></div>
         )}
 
         {nextLesson ? (
-          <button
+          <Button
             onClick={() => handleNavigateLesson(nextLesson.lesson.chapter_number, nextLesson.lesson.lesson_number)}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 flex-1 md:flex-initial"
           >
-            <div className="text-right">
-              <div className="text-xs text-gray-200">Next</div>
-              <div className="text-sm font-medium text-white">
+            <div className="text-right hidden sm:block">
+              <div className="text-xs text-slate-200">Next</div>
+              <div className="text-sm font-medium">
                 {nextLesson.lesson.lesson_title}
               </div>
             </div>
+            <span className="sm:hidden">Next</span>
             <ChevronRight size={20} />
-          </button>
+          </Button>
         ) : (
           <div></div>
         )}

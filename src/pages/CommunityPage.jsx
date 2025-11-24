@@ -23,14 +23,23 @@ import {
   Image as ImageIcon,
   Video,
   FileText,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Home
 } from 'lucide-react'
+import { Card, CardContent, CardHeader } from '../components/ui/card'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import Breadcrumbs from '../components/common/Breadcrumbs'
+import SkeletonLoader from '../components/common/SkeletonLoader'
+import ErrorDisplay from '../components/common/ErrorDisplay'
+import EmptyState from '../components/common/EmptyState'
 
 const CommunityPage = () => {
   const { user, profile } = useAuth()
   const [activeTab, setActiveTab] = useState('feed')
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
   const [showCreatePost, setShowCreatePost] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterType, setFilterType] = useState('all')
@@ -219,8 +228,31 @@ const CommunityPage = () => {
     { id: 'discover', label: 'Discover', icon: Search }
   ]
 
+  if (error) {
+    return (
+      <div className="h-full w-full p-4">
+        <ErrorDisplay
+          title="Failed to load community"
+          message={error}
+          onRetry={() => window.location.reload()}
+          variant="card"
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="h-full w-full">
+      {/* Breadcrumbs - Hidden on mobile */}
+      <div className="mb-4 hidden lg:block">
+        <Breadcrumbs
+          customItems={[
+            { label: 'Home', path: '/dashboard', icon: Home },
+            { label: 'Community', path: '/community' }
+          ]}
+        />
+      </div>
+
       {/* Header */}
       <div className="community-header flex justify-between items-center mb-4 sm:mb-6 lg:mb-8">
         <div className="flex-1 min-w-0">
@@ -230,27 +262,28 @@ const CommunityPage = () => {
           <p className="text-slate-300 text-xs sm:text-sm mt-1">Connect, learn, and grow together</p>
         </div>
         <div className="flex-shrink-0">
-          <button 
+          <Button 
             onClick={() => setShowCreatePost(true)}
-            className="px-3 py-2 sm:px-4 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-emerald-500/25 flex items-center space-x-1 sm:space-x-2"
+            className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600"
+            size="sm"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Create Post</span>
             <span className="sm:hidden">New</span>
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Search and Filter Bar */}
       <div className="community-search-filter flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6 lg:mb-8">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4 sm:w-5 sm:h-5" />
-          <input
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4 sm:w-5 sm:h-5 z-10" />
+          <Input
             type="text"
             placeholder="Search posts, users, or topics..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 sm:pl-10 pr-4 py-2.5 sm:py-3 bg-slate-800/50 border border-slate-600/50 rounded-xl text-white text-sm sm:text-base placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50"
+            className="pl-9 sm:pl-10 bg-slate-800/50 border-slate-600/50 text-white placeholder-slate-400"
           />
         </div>
         <select
@@ -268,19 +301,17 @@ const CommunityPage = () => {
       {/* Mobile Tab Navigation - Show only on mobile */}
       <div className="xl:hidden mb-6 bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-2 border border-slate-600/50 shadow-xl">
         <div className="flex space-x-2 overflow-x-auto hide-scrollbar">
-          {tabs.map((tab) => (
-            <button
+              {tabs.map((tab) => (
+            <Button
               key={tab.id}
+              variant={activeTab === tab.id ? 'default' : 'ghost'}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'bg-gradient-to-r from-violet-600 to-violet-700 text-white shadow-lg'
-                  : 'text-slate-300'
-              }`}
+              size="sm"
+              className={activeTab === tab.id ? 'bg-gradient-to-r from-violet-600 to-violet-700' : ''}
             >
-              <tab.icon className="w-4 h-4" />
+              <tab.icon className="w-4 h-4 mr-2" />
               <span>{tab.label}</span>
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -290,25 +321,28 @@ const CommunityPage = () => {
         
         {/* Left Sidebar - Navigation - Hidden on mobile */}
         <div className="community-left-sidebar hidden xl:block xl:col-span-1">
-          <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-6 border border-slate-600/50 shadow-xl">
-            <h3 className="text-lg font-semibold mb-4 text-white">Navigation</h3>
-            <nav className="space-y-2">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                    activeTab === tab.id
-                      ? 'bg-gradient-to-r from-violet-600 to-violet-700 text-white shadow-lg'
-                      : 'text-slate-300 hover:bg-slate-700/50'
-                  }`}
-                >
-                  <tab.icon className="w-5 h-5" />
-                  <span>{tab.label}</span>
-                </button>
-              ))}
-            </nav>
-          </div>
+          <Card className="glass-effect-enhanced border-slate-600/50">
+            <CardHeader>
+              <h3 className="text-lg font-semibold text-white">Navigation</h3>
+            </CardHeader>
+            <CardContent>
+              <nav className="space-y-2">
+                {tabs.map((tab) => (
+                  <Button
+                    key={tab.id}
+                    variant={activeTab === tab.id ? 'default' : 'ghost'}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`w-full justify-start ${
+                      activeTab === tab.id ? 'bg-gradient-to-r from-violet-600 to-violet-700' : ''
+                    }`}
+                  >
+                    <tab.icon className="w-5 h-5 mr-3" />
+                    <span>{tab.label}</span>
+                  </Button>
+                ))}
+              </nav>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Main Content Area */}
@@ -316,12 +350,20 @@ const CommunityPage = () => {
           {activeTab === 'feed' && (
             <div className="space-y-4 sm:space-y-6">
               {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400"></div>
-                </div>
+                <SkeletonLoader type="list" count={3} variant="glass" />
+              ) : posts.length === 0 ? (
+                <EmptyState
+                  icon={MessageCircle}
+                  title="No posts yet"
+                  description="Be the first to share something with the community!"
+                  actionLabel="Create Post"
+                  onAction={() => setShowCreatePost(true)}
+                  variant="large"
+                />
               ) : (
                 posts.map((post) => (
-                  <div key={post.id} className="community-post bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-slate-600/50 shadow-xl">
+                  <Card key={post.id} className="glass-effect-enhanced border-slate-600/50">
+                    <CardContent className="p-4 sm:p-6">
                     {/* Post Header */}
                     <div className="community-post-header flex items-start space-x-3 mb-3 sm:mb-4">
                       <img
@@ -368,33 +410,36 @@ const CommunityPage = () => {
                     {/* Post Actions */}
                     <div className="community-post-actions flex flex-col sm:flex-row items-stretch sm:items-center justify-between pt-3 sm:pt-4 border-t border-slate-600/50 gap-3 sm:gap-0">
                       <div className="flex items-center space-x-4 sm:space-x-6 justify-around sm:justify-start">
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleLike(post.id)}
-                          className={`flex items-center space-x-1.5 sm:space-x-2 transition-colors min-w-0 ${
-                            post.isLiked ? 'text-red-400' : 'text-slate-400 hover:text-red-400'
-                          }`}
+                          className={`${post.isLiked ? 'text-red-400' : 'text-slate-400 hover:text-red-400'}`}
                         >
-                          <Heart className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${post.isLiked ? 'fill-current' : ''}`} />
+                          <Heart className={`w-4 h-4 sm:w-5 sm:h-5 mr-2 ${post.isLiked ? 'fill-current' : ''}`} />
                           <span className="text-xs sm:text-sm">{post.likes_count || 0}</span>
-                        </button>
-                        <button className="flex items-center space-x-1.5 sm:space-x-2 text-slate-400 hover:text-blue-400 transition-colors min-w-0">
-                          <Reply className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-slate-400 hover:text-blue-400">
+                          <Reply className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                           <span className="text-xs sm:text-sm">{post.comments_count || 0}</span>
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleShare(post.id)}
-                          className="flex items-center space-x-1.5 sm:space-x-2 text-slate-400 hover:text-green-400 transition-colors min-w-0"
+                          className="text-slate-400 hover:text-green-400"
                         >
-                          <Share2 className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                          <Share2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                           <span className="text-xs sm:text-sm">{post.shares_count || 0}</span>
-                        </button>
+                        </Button>
                       </div>
                       <div className="hidden sm:flex items-center space-x-2 text-slate-400">
                         <Eye className="w-4 h-4" />
                         <span className="text-sm">1.2k views</span>
                       </div>
                     </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 ))
               )}
             </div>

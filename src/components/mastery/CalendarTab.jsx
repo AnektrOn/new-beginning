@@ -5,6 +5,8 @@ import { supabase } from '../../lib/supabaseClient';
 import masteryService from '../../services/masteryService';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMasteryRefresh } from '../../pages/Mastery';
+import LoadingSpinner from '../common/LoadingSpinner';
+import ErrorDisplay from '../common/ErrorDisplay';
 
 const CalendarTab = () => {
   const { user, fetchProfile } = useAuth();
@@ -575,22 +577,20 @@ const CalendarTab = () => {
 
       {/* Error Display */}
       {error && (
-        <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-red-700 dark:text-red-300 text-sm">{error}</p>
-          <button
-            onClick={() => setError(null)}
-            className="mt-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 text-xs"
-          >
-            Dismiss
-          </button>
+        <div className="mb-4">
+          <ErrorDisplay
+            title="Error loading calendar"
+            message={error}
+            variant="alert"
+            onDismiss={() => setError(null)}
+          />
         </div>
       )}
 
       {/* Loading State */}
       {loading && (
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          <span className="ml-2 text-gray-600 dark:text-gray-400">Loading...</span>
+          <LoadingSpinner size="lg" text="Loading calendar..." />
         </div>
       )}
 

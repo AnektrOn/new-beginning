@@ -5,51 +5,47 @@
 /* Import Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 
-/* CSS Custom Properties for Design System */
+/* Import Design Tokens */
+@import './styles/design-tokens.css';
+
+/* Import Animations */
+@import './styles/animations.css';
+
+/* Import Typography */
+@import './styles/typography.css';
+
+/* Import Accessibility */
+@import './styles/accessibility.css';
+
+/* CSS Custom Properties for Design System - Using Palette System */
 :root {
-  /* shadcn/ui variables */
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222.2 84% 4.9%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96%;
-  --accent-foreground: 222.2 84% 4.9%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
+  /* shadcn/ui variables - Light Theme */
+  --background: 247 241 225;  /* Old lace - #F7F1E1 */
+  --foreground: 63 63 44;     /* Earth Green - #3F3F2C */
+  --card: 227 216 193;        /* Bone - #E3D8C1 */
+  --card-foreground: 102 55 27; /* Kobicha - #66371B */
+  --popover: 247 241 225;     /* Old lace */
+  --popover-foreground: 102 55 27; /* Kobicha */
+  --primary: 180 131 61;      /* Dark goldenrod - #B4833D */
+  --primary-foreground: 247 241 225; /* Old lace */
+  --secondary: 227 216 193;   /* Bone */
+  --secondary-foreground: 102 55 27; /* Kobicha */
+  --muted: 227 216 193;       /* Bone */
+  --muted-foreground: 129 117 75; /* Coyote - #81754B */
+  --accent: 180 131 61;        /* Dark goldenrod */
+  --accent-foreground: 247 241 225; /* Old lace */
+  --destructive: 180 131 61;   /* Dark goldenrod */
+  --destructive-foreground: 247 241 225; /* Old lace */
+  --border: 129 117 75;        /* Coyote */
+  --input: 129 117 75;         /* Coyote */
+  --ring: 180 131 61;          /* Dark goldenrod */
   --radius: 0.5rem;
   
-  /* Design system colors */
-  --color-primary: #3b82f6;
-  --color-primary-dark: #1d4ed8;
-  --color-primary-light: #60a5fa;
-  
-  /* Secondary Colors */
-  --color-secondary: #667eea;
-  --color-secondary-dark: #4c51bf;
-  --color-secondary-light: #a5b4fc;
-  
-  /* Semantic Colors */
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
-  --color-info: #3b82f6;
-  
-  /* Light Mode Colors */
-  --bg-primary: #F7F1E1;
-  --bg-secondary: #E3D8C1;
-  --text-primary: #3F3F2C;
-  --text-secondary: #81754B;
+  /* Light Mode Colors - Using Palette */
+  --bg-primary: var(--palette-light-bg);
+  --bg-secondary: var(--palette-light-surface);
+  --text-primary: var(--palette-light-text);
+  --text-secondary: var(--palette-light-border);
   
   /* Font Families */
   --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -57,13 +53,65 @@
   --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
-/* Dark Mode */
+/* Dark Mode - Using Dark Palette */
+.dark,
+[data-theme="dark"] {
+  /* shadcn/ui variables - Dark Theme */
+  --background: 8 24 24;     /* Darkest - #081818 */
+  --foreground: 238 232 178;  /* Lightest - #EEE8B2 */
+  --card: 32 56 55;           /* Dark teal - #203837 */
+  --card-foreground: 238 232 178; /* Lightest */
+  --popover: 8 24 24;         /* Darkest */
+  --popover-foreground: 238 232 178; /* Lightest */
+  --primary: 90 143 118;      /* Medium green - #5A8F76 */
+  --primary-foreground: 238 232 178; /* Lightest */
+  --secondary: 32 56 55;      /* Dark teal */
+  --secondary-foreground: 150 205 176; /* Light green - #96CDB0 */
+  --muted: 32 56 55;          /* Dark teal */
+  --muted-foreground: 193 141 82; /* Brown/Orange - #C18D52 */
+  --accent: 90 143 118;       /* Medium green */
+  --accent-foreground: 238 232 178; /* Lightest */
+  --destructive: 193 141 82;  /* Brown/Orange */
+  --destructive-foreground: 238 232 178; /* Lightest */
+  --border: 32 56 55;         /* Dark teal */
+  --input: 32 56 55;          /* Dark teal */
+  --ring: 90 143 118;         /* Medium green */
+  
+  /* Dark Mode Colors - Using Palette */
+  --bg-primary: var(--palette-dark-bg);
+  --bg-secondary: var(--palette-dark-surface);
+  --text-primary: var(--palette-dark-text);
+  --text-secondary: var(--palette-dark-secondary);
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg-primary: #081818;
-    --bg-secondary: #203837;
-    --text-primary: #C18D52;
-    --text-secondary: #96CDB0;
+  :root:not(.light):not([data-theme="light"]) {
+    /* shadcn/ui variables - Dark Theme */
+    --background: 8 24 24;     /* Darkest - #081818 */
+    --foreground: 238 232 178;  /* Lightest - #EEE8B2 */
+    --card: 32 56 55;           /* Dark teal - #203837 */
+    --card-foreground: 238 232 178; /* Lightest */
+    --popover: 8 24 24;         /* Darkest */
+    --popover-foreground: 238 232 178; /* Lightest */
+    --primary: 90 143 118;      /* Medium green - #5A8F76 */
+    --primary-foreground: 238 232 178; /* Lightest */
+    --secondary: 32 56 55;      /* Dark teal */
+    --secondary-foreground: 150 205 176; /* Light green - #96CDB0 */
+    --muted: 32 56 55;          /* Dark teal */
+    --muted-foreground: 193 141 82; /* Brown/Orange - #C18D52 */
+    --accent: 90 143 118;       /* Medium green */
+    --accent-foreground: 238 232 178; /* Lightest */
+    --destructive: 193 141 82;  /* Brown/Orange */
+    --destructive-foreground: 238 232 178; /* Lightest */
+    --border: 32 56 55;         /* Dark teal */
+    --input: 32 56 55;          /* Dark teal */
+    --ring: 90 143 118;         /* Medium green */
+    
+    /* Dark Mode Colors - Using Palette */
+    --bg-primary: var(--palette-dark-bg);
+    --bg-secondary: var(--palette-dark-surface);
+    --text-primary: var(--palette-dark-text);
+    --text-secondary: var(--palette-dark-secondary);
   }
 }
 
