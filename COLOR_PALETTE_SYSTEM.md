@@ -1,98 +1,119 @@
-# Color Palette System
+# 🎨 Color Palette System
 
 ## Overview
-The application now uses a dual-palette system with separate color schemes for light and dark themes.
 
-## Light Theme Palette
+The Human Catalyst University now includes a comprehensive color palette system that allows users to choose from multiple themes. The system is fully integrated and provides a seamless way to switch between different color schemes.
 
-| Color Name | Hex Code | Usage |
-|------------|----------|-------|
-| **Old lace** | `#F7F1E1` | Primary background |
-| **Bone** | `#E3D8C1` | Secondary background, surfaces |
-| **Dark goldenrod** | `#B4833D` | Primary accent, active states |
-| **Kobicha** | `#66371B` | Primary text, dark accents |
-| **Coyote** | `#81754B` | Borders, secondary text |
-| **Earth Green** | `#3F3F2C` | Darkest text, emphasis |
+## Features
 
-### Light Theme CSS Variables
-- `--palette-light-bg`: `#F7F1E1` (Old lace)
-- `--palette-light-surface`: `#E3D8C1` (Bone)
-- `--palette-light-accent`: `#B4833D` (Dark goldenrod)
-- `--palette-light-text`: `#66371B` (Kobicha)
-- `--palette-light-border`: `#81754B` (Coyote)
-- `--palette-light-dark`: `#3F3F2C` (Earth Green)
+- **8 Pre-built Color Palettes**: Ocean Blue, Forest Green, Sunset Orange, Royal Purple, Ocean Teal, Rose Pink, Dark Mode, and Midnight Blue
+- **Persistent Storage**: User's palette choice is saved in localStorage
+- **Real-time Switching**: Colors change instantly without page reload
+- **Responsive Design**: Works on all screen sizes
+- **Accessibility**: High contrast support and keyboard navigation
 
-## Dark Theme Palette
+## File Structure
 
-| Color Name | Hex Code | Usage |
-|------------|----------|-------|
-| **Lightest** | `#EEE8B2` | Primary text, light accents |
-| **Brown/Orange** | `#C18D52` | Accent, warning states |
-| **Darkest** | `#081818` | Primary background |
-| **Dark teal** | `#203837` | Secondary background, surfaces |
-| **Medium green** | `#5A8F76` | Primary accent, active states |
-| **Light green** | `#96CDB0` | Secondary text, borders |
-
-### Dark Theme CSS Variables
-- `--palette-dark-bg`: `#081818` (Darkest)
-- `--palette-dark-surface`: `#203837` (Dark teal)
-- `--palette-dark-accent`: `#C18D52` (Brown/Orange)
-- `--palette-dark-text`: `#EEE8B2` (Lightest)
-- `--palette-dark-secondary`: `#96CDB0` (Light green)
-- `--palette-dark-primary`: `#5A8F76` (Medium green)
-
-## Semantic Color Mapping
-
-### Light Theme
-- **Primary**: Dark goldenrod (`#B4833D`)
-- **Secondary**: Bone (`#E3D8C1`)
-- **Success**: Earth Green (`#3F3F2C`)
-- **Warning**: Dark goldenrod (`#B4833D`)
-- **Error**: Dark goldenrod (`#B4833D`)
-- **Info**: Coyote (`#81754B`)
-
-### Dark Theme
-- **Primary**: Medium green (`#5A8F76`)
-- **Secondary**: Dark teal (`#203837`)
-- **Success**: Medium green (`#5A8F76`)
-- **Warning**: Brown/Orange (`#C18D52`)
-- **Error**: Brown/Orange (`#C18D52`)
-- **Info**: Light green (`#96CDB0`)
-
-## Bottom Navigation Colors
-
-### Light Theme
-- **Background**: `rgba(247, 241, 225, 0.95)` (Old lace with opacity)
-- **Border**: `rgba(129, 117, 75, 0.3)` (Coyote)
-- **Active Icon**: `#B4833D` (Dark goldenrod)
-- **Inactive Icon**: `#81754B` (Coyote)
-
-### Dark Theme
-- **Background**: `rgba(8, 24, 24, 0.95)` (Darkest with opacity)
-- **Border**: `rgba(90, 143, 118, 0.3)` (Medium green)
-- **Active Icon**: `#5A8F76` (Medium green)
-- **Inactive Icon**: `#96CDB0` (Light green)
+```
+src/
+├── config/
+│   └── colorPalettes.js          # All color palette definitions
+├── utils/
+│   └── colorPaletteSwitcher.js   # Core switching logic
+└── components/
+    └── common/
+        ├── ColorPaletteDropdown.js    # UI component
+        └── ColorPaletteDropdown.css   # Styling
+```
 
 ## Usage
 
-All colors are available as CSS custom properties in `src/styles/design-tokens.css`. Components should use these variables instead of hardcoded colors to ensure theme consistency.
+### For Users
+1. Look for the color palette dropdown in the header (right side)
+2. Click on the current theme name to open the dropdown
+3. Select your preferred theme from the list
+4. The theme will be applied immediately and saved for future visits
 
-### Example Usage
+### For Developers
 
-```css
-/* Light theme (default) */
-.my-component {
-  background-color: var(--color-background);
-  color: var(--color-text);
-  border-color: var(--color-border);
-}
+#### Switching Palettes Programmatically
+```javascript
+import colorPaletteSwitcher from './utils/colorPaletteSwitcher';
 
-/* Dark theme (automatic via .dark class) */
-.dark .my-component {
-  /* Colors automatically switch via CSS variables */
+// Switch to a specific palette
+colorPaletteSwitcher.switchTo('forest');
+
+// Get current palette
+const currentPalette = colorPaletteSwitcher.getCurrentPalette();
+
+// Reset to default
+colorPaletteSwitcher.resetToDefault();
+```
+
+#### Listening to Palette Changes
+```javascript
+document.addEventListener('colorPaletteChanged', (event) => {
+  console.log('New palette:', event.detail.paletteKey);
+  console.log('Palette data:', event.detail.palette);
+});
+```
+
+#### Adding New Palettes
+Edit `src/config/colorPalettes.js` and add a new palette object:
+
+```javascript
+newTheme: {
+  name: 'New Theme',
+  description: 'Description of the new theme',
+  colors: {
+    '--color-primary': '#your-color',
+    '--color-secondary': '#your-color',
+    // ... all other color variables
+  }
 }
 ```
 
-## Theme Switching
+## Available Palettes
 
-The theme is controlled by the `.dark` class on the root element. The `AppShellMobile` component manages theme state and applies the class accordingly.
+1. **Ocean Blue** (Default) - Professional blue theme
+2. **Forest Green** - Natural green theme  
+3. **Sunset Orange** - Warm orange theme
+4. **Royal Purple** - Elegant purple theme
+5. **Ocean Teal** - Calming teal theme
+6. **Rose Pink** - Soft pink theme
+7. **Dark Mode** - Dark theme for low light
+8. **Midnight Blue** - Deep blue night theme
+
+## CSS Variables
+
+The system uses CSS custom properties (variables) that are dynamically updated:
+
+- `--color-primary` - Main brand color
+- `--color-secondary` - Secondary brand color
+- `--color-success` - Success states
+- `--color-warning` - Warning states
+- `--color-error` - Error states
+- `--bg-primary` - Main background
+- `--bg-secondary` - Secondary background
+- `--text-primary` - Primary text color
+- `--text-secondary` - Secondary text color
+
+## Integration Points
+
+- **Header Component**: Contains the color palette dropdown
+- **App Component**: Initializes the color palette system
+- **All Components**: Automatically use the current palette via CSS variables
+
+## Browser Support
+
+- Modern browsers with CSS custom properties support
+- localStorage for persistence
+- Graceful fallback to default palette if localStorage is unavailable
+
+## Future Enhancements
+
+- Custom palette creation
+- Palette sharing between users
+- System theme detection (light/dark mode)
+- Animation transitions between palettes
+- Palette preview in settings

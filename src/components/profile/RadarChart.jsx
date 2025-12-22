@@ -100,12 +100,12 @@ const RadarChart = ({ data, size = 200 }) => {
         ))}
       </svg>
       
-      {/* Labels - Mobile: Smaller, Better Spacing */}
-      <div className="mt-3 sm:mt-4 grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2 text-xs">
+      {/* Labels */}
+      <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
         {points.map((point, index) => (
           <div key={index} className="flex items-center justify-center">
-            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full mr-1 flex-shrink-0"></div>
-            <span className="text-slate-300 dark:text-slate-400 font-medium text-[10px] sm:text-xs text-center line-clamp-1">{point.name}</span>
+            <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+            <span className="text-gray-600 font-medium">{point.name}</span>
           </div>
         ))}
       </div>

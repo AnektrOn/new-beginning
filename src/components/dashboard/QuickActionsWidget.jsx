@@ -1,8 +1,8 @@
-import React, { memo } from 'react';
+import React from 'react';
 import { Wind, FileText, Eye, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const QuickActionsWidget = memo(({ actions = [] }) => {
+const QuickActionsWidget = ({ actions = [] }) => {
     const navigate = useNavigate();
 
     const defaultActions = [
@@ -10,28 +10,28 @@ const QuickActionsWidget = memo(({ actions = [] }) => {
             id: 'breathwork',
             label: 'Breathwork',
             icon: Wind,
-            color: 'var(--color-success, #6BCF7F)',
+            color: '#6BCF7F',
             action: () => navigate('/mastery/timer')
         },
         {
             id: 'notes',
             label: 'Notes',
             icon: FileText,
-            color: 'var(--color-warning, #FFB75B)',
+            color: '#FFB75B',
             action: () => navigate('/profile')
         },
         {
             id: 'veilkeeper',
             label: 'Veilkeeper',
             icon: Eye,
-            color: 'var(--color-secondary, #A78BFA)',
+            color: '#A78BFA',
             action: () => navigate('/mastery')
         },
         {
             id: 'resume',
             label: 'Resume',
             icon: Zap,
-            color: 'var(--color-primary, #FF8A5B)',
+            color: '#FF8A5B',
             action: () => navigate('/courses')
         }
     ];
@@ -50,15 +50,8 @@ const QuickActionsWidget = memo(({ actions = [] }) => {
                     return (
                         <button
                             key={action.id}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                console.log('Quick Action clicked:', action.id);
-                                action.action();
-                            }}
-                            className="group p-4 rounded-xl bg-white/50 dark:bg-black/20 border border-gray-200 dark:border-white/10 hover:bg-white/70 dark:hover:bg-black/30 hover:scale-105 transition-all duration-300 flex flex-col items-center gap-2 cursor-pointer"
-                            style={{ pointerEvents: 'auto' }}
-                            aria-label={`${action.label} quick action`}
+                            onClick={action.action}
+                            className="group p-4 rounded-xl bg-white/50 dark:bg-black/20 border border-gray-200 dark:border-white/10 hover:bg-white/70 dark:hover:bg-black/30 hover:scale-105 transition-all duration-300 flex flex-col items-center gap-2"
                         >
                             <div
                                 className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110"
@@ -78,8 +71,6 @@ const QuickActionsWidget = memo(({ actions = [] }) => {
             </div>
         </div>
     );
-});
-
-QuickActionsWidget.displayName = 'QuickActionsWidget';
+};
 
 export default QuickActionsWidget;

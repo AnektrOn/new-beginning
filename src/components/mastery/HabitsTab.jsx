@@ -3,8 +3,6 @@ import { Plus, Target, CheckCircle, Star, Laptop, BookOpen, Dumbbell, Flame, Tra
 import masteryService from '../../services/masteryService';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleError } from '../../utils/errorHandler';
-import LoadingSpinner from '../common/LoadingSpinner';
-import ErrorDisplay from '../common/ErrorDisplay';
 
 // Helper function to calculate current streak from completion dates
 const calculateCurrentStreak = (completedDates) => {
@@ -401,19 +399,26 @@ const HabitsTab = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <LoadingSpinner size="lg" text="Loading habits..." />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2 text-gray-600">Loading habits...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <ErrorDisplay
-        title="Error loading habits"
-        message={error}
-        variant="card"
-        onRetry={() => window.location.reload()}
-      />
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-red-600 mb-2">Error loading habits</div>
+          <div className="text-sm text-gray-600">{error}</div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
     );
   }
 
@@ -421,25 +426,19 @@ const HabitsTab = () => {
     <div className="space-y-6">
       {/* Tab Navigation */}
       <div className="glass-tab-navigation">
-        <nav className="flex space-x-1" role="tablist">
+        <nav className="flex space-x-1">
           <button
             onClick={() => setActiveTab('personal')}
             className={`glass-tab-btn ${activeTab === 'personal' ? 'glass-tab-btn-active' : ''}`}
-            role="tab"
-            aria-selected={activeTab === 'personal'}
-            aria-label={`My Habits (${personalHabits.length} habits)`}
           >
-            <Target size={20} className="mr-2" aria-hidden="true" />
+            <Target size={20} className="mr-2" />
             My Habits ({personalHabits.length})
           </button>
           <button
             onClick={() => setActiveTab('library')}
             className={`glass-tab-btn ${activeTab === 'library' ? 'glass-tab-btn-active' : ''}`}
-            role="tab"
-            aria-selected={activeTab === 'library'}
-            aria-label={`Library (${habitsLibrary.length} habits)`}
           >
-            <Star size={20} className="mr-2" aria-hidden="true" />
+            <Star size={20} className="mr-2" />
             Library ({habitsLibrary.length})
           </button>
         </nav>
@@ -456,9 +455,8 @@ const HabitsTab = () => {
             <button
               onClick={() => setShowAddHabit(true)}
               className="glass-primary-btn"
-              aria-label="Add new custom habit"
-             aria-label="Add new custom habit">
-              <Plus size={20} className="mr-2" aria-hidden="true" />
+            >
+              <Plus size={20} className="mr-2" />
               Add Custom Habit
             </button>
           </div>
@@ -528,15 +526,13 @@ const HabitsTab = () => {
                     onClick={createCustomHabit}
                     className="glass-primary-btn"
                     disabled={!newHabit.title.trim()}
-                    aria-label="Create new custom habit"
-                   aria-label="Create new custom habit">
+                  >
                     Create Habit
                   </button>
                   <button
                     onClick={() => setShowAddHabit(false)}
                     className="glass-secondary-btn"
-                    aria-label="Cancel creating habit"
-                   aria-label="Cancel creating habit">
+                  >
                     Cancel
                   </button>
                 </div>
@@ -564,10 +560,8 @@ const HabitsTab = () => {
                             ? 'bg-blue-600 text-white'
                             : 'border-2 border-white text-white hover:bg-white hover:text-blue-900'
                         }`}
-                        aria-label={habit.completed_today ? `Mark ${habit.title} as incomplete` : `Complete ${habit.title}`}
-                        aria-pressed={habit.completed_today}
                       >
-                        <CheckCircle size={12} strokeWidth={1.5} aria-hidden="true" />
+                        <CheckCircle size={12} strokeWidth={1.5} />
                       </button>
                     </div>
 
@@ -602,10 +596,9 @@ const HabitsTab = () => {
                       <button
                         onClick={() => deleteHabit(habit.id)}
                         className="w-6 h-6 rounded-full flex items-center justify-center text-red-400 hover:text-red-300 hover:bg-red-900/20 transition-colors"
-                        aria-label={`Delete habit ${habit.title}`}
                         title="Delete habit"
                       >
-                        <Trash2 size={12} strokeWidth={1.5} aria-hidden="true" />
+                        <Trash2 size={12} strokeWidth={1.5} />
                       </button>
                     </div>
                   </div>
@@ -616,7 +609,7 @@ const HabitsTab = () => {
 
           {personalHabits.length === 0 && (
             <div className="glass-card p-8 text-center">
-              <Target size={48} className="mx-auto text-gray-400 mb-4"  aria-hidden="true"/>
+              <Target size={48} className="mx-auto text-gray-400 mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 No habits yet
               </h3>
@@ -626,8 +619,7 @@ const HabitsTab = () => {
               <button
                 onClick={() => setActiveTab('library')}
                 className="glass-primary-btn"
-                aria-label="Browse habits library"
-               role="tab" aria-selected={activeTab === 'library'} aria-label="Habits Library" aria-label="Browse habits library">
+              >
                 Browse Library
               </button>
             </div>
@@ -668,9 +660,8 @@ const HabitsTab = () => {
                   <button
                     onClick={() => addHabitFromLibrary(habit)}
                     className="glass-primary-btn"
-                    aria-label={`Add ${habit.title} to your habits`}
-                   aria-label={`Add ${habit.title} to your habits`}>
-                    <Plus size={20} className="mr-2"  aria-hidden="true"/>
+                  >
+                    <Plus size={20} className="mr-2" />
                     Add to My Habits
                   </button>
                 </div>

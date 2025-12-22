@@ -1,97 +1,41 @@
 import React from 'react';
-import { AlertCircle, RefreshCw, Home } from 'lucide-react';
-import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { cn } from '../../lib/utils';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 
 /**
- * Enhanced Error Display Component
- * Provides user-friendly error messages with recovery actions
+ * Consistent error display component
  */
-const ErrorDisplay = ({
+const ErrorDisplay = ({ 
+  error, 
+  onRetry, 
   title = 'Something went wrong',
-  message,
-  error,
-  onRetry,
-  onGoHome,
-  variant = 'card', // card, alert, minimal
-  className
+  showRetry = true,
+  className = ''
 }) => {
-  const errorMessage = message || error?.message || 'An unexpected error occurred. Please try again.';
+  if (!error) return null;
 
-  if (variant === 'alert') {
-    return (
-      <Alert variant="destructive" className={className}>
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>{title}</AlertTitle>
-        <AlertDescription>
-          {errorMessage}
-          {(onRetry || onGoHome) && (
-            <div className="flex gap-2 mt-4">
-              {onRetry && (
-                <Button variant="outline" size="sm" onClick={onRetry}>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Try Again
-                </Button>
-              )}
-              {onGoHome && (
-                <Button variant="outline" size="sm" onClick={onGoHome}>
-                  <Home className="mr-2 h-4 w-4" />
-                  Go Home
-                </Button>
-              )}
-            </div>
-          )}
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  if (variant === 'minimal') {
-    return (
-      <div className={cn('text-center py-8', className)}>
-        <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-2" />
-        <p className="text-sm text-muted-foreground">{errorMessage}</p>
-        {onRetry && (
-          <Button variant="ghost" size="sm" onClick={onRetry} className="mt-4">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Retry
-          </Button>
-        )}
-      </div>
-    );
-  }
-
-  // Default card variant
   return (
-    <Card className={cn('glass-effect-enhanced border-destructive/50', className)}>
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <AlertCircle className="h-5 w-5 text-destructive" />
-          <CardTitle className="text-destructive">{title}</CardTitle>
+    <div className={`bg-red-50 border border-red-200 rounded-lg p-4 ${className}`}>
+      <div className="flex items-start">
+        <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
+        <div className="flex-1">
+          <h3 className="text-sm font-medium text-red-800 mb-1">
+            {title}
+          </h3>
+          <p className="text-sm text-red-700 mb-3">
+            {error}
+          </p>
+          {showRetry && onRetry && (
+            <button
+              onClick={onRetry}
+              className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Try Again
+            </button>
+          )}
         </div>
-        <CardDescription>{errorMessage}</CardDescription>
-      </CardHeader>
-      {(onRetry || onGoHome) && (
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-2">
-            {onRetry && (
-              <Button variant="default" onClick={onRetry} className="flex-1">
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Try Again
-              </Button>
-            )}
-            {onGoHome && (
-              <Button variant="outline" onClick={onGoHome} className="flex-1">
-                <Home className="mr-2 h-4 w-4" />
-                Go to Dashboard
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      )}
-    </Card>
+      </div>
+    </div>
   );
 };
 

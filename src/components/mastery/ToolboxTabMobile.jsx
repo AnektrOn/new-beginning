@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Wrench, Plus } from 'lucide-react';
+import { Wrench, Plus, CheckCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMasteryRefresh } from '../../pages/Mastery';
@@ -16,7 +16,7 @@ const ToolboxTabMobile = () => {
   const [toolboxLibrary, setToolboxLibrary] = useState([]);
   const [userToolbox, setUserToolbox] = useState([]);
   const [loading, setLoading] = useState(true);
-  // Removed unused error state (errors are logged directly)
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadToolbox = async () => {
@@ -36,7 +36,7 @@ const ToolboxTabMobile = () => {
         setUserToolbox(userTools || []);
       } catch (err) {
         console.error('Error loading toolbox:', err);
-        // Error logged above
+        setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -92,6 +92,14 @@ const ToolboxTabMobile = () => {
     }
   };
 
+  const getToolColor = (title) => {
+    const lower = title?.toLowerCase() || '';
+    if (lower.includes('pomodoro')) return '#8B5CF6';
+    if (lower.includes('mind') || lower.includes('map')) return '#A78BFA';
+    if (lower.includes('meditation')) return '#10B981';
+    return '#6B7280';
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -110,7 +118,7 @@ const ToolboxTabMobile = () => {
             activeTab === 'my-tools' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400'
           }`}
         >
-          <Wrench size={18}  aria-hidden="true"/>
+          <Wrench size={18} />
           <span>My Tools</span>
         </button>
         <button
@@ -119,7 +127,7 @@ const ToolboxTabMobile = () => {
             activeTab === 'library' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400'
           }`}
         >
-          <Plus size={18}  aria-hidden="true"/>
+          <Plus size={18} />
           <span>Library</span>
         </button>
       </div>
@@ -129,12 +137,12 @@ const ToolboxTabMobile = () => {
         <div className="space-y-4">
           {userToolbox.length === 0 ? (
             <div className="text-center py-12">
-              <Wrench size={48} className="mx-auto mb-4 text-slate-600"  aria-hidden="true"/>
+              <Wrench size={48} className="mx-auto mb-4 text-slate-600" />
               <p className="text-slate-400 mb-4">No tools yet</p>
               <button
                 onClick={() => setActiveTab('library')}
                 className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-indigo-500 transition-all min-h-[48px]"
-               role="tab" aria-selected={activeTab === 'library'} aria-label="Toolbox Library">
+              >
                 Add from Library
               </button>
             </div>

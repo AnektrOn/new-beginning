@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Target, Flame } from 'lucide-react';
+import { Plus, Target, Trash2, CheckCircle, Flame } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
@@ -17,7 +17,7 @@ const HabitsTabMobile = () => {
   const [personalHabits, setPersonalHabits] = useState([]);
   const [habitsLibrary, setHabitsLibrary] = useState([]);
   const [loading, setLoading] = useState(true);
-  // Removed unused error state (errors are logged directly)
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadHabits = async () => {
@@ -67,7 +67,7 @@ const HabitsTabMobile = () => {
         setPersonalHabits(transformed);
       } catch (err) {
         console.error('Error loading habits:', err);
-        // Error logged above
+        setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -103,9 +103,9 @@ const HabitsTabMobile = () => {
           {
             duration: 4000,
             style: {
-              background: 'color-mix(in srgb, var(--bg-secondary, #1e293b) 95%, transparent)',
+              background: 'rgba(30, 41, 59, 0.95)',
               color: '#fff',
-              border: '1px solid color-mix(in srgb, var(--color-success, #10b981) 30%, transparent)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
               borderRadius: '12px',
               padding: '16px 20px',
               fontSize: '14px',
@@ -113,7 +113,7 @@ const HabitsTabMobile = () => {
               zIndex: 9999,
             },
             iconTheme: {
-              primary: 'var(--color-success, #10B981)',
+              primary: '#10B981',
               secondary: '#fff',
             },
           }
@@ -151,7 +151,7 @@ const HabitsTabMobile = () => {
       toast.error('Failed to update habit. Please try again.', {
         duration: 3000,
         style: {
-          background: 'color-mix(in srgb, var(--color-error, #ef4444) 95%, transparent)',
+          background: 'rgba(239, 68, 68, 0.95)',
           color: '#fff',
           zIndex: 9999,
         },
@@ -213,7 +213,7 @@ const HabitsTabMobile = () => {
             activeTab === 'my-habits' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400'
           }`}
         >
-          <Target size={18}  aria-hidden="true"/>
+          <Target size={18} />
           <span>My Habits</span>
         </button>
         <button
@@ -222,7 +222,7 @@ const HabitsTabMobile = () => {
             activeTab === 'library' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400'
           }`}
         >
-          <Plus size={18}  aria-hidden="true"/>
+          <Plus size={18} />
           <span>Library</span>
         </button>
       </div>
@@ -232,7 +232,7 @@ const HabitsTabMobile = () => {
         <div className="space-y-4">
           {personalHabits.length === 0 ? (
             <div className="text-center py-12">
-              <Target size={48} className="mx-auto mb-4 text-slate-600"  aria-hidden="true"/>
+              <Target size={48} className="mx-auto mb-4 text-slate-600" />
               <p className="text-slate-400 mb-4">No habits yet</p>
               <button
                 onClick={() => setActiveTab('library')}

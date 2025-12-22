@@ -41,19 +41,17 @@ const calculateCurrentStreak = (completedDates = []) => {
 // Helper function to get appropriate color for toolbox items
 const getToolboxColor = (title) => {
   const titleLower = title.toLowerCase();
-  const root = document.documentElement;
-  const computedStyle = window.getComputedStyle(root);
   
   if (titleLower.includes('pomodoro') || titleLower.includes('time')) {
-    return computedStyle.getPropertyValue('--color-info').trim() || '#3B82F6'; // Blue
+    return '#3B82F6'; // Blue
   } else if (titleLower.includes('mind') || titleLower.includes('map')) {
-    return computedStyle.getPropertyValue('--color-secondary').trim() || '#8B5CF6'; // Purple
+    return '#8B5CF6'; // Purple
   } else if (titleLower.includes('meditation') || titleLower.includes('mindfulness')) {
-    return computedStyle.getPropertyValue('--color-success').trim() || '#10B981'; // Green
+    return '#10B981'; // Green
   } else if (titleLower.includes('listening') || titleLower.includes('communication')) {
-    return computedStyle.getPropertyValue('--color-warning').trim() || '#F59E0B'; // Orange
+    return '#F59E0B'; // Orange
   } else {
-    return computedStyle.getPropertyValue('--text-secondary').trim() || '#6B7280'; // Gray default
+    return '#6B7280'; // Gray default
   }
 };
 
@@ -69,7 +67,10 @@ const ToolboxTabCompact = () => {
     frequency_type: 'daily'
   });
   
-  // Removed unused state variables: allSkills, skillsMap, masterStats
+  // Skills system state
+  const [allSkills, setAllSkills] = useState([]);
+  const [skillsMap, setSkillsMap] = useState(new Map());
+  const [masterStats, setMasterStats] = useState([]);
 
   // Load toolbox data from database - NO LOADING STATE
   useEffect(() => {
@@ -83,11 +84,20 @@ const ToolboxTabCompact = () => {
         const { data: skillsData, error: skillsError } = await skillsService.getAllSkills();
         let skillsMap = new Map();
         if (!skillsError && skillsData) {
+          setAllSkills(skillsData);
           skillsMap = new Map(skillsData.map(skill => [skill.id, skill]));
+          setSkillsMap(skillsMap);
           console.log('✅ ToolboxTabCompact: Skills loaded:', skillsData.length);
           console.log('📋 Skills map created with', skillsMap.size, 'entries');
         } else {
           console.error('❌ ToolboxTabCompact: Failed to load skills:', skillsError);
+        }
+
+        // Load master stats
+        const { data: masterStatsData, error: masterStatsError } = await skillsService.getMasterStats();
+        if (!masterStatsError && masterStatsData) {
+          setMasterStats(masterStatsData);
+          console.log('✅ ToolboxTabCompact: Master stats loaded:', masterStatsData.length);
         }
 
         // Load toolbox library from database (always load this)
@@ -538,7 +548,7 @@ const ToolboxTabCompact = () => {
               <button
                 onClick={() => setActiveTab('library')}
                 className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-               role="tab" aria-selected={activeTab === 'library'} aria-label="Toolbox Library">
+              >
                 Browse Library
               </button>
             </div>

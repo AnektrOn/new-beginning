@@ -120,103 +120,44 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     console.log('🔍 AuthContext: Starting authentication check...')
 
-    // Force timeout to prevent infinite loading (8 seconds max - enough for session + profile fetch)
-    const forceTimeout = setTimeout(() => {
-      console.warn('⏰ AuthContext: Force timeout reached, setting loading to false')
-      setLoading(false)
-    }, 8000)
-
-    let loadingCleared = false
-    const clearLoadingSafely = () => {
-      if (!loadingCleared) {
-        loadingCleared = true
-        clearTimeout(forceTimeout)
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('👤 AuthContext: Initial session check:', session?.user ? 'User found' : 'No user')
+      setUser(session?.user ?? null)
+      if (session?.user) {
+        console.log('📥 AuthContext: Fetching profile for user:', session.user.id)
+        fetchProfile(session.user.id).finally(() => {
+          console.log('✅ AuthContext: Profile fetch completed, setting loading to false')
+          setLoading(false)
+        })
+      } else {
+        console.log('✅ AuthContext: No user, setting loading to false')
         setLoading(false)
       }
-    }
-
-    // Helper to wrap promises with timeout
-    const withTimeout = (promise, ms = 3000) => {
-      return Promise.race([
-        promise,
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('SESSION_CHECK_TIMEOUT')), ms)
-        )
-      ])
-    }
-
-    // Get initial session with timeout
-    withTimeout(supabase.auth.getSession())
-      .then(({ data: { session } }) => {
-        console.log('👤 AuthContext: Initial session check:', session?.user ? 'User found' : 'No user')
-        setUser(session?.user ?? null)
-        if (session?.user) {
-          console.log('📥 AuthContext: Fetching profile for user:', session.user.id)
-          // Fetch profile with its own timeout, but ensure loading is cleared
-          fetchProfile(session.user.id)
-            .then(() => {
-              console.log('✅ AuthContext: Profile fetch completed')
-              clearLoadingSafely()
-            })
-            .catch((err) => {
-              console.error('❌ AuthContext: Profile fetch error:', err)
-              clearLoadingSafely()
-            })
-        } else {
-          console.log('✅ AuthContext: No user, setting loading to false')
-          clearLoadingSafely()
-        }
-      })
-      .catch((error) => {
-        if (error && error.message === 'SESSION_CHECK_TIMEOUT') {
-          console.warn('⏰ AuthContext: Session check timed out, proceeding without blocking UI')
-        } else {
-          console.error('❌ AuthContext: Error getting session:', error)
-        }
-        clearLoadingSafely()
-      })
+    }).catch((error) => {
+      console.error('❌ AuthContext: Error getting session:', error)
+      setLoading(false)
+    })
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.jsx:180',message:'onAuthStateChange triggered',data:{event,hasSession:!!session,hasUser:!!session?.user,userId:session?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
-        
         console.log('🔄 AuthContext: Auth state changed:', event, session?.user ? 'User found' : 'No user')
         setUser(session?.user ?? null)
-        
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.jsx:184',message:'setUser called in onAuthStateChange',data:{userId:session?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
-        
         if (session?.user) {
           console.log('📥 AuthContext: Fetching profile after auth change for user:', session.user.id)
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.jsx:186',message:'Calling fetchProfile in onAuthStateChange - before',data:{userId:session.user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-          // #endregion
           await fetchProfile(session.user.id)
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.jsx:186',message:'fetchProfile completed in onAuthStateChange - after',data:{userId:session.user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-          // #endregion
         } else {
           setProfile(null)
         }
         console.log('✅ AuthContext: Auth state change completed, setting loading to false')
         setLoading(false)
-        
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.jsx:191',message:'onAuthStateChange completed - setLoading false',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
       }
     )
 
     return () => {
       console.log('🧹 AuthContext: Cleaning up auth subscription and timeout')
-      clearTimeout(forceTimeout)
-      if (subscription) {
-        subscription.unsubscribe()
-      }
+      subscription.unsubscribe()
     }
   }, [fetchProfile])
 
@@ -263,36 +204,16 @@ export const AuthProvider = ({ children }) => {
 
   const signIn = async (email, password) => {
     try {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.jsx:245',message:'signIn called - before supabase call',data:{email:email.trim()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
-      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       })
 
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.jsx:252',message:'signIn supabase returned - after',data:{hasError:!!error,hasData:!!data,hasUser:!!data?.user,hasSession:!!data?.session,userId:data?.user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
-
       if (error) throw error
       
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.jsx:254',message:'signIn success - before toast',data:{userId:data?.user?.id,currentUserState:user?.id,currentProfileState:profile?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
-      
       toast.success('Welcome back!')
-      
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.jsx:255',message:'signIn success - returning',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
-      
       return { data, error: null }
     } catch (error) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e1fd222d-4bbd-4d1f-896a-e639b5e7b121',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AuthContext.jsx:257',message:'signIn error catch',data:{errorMessage:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       console.error('Sign in error:', error)
       toast.error(error.message)
       return { data: null, error }
@@ -343,7 +264,6 @@ export const AuthProvider = ({ children }) => {
     if (!user) return { error: new Error('No user logged in') }
 
     try {
-      console.log('🔄 AuthContext: Updating profile with:', updates)
       const { data, error } = await supabase
         .from('profiles')
         .update(updates)
@@ -353,12 +273,11 @@ export const AuthProvider = ({ children }) => {
 
       if (error) throw error
 
-      console.log('✅ AuthContext: Profile updated, new data:', data)
       setProfile(data)
-      // Don't show toast here - let the caller handle it
+      toast.success('Profile updated successfully!')
       return { data, error: null }
     } catch (error) {
-      console.error('❌ AuthContext: Update profile error:', error)
+      console.error('Update profile error:', error)
       toast.error(error.message)
       return { data: null, error }
     }

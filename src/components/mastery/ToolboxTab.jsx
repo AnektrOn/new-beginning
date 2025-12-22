@@ -3,8 +3,7 @@ import { Wrench, Plus, Target, Trash2, CheckCircle, Clock, Star } from 'lucide-r
 import masteryService from '../../services/masteryService';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleError, clearError } from '../../utils/errorHandler';
-import LoadingSpinner from '../common/LoadingSpinner';
-import ErrorDisplay from '../common/ErrorDisplay';
+import toast from 'react-hot-toast';
 
 // Helper function to calculate current streak from completion dates
 const calculateCurrentStreak = (completedDates = []) => {
@@ -272,13 +271,30 @@ const ToolboxTab = () => {
 
   // Remove tool from user toolbox
   const removeTool = async (toolId) => {
+    if (!user) return;
+    
     try {
-      // TODO: Implement API call to remove tool
-      console.log('Removing tool:', toolId);
+      // Find the user toolbox item ID
+      const toolboxItem = userToolbox.find(tool => tool.toolbox_library?.id === toolId || tool.id === toolId);
+      if (!toolboxItem) {
+        console.error('Toolbox item not found:', toolId);
+        return;
+      }
+
+      // Use masteryService to remove the toolbox item
+      const { error } = await masteryService.removeUserToolboxItem(toolboxItem.id);
       
-      setUserToolbox(userToolbox.filter(tool => tool.id !== toolId));
+      if (error) {
+        console.error('Error removing tool:', error);
+        handleError(error);
+        return;
+      }
+      
+      // Update local state
+      setUserToolbox(userToolbox.filter(tool => tool.id !== toolboxItem.id));
     } catch (error) {
       console.error('Error removing tool:', error);
+      handleError(error);
     }
   };
 
@@ -379,34 +395,41 @@ const ToolboxTab = () => {
       const { error } = await masteryService.useToolboxItem(user.id, toolId);
       if (error) throw error;
 
-      // Reload toolbox to get updated data
+      // Reload toolbox to get updated data with real usage
       const { data: userToolboxData } = await masteryService.getUserToolboxItems(user.id);
       if (userToolboxData) {
-        // Transform the updated toolbox items
+        // Transform the updated toolbox items with real usage data
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const today = new Date();
+        
         const transformedUserToolbox = await Promise.all(
           userToolboxData.map(async (item) => {
-            const mockUsageCount = Math.floor(Math.random() * 20) + 1;
-            const mockCompletedDates = Array.from({ length: mockUsageCount }, (_, i) => {
-              const date = new Date();
-              date.setDate(date.getDate() - Math.floor(Math.random() * 30));
-              return date.toISOString().split('T')[0];
-            }).sort();
+            // Get real usage data from Supabase
+            const { data: usageData } = await masteryService.getToolboxUsage(
+              user.id,
+              item.id,
+              thirtyDaysAgo.toISOString().split('T')[0],
+              today.toISOString().split('T')[0]
+            );
 
-            const today = new Date();
+            // Get usage dates from real data
+            const usageDates = (usageData || []).map(usage => new Date(usage.used_at).toISOString().split('T')[0]);
             const todayString = today.toISOString().split('T')[0];
-            const isUsedToday = mockCompletedDates.includes(todayString);
+            const isUsedToday = usageDates.includes(todayString);
+            const totalXPEarned = (usageData || []).reduce((sum, usage) => sum + (usage.xp_earned || 0), 0);
 
             return {
               ...item,
               title: item.toolbox_library?.title || 'Unknown Tool',
               description: item.toolbox_library?.description || 'No description available',
-              usage_count: mockUsageCount,
-              last_used: mockCompletedDates[mockCompletedDates.length - 1] || null,
-              xp_earned: mockUsageCount * (item.toolbox_library?.xp_reward || 15),
+              usage_count: usageData?.length || 0,
+              last_used: usageDates[usageDates.length - 1] || null,
+              xp_earned: totalXPEarned,
               color: getToolboxColor(item.toolbox_library?.title || 'Unknown Tool'),
-              completed_dates: mockCompletedDates,
+              completed_dates: usageDates,
               used_today: isUsedToday,
-              streak: calculateCurrentStreak(mockCompletedDates)
+              streak: calculateCurrentStreak(usageDates)
             };
           })
         );
@@ -422,19 +445,26 @@ const ToolboxTab = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <LoadingSpinner size="lg" text="Loading toolbox..." />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2 text-gray-600">Loading toolbox...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <ErrorDisplay
-        title="Error loading toolbox"
-        message={error}
-        variant="card"
-        onRetry={() => window.location.reload()}
-      />
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-red-600 mb-2">Error loading toolbox</div>
+          <div className="text-sm text-gray-600">{error}</div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
     );
   }
 

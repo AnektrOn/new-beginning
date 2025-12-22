@@ -1,18 +1,8 @@
 import { supabase } from '../lib/supabaseClient';
 
-/**
- * Levels Service
- * 
- * Security Note: The 'levels' table is a public reference table containing
- * level definitions (XP thresholds, titles, etc.). RLS policies should ensure:
- * - Only authenticated users can read levels
- * - No user-specific filtering needed as levels are shared reference data
- * - All users see the same level definitions
- */
 class LevelsService {
   /**
    * Get all levels from the levels table
-   * RLS: Requires authenticated user, no user-specific filtering needed
    */
   async getAllLevels() {
     try {
@@ -31,7 +21,6 @@ class LevelsService {
 
   /**
    * Get level by level number
-   * RLS: Requires authenticated user, no user-specific filtering needed
    */
   async getLevelByNumber(levelNumber) {
     try {
@@ -51,7 +40,6 @@ class LevelsService {
 
   /**
    * Get current level and next level based on XP
-   * RLS: Requires authenticated user, no user-specific filtering needed
    */
   async getCurrentAndNextLevel(currentXP) {
     try {

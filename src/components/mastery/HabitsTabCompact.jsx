@@ -70,7 +70,10 @@ const HabitsTabCompact = () => {
     frequency_type: 'daily',
     xp_reward: 10
   });
-  // Removed unused state variables: allSkills, skillsMap, selectedSkillFilter, masterStats
+  const [allSkills, setAllSkills] = useState([]);
+  const [skillsMap, setSkillsMap] = useState(new Map());
+  const [selectedSkillFilter, setSelectedSkillFilter] = useState(null);
+  const [masterStats, setMasterStats] = useState([]);
 
   // Load habits data from database - NO LOADING STATE
   useEffect(() => {
@@ -84,11 +87,20 @@ const HabitsTabCompact = () => {
         const { data: skillsData, error: skillsError } = await skillsService.getAllSkills();
         let skillsMap = new Map();
         if (!skillsError && skillsData) {
+          setAllSkills(skillsData);
           skillsMap = new Map(skillsData.map(skill => [skill.id, skill]));
+          setSkillsMap(skillsMap);
           console.log('✅ HabitsTabCompact: Skills loaded:', skillsData.length);
           console.log('📋 Skills map created with', skillsMap.size, 'entries');
         } else {
           console.error('❌ HabitsTabCompact: Failed to load skills:', skillsError);
+        }
+
+        // Load master stats
+        const { data: masterStatsData, error: masterStatsError } = await skillsService.getMasterStats();
+        if (!masterStatsError && masterStatsData) {
+          setMasterStats(masterStatsData);
+          console.log('✅ HabitsTabCompact: Master stats loaded:', masterStatsData.length);
         }
 
         // Load habits library from database (always load this)

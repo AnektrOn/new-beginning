@@ -4,137 +4,170 @@
 
 /* Import Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
 
-/* Import Design Tokens */
-@import './styles/design-tokens.css';
+@layer base {
+  :root {
+    /* Shadcn/UI & Design System Core Colors (HSL) */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
 
-/* Import Animations */
-@import './styles/animations.css';
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
 
-/* Import Typography */
-@import './styles/typography.css';
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-/* Import Accessibility */
-@import './styles/accessibility.css';
+    /* Primary: Dark Goldenrod #B4833D -> 36 54% 47% */
+    --primary: 36 54% 47%;
+    --primary-foreground: 210 40% 98%;
 
-/* CSS Custom Properties for Design System - Using Palette System */
-:root {
-  /* shadcn/ui variables - Light Theme */
-  --background: 247 241 225;  /* Old lace - #F7F1E1 */
-  --foreground: 63 63 44;     /* Earth Green - #3F3F2C */
-  --card: 227 216 193;        /* Bone - #E3D8C1 */
-  --card-foreground: 102 55 27; /* Kobicha - #66371B */
-  --popover: 247 241 225;     /* Old lace */
-  --popover-foreground: 102 55 27; /* Kobicha */
-  --primary: 180 131 61;      /* Dark goldenrod - #B4833D */
-  --primary-foreground: 247 241 225; /* Old lace */
-  --secondary: 227 216 193;   /* Bone */
-  --secondary-foreground: 102 55 27; /* Kobicha */
-  --muted: 227 216 193;       /* Bone */
-  --muted-foreground: 129 117 75; /* Coyote - #81754B */
-  --accent: 180 131 61;        /* Dark goldenrod */
-  --accent-foreground: 247 241 225; /* Old lace */
-  --destructive: 180 131 61;   /* Dark goldenrod */
-  --destructive-foreground: 247 241 225; /* Old lace */
-  --border: 129 117 75;        /* Coyote */
-  --input: 129 117 75;         /* Coyote */
-  --ring: 180 131 61;          /* Dark goldenrod */
-  --radius: 0.5rem;
-  
-  /* Light Mode Colors - Using Palette */
-  --bg-primary: var(--palette-light-bg);
-  --bg-secondary: var(--palette-light-surface);
-  --text-primary: var(--palette-light-text);
-  --text-secondary: var(--palette-light-border);
-  
-  /* Font Families */
-  --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-family-heading: 'Space Grotesk', sans-serif;
-  --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
-}
+    /* Secondary: Coyote #81754B -> 48 27% 40% */
+    --secondary: 48 27% 40%;
+    --secondary-foreground: 210 40% 98%;
 
-/* Dark Mode - Using Dark Palette */
-.dark,
-[data-theme="dark"] {
-  /* shadcn/ui variables - Dark Theme */
-  --background: 8 24 24;     /* Darkest - #081818 */
-  --foreground: 238 232 178;  /* Lightest - #EEE8B2 */
-  --card: 32 56 55;           /* Dark teal - #203837 */
-  --card-foreground: 238 232 178; /* Lightest */
-  --popover: 8 24 24;         /* Darkest */
-  --popover-foreground: 238 232 178; /* Lightest */
-  --primary: 90 143 118;      /* Medium green - #5A8F76 */
-  --primary-foreground: 238 232 178; /* Lightest */
-  --secondary: 32 56 55;      /* Dark teal */
-  --secondary-foreground: 150 205 176; /* Light green - #96CDB0 */
-  --muted: 32 56 55;          /* Dark teal */
-  --muted-foreground: 193 141 82; /* Brown/Orange - #C18D52 */
-  --accent: 90 143 118;       /* Medium green */
-  --accent-foreground: 238 232 178; /* Lightest */
-  --destructive: 193 141 82;  /* Brown/Orange */
-  --destructive-foreground: 238 232 178; /* Lightest */
-  --border: 32 56 55;         /* Dark teal */
-  --input: 32 56 55;          /* Dark teal */
-  --ring: 90 143 118;         /* Medium green */
-  
-  /* Dark Mode Colors - Using Palette */
-  --bg-primary: var(--palette-dark-bg);
-  --bg-secondary: var(--palette-dark-surface);
-  --text-primary: var(--palette-dark-text);
-  --text-secondary: var(--palette-dark-secondary);
-}
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-@media (prefers-color-scheme: dark) {
-  :root:not(.light):not([data-theme="light"]) {
-    /* shadcn/ui variables - Dark Theme */
-    --background: 8 24 24;     /* Darkest - #081818 */
-    --foreground: 238 232 178;  /* Lightest - #EEE8B2 */
-    --card: 32 56 55;           /* Dark teal - #203837 */
-    --card-foreground: 238 232 178; /* Lightest */
-    --popover: 8 24 24;         /* Darkest */
-    --popover-foreground: 238 232 178; /* Lightest */
-    --primary: 90 143 118;      /* Medium green - #5A8F76 */
-    --primary-foreground: 238 232 178; /* Lightest */
-    --secondary: 32 56 55;      /* Dark teal */
-    --secondary-foreground: 150 205 176; /* Light green - #96CDB0 */
-    --muted: 32 56 55;          /* Dark teal */
-    --muted-foreground: 193 141 82; /* Brown/Orange - #C18D52 */
-    --accent: 90 143 118;       /* Medium green */
-    --accent-foreground: 238 232 178; /* Lightest */
-    --destructive: 193 141 82;  /* Brown/Orange */
-    --destructive-foreground: 238 232 178; /* Lightest */
-    --border: 32 56 55;         /* Dark teal */
-    --input: 32 56 55;          /* Dark teal */
-    --ring: 90 143 118;         /* Medium green */
-    
-    /* Dark Mode Colors - Using Palette */
-    --bg-primary: var(--palette-dark-bg);
-    --bg-secondary: var(--palette-dark-surface);
-    --text-primary: var(--palette-dark-text);
-    --text-secondary: var(--palette-dark-secondary);
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 36 54% 47%;
+    /* Dark Goldenrod for focus rings */
+
+    --radius: 0.5rem;
+
+    /* Semantic Colors (HSL) */
+    --success: 151 55% 41.5%;
+    /* #10b981 */
+    --warning: 38 92% 50%;
+    /* #f59e0b */
+    --error: 0 84% 60%;
+    /* #ef4444 */
+    --info: 217 91% 60%;
+    /* #3b82f6 */
+
+    /* Earth Tone Palette */
+    --color-old-lace: #F7F1E1;
+    --color-bone: #E3D8C1;
+    --color-dark-goldenrod: #B4833D;
+    --color-kobicha: #66371B;
+    --color-coyote: #81754B;
+    --color-earth-green: #3F3F2C;
+
+    /* Earth Tone HSL Values */
+    --old-lace: 42 47% 93%;
+    /* #F7F1E1 */
+    --bone: 42 35% 82%;
+    /* #E3D8C1 */
+    --dark-goldenrod: 36 54% 47%;
+    /* #B4833D */
+    --kobicha: 21 59% 25%;
+    /* #66371B */
+    --coyote: 48 27% 40%;
+    /* #81754B */
+    --earth-green: 60 11% 22%;
+    /* #3F3F2C */
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, #B4833D 0%, #66371B 100%);
+    --gradient-secondary: linear-gradient(135deg, #81754B 0%, #3F3F2C 100%);
+    --gradient-warm: linear-gradient(135deg, #F7F1E1 0%, #E3D8C1 100%);
+    --gradient-earth: linear-gradient(135deg, #B4833D 0%, #81754B 50%, #3F3F2C 100%);
+
+    /* Sidebar Dimensions */
+    --sidebar-width-collapsed: 80px;
+    --sidebar-width-expanded: 240px;
+    --sidebar-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Custom Design System Colors (Updated) */
+    --color-primary: #B4833D;
+    --color-secondary: #81754B;
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-error: #ef4444;
+
+    /* Glassmorphism Variables */
+    --glass-opacity: 0.08;
+    --glass-border-opacity: 0.2;
+    --glass-blur: 16px;
+
+    /* Font Families */
+    --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-family-heading: 'Space Grotesk', sans-serif;
+    --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
   }
 }
 
-/* Base styles */
-body {
-  margin: 0;
-  font-family: var(--font-family-primary);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-family-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-family-heading);
+  }
+
+  code {
+    font-family: var(--font-family-mono);
+  }
 }
 
-code {
-  font-family: var(--font-family-mono);
+/* Smooth transitions */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }
 
 /* Custom utility classes */
 .text-balance {
   text-wrap: balance;
-}
-
-/* Smooth transitions */
-* {
-  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }

@@ -33,16 +33,9 @@ const UserProfileDropdown = ({ isOpen, onClose }) => {
     };
 
     const handleSignOut = async () => {
-        try {
-            await signOut();
-            navigate('/login');
-            onClose();
-        } catch (error) {
-            console.error('Error signing out:', error);
-            // Still navigate to login even if signOut fails
-            navigate('/login');
-            onClose();
-        }
+        await signOut();
+        navigate('/login');
+        onClose();
     };
 
     return (
@@ -57,7 +50,7 @@ const UserProfileDropdown = ({ isOpen, onClose }) => {
                             className="w-10 h-10 rounded-full"
                         />
                     ) : (
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#B4833D] to-[#81754B] flex items-center justify-center">
                             <User size={20} className="text-white" />
                         </div>
                     )}

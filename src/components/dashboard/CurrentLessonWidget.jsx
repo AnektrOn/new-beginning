@@ -1,8 +1,8 @@
-import React, { memo } from 'react';
+import React from 'react';
 import { BookOpen, Play, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const CurrentLessonWidget = memo(({
+const CurrentLessonWidget = ({
     lessonId = null,
     lessonTitle = 'No active lesson',
     courseTitle = '',
@@ -35,22 +35,16 @@ const CurrentLessonWidget = memo(({
                         </p>
                     )}
                 </div>
-                <div 
-                    className="p-3 rounded-xl"
-                    style={{
-                        backgroundColor: 'color-mix(in srgb, var(--color-info) 10%, transparent)',
-                        color: 'var(--color-info)'
-                    }}
-                >
+                <div className="p-3 rounded-xl bg-blue-400/10 text-blue-500">
                     <BookOpen size={20} />
                 </div>
             </div>
 
             {thumbnailUrl && (
-                <div className="relative w-full h-40 rounded-lg overflow-hidden mb-4 group cursor-pointer" onClick={handleResume} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && handleResume()} aria-label={`Resume lesson: ${lessonTitle}`}>
+                <div className="relative w-full h-40 rounded-lg overflow-hidden mb-4 group cursor-pointer" onClick={handleResume}>
                     <img
                         src={thumbnailUrl}
-                        alt={`${lessonTitle} thumbnail`}
+                        alt={lessonTitle}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors flex items-center justify-center">
@@ -67,16 +61,12 @@ const CurrentLessonWidget = memo(({
                     <div className="mb-4">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Progress</span>
-                            <span className="text-xs font-medium" style={{ color: 'var(--color-info)' }}>{progressPercentage}%</span>
+                            <span className="text-xs font-medium text-blue-500">{progressPercentage}%</span>
                         </div>
                         <div className="w-full h-2 bg-gray-200 dark:bg-gray-700/50 rounded-full overflow-hidden">
                             <div
-                                className="h-full rounded-full transition-all duration-500"
-                                style={{ 
-                                    width: `${progressPercentage}%`,
-                                    background: 'var(--gradient-primary)',
-                                    backgroundColor: 'var(--color-info)'
-                                }}
+                                className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-500"
+                                style={{ width: `${progressPercentage}%` }}
                             />
                         </div>
                     </div>
@@ -93,9 +83,8 @@ const CurrentLessonWidget = memo(({
                     <button
                         onClick={handleResume}
                         className="w-full py-3 px-4 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-                        aria-label={`Resume lesson: ${lessonTitle}`}
                     >
-                        <Play size={16} aria-hidden="true" />
+                        <Play size={16} />
                         Resume Lesson
                     </button>
                 </>
@@ -104,28 +93,13 @@ const CurrentLessonWidget = memo(({
             {!lessonId && (
                 <button
                     onClick={() => navigate('/courses')}
-                    className="w-full py-3 px-4 rounded-lg border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium transition-all duration-300"
-                    style={{
-                        borderColor: 'var(--color-info)',
-                        color: 'var(--color-info)'
-                    }}
-                    aria-label="Browse available courses"
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = 'var(--color-info)';
-                        e.currentTarget.style.color = 'var(--color-info)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = '';
-                        e.currentTarget.style.color = '';
-                    }}
+                    className="w-full py-3 px-4 rounded-lg border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium hover:border-blue-500 hover:text-blue-500 transition-all duration-300"
                 >
                     Browse Courses
                 </button>
             )}
         </div>
     );
-});
-
-CurrentLessonWidget.displayName = 'CurrentLessonWidget';
+};
 
 export default CurrentLessonWidget;
