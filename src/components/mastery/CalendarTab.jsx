@@ -5,6 +5,8 @@ import { supabase } from '../../lib/supabaseClient';
 import masteryService from '../../services/masteryService';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMasteryRefresh } from '../../pages/Mastery';
+import LoadingSpinner from '../common/LoadingSpinner';
+import ErrorDisplay from '../common/ErrorDisplay';
 
 const CalendarTab = () => {
   const { user, fetchProfile } = useAuth();
@@ -22,21 +24,19 @@ const CalendarTab = () => {
   // Helper function to get appropriate color for habits
   const getHabitColor = (title) => {
     const titleLower = title.toLowerCase();
-    const root = document.documentElement;
-    const computedStyle = window.getComputedStyle(root);
     
     if (titleLower.includes('read') || titleLower.includes('book')) {
-      return computedStyle.getPropertyValue('--color-success').trim() || '#10b981';
+      return '#10b981'; // Green
     } else if (titleLower.includes('workout') || titleLower.includes('exercise') || titleLower.includes('gym')) {
-      return computedStyle.getPropertyValue('--color-secondary').trim() || '#8b5cf6';
+      return '#8b5cf6'; // Purple
     } else if (titleLower.includes('build') || titleLower.includes('code') || titleLower.includes('program')) {
-      return computedStyle.getPropertyValue('--color-info').trim() || '#3b82f6';
+      return '#3b82f6'; // Blue
     } else if (titleLower.includes('meditation') || titleLower.includes('mindfulness')) {
-      return computedStyle.getPropertyValue('--color-warning').trim() || '#f59e0b';
+      return '#f59e0b'; // Orange
     } else if (titleLower.includes('journal') || titleLower.includes('write')) {
-      return computedStyle.getPropertyValue('--color-error').trim() || '#ef4444';
+      return '#ef4444'; // Red
     } else {
-      return computedStyle.getPropertyValue('--text-secondary').trim() || '#6b7280';
+      return '#6b7280'; // Gray default
     }
   };
 
@@ -344,16 +344,16 @@ const CalendarTab = () => {
           toast.success(`Task Completed! ${habit?.title || 'Task'} • +${xpReward} XP earned`, {
             duration: 4000,
             style: {
-              background: 'color-mix(in srgb, var(--bg-secondary, #1e293b) 95%, transparent)',
+              background: 'rgba(30, 41, 59, 0.95)',
               color: '#fff',
-              border: '1px solid color-mix(in srgb, var(--color-success, #10b981) 30%, transparent)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
               borderRadius: '12px',
               padding: '16px 20px',
               fontSize: '14px',
               fontWeight: 500,
             },
             iconTheme: {
-              primary: 'var(--color-success, #10B981)',
+              primary: '#10B981',
               secondary: '#fff',
             },
           });
@@ -406,8 +406,8 @@ const CalendarTab = () => {
         toast.error('Failed to update habit. Please try again.', {
           duration: 3000,
           style: {
-          background: 'color-mix(in srgb, var(--color-error, #ef4444) 95%, transparent)',
-          color: '#fff',
+            background: 'rgba(239, 68, 68, 0.95)',
+            color: '#fff',
             borderRadius: '12px',
             padding: '14px 18px',
             fontSize: '13px',
@@ -502,6 +502,7 @@ const CalendarTab = () => {
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   const days = getDaysInMonth(currentDate);
+  const totalEvents = events.length;
   const currentMonth = monthNames[currentDate.getMonth()];
   const currentYear = currentDate.getFullYear();
 
@@ -515,9 +516,8 @@ const CalendarTab = () => {
           <button
             onClick={view === 'month' ? handlePrevMonth : view === 'week' ? handlePrevWeek : handlePrevDay}
             className="p-2 hover:bg-slate-800/50 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-            aria-label={`Previous ${view === 'month' ? 'month' : view === 'week' ? 'week' : 'day'}`}
           >
-            <ChevronLeft size={20} className="text-white" aria-hidden="true" />
+            <ChevronLeft size={20} className="text-white" />
           </button>
           
           <div className="text-center">
@@ -532,9 +532,8 @@ const CalendarTab = () => {
           <button
             onClick={view === 'month' ? handleNextMonth : view === 'week' ? handleNextWeek : handleNextDay}
             className="p-2 hover:bg-slate-800/50 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-            aria-label={`Next ${view === 'month' ? 'month' : view === 'week' ? 'week' : 'day'}`}
           >
-            <ChevronRight size={20} className="text-white" aria-hidden="true" />
+            <ChevronRight size={20} className="text-white" />
           </button>
         </div>
 
@@ -547,10 +546,8 @@ const CalendarTab = () => {
                 ? 'bg-indigo-600 text-white shadow-lg' 
                 : 'text-slate-300 hover:text-white'
             }`}
-            aria-label="Switch to month view"
-            aria-pressed={view === 'month'}
           >
-            <Grid3X3 size={16} aria-hidden="true" />
+            <Grid3X3 size={16} />
             <span className="hidden sm:inline">Month</span>
           </button>
           <button
@@ -560,10 +557,8 @@ const CalendarTab = () => {
                 ? 'bg-indigo-600 text-white shadow-lg' 
                 : 'text-slate-300 hover:text-white'
             }`}
-            aria-label="Switch to week view"
-            aria-pressed={view === 'week'}
           >
-            <CalendarIcon size={16} aria-hidden="true" />
+            <CalendarIcon size={16} />
             <span className="hidden sm:inline">Week</span>
           </button>
           <button
@@ -573,10 +568,8 @@ const CalendarTab = () => {
                 ? 'bg-indigo-600 text-white shadow-lg' 
                 : 'text-slate-300 hover:text-white'
             }`}
-            aria-label="Switch to day view"
-            aria-pressed={view === 'day'}
           >
-            <Clock size={16} aria-hidden="true" />
+            <Clock size={16} />
             <span className="hidden sm:inline">Day</span>
           </button>
         </div>
@@ -584,23 +577,20 @@ const CalendarTab = () => {
 
       {/* Error Display */}
       {error && (
-        <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-red-700 dark:text-red-300 text-sm">{error}</p>
-          <button
-            onClick={() => setError(null)}
-            className="mt-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 text-xs"
-            aria-label="Dismiss error message"
-          >
-            Dismiss
-          </button>
+        <div className="mb-4">
+          <ErrorDisplay
+            title="Error loading calendar"
+            message={error}
+            variant="alert"
+            onDismiss={() => setError(null)}
+          />
         </div>
       )}
 
       {/* Loading State */}
       {loading && (
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          <span className="ml-2 text-gray-600 dark:text-gray-400">Loading...</span>
+          <LoadingSpinner size="lg" text="Loading calendar..." />
         </div>
       )}
 
@@ -742,10 +732,9 @@ const CalendarTab = () => {
                                 ? 'bg-yellow-500 hover:bg-yellow-600 text-white' 
                                 : 'bg-green-500 hover:bg-green-600 text-white'
                             }`}
-                            aria-label={event.completed ? `Mark ${event.title} as incomplete` : `Mark ${event.title} as complete`}
                             title={event.completed ? 'Mark as incomplete' : 'Mark as complete'}
                           >
-                            <CheckCircle size={12} aria-hidden="true" />
+                            <CheckCircle size={12} />
                           </button>
                           {event.source !== 'habit' && (
                             <button
@@ -754,10 +743,9 @@ const CalendarTab = () => {
                                 deleteEvent(event.id);
                               }}
                               className="p-1 rounded bg-red-500 hover:bg-red-600 text-white text-xs"
-                              aria-label={`Delete event ${event.title}`}
                               title="Delete event"
                             >
-                              <Trash2 size={12} aria-hidden="true" />
+                              <Trash2 size={12} />
                             </button>
                           )}
                         </div>
@@ -778,7 +766,6 @@ const CalendarTab = () => {
                               addHabitCompletion(habit.id, day.toISOString().split('T')[0]);
                             }}
                             className="w-full p-1 rounded text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center space-x-1"
-                            aria-label={`Complete habit: ${habit.name}`}
                           >
                             <Target size={10} />
                             <span>+ {habit.title}</span>
@@ -800,16 +787,14 @@ const CalendarTab = () => {
               <button
                 onClick={handlePrevDay}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                aria-label="Previous day"
               >
-                <ChevronLeft size={20} aria-hidden="true" />
+                <ChevronLeft size={20} />
               </button>
               <button
                 onClick={handleNextDay}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                aria-label="Next day"
               >
-                <ChevronRight size={20} aria-hidden="true" />
+                <ChevronRight size={20} />
               </button>
             </div>
             <div className="text-center">
@@ -842,8 +827,6 @@ const CalendarTab = () => {
                         ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white'
                         : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`}
-                    aria-label={`Select ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
-                    aria-pressed={isSelected}
                   >
                     <div className="text-center">
                       <div className="text-xs font-medium">
@@ -946,10 +929,6 @@ const CalendarTab = () => {
                               ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-600/30' 
                               : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500/60'
                           }`}
-                          aria-label={event.completed ? `Mark ${event.title} as incomplete` : `Complete ${event.title}`}
-                          aria-pressed={event.completed}
-                          aria-label={event.completed ? `Mark ${event.title} as incomplete` : `Mark ${event.title} as complete`}
-                          aria-pressed={event.completed}
                         >
                           {event.completed ? '✓ Done' : 'Complete'}
                         </button>
@@ -992,16 +971,14 @@ const CalendarTab = () => {
                 <button
                   onClick={handlePrevMonth}
                   className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-                  aria-label="Previous month in mini calendar"
                 >
-                  <ChevronLeft size={16} aria-hidden="true" />
+                  <ChevronLeft size={16} />
                 </button>
                 <button
                   onClick={handleNextMonth}
                   className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-                  aria-label="Next month in mini calendar"
                 >
-                  <ChevronRight size={16} aria-hidden="true" />
+                  <ChevronRight size={16} />
                 </button>
               </div>
             </div>
@@ -1025,7 +1002,6 @@ const CalendarTab = () => {
                   <button
                     key={index}
                     onClick={() => day && handleDayClick(day)}
-                    disabled={!day}
                     className={`text-sm p-1 rounded transition-colors ${
                       !day 
                         ? 'text-gray-300 dark:text-gray-600' 
@@ -1037,8 +1013,6 @@ const CalendarTab = () => {
                         ? 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
                         : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`}
-                    aria-label={day ? `Select ${day.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}${hasEvents ? ' (has events)' : ''}` : ''}
-                    aria-pressed={isSelected}
                   >
                     {day ? day.getDate() : ''}
                   </button>

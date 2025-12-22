@@ -1,0 +1,25 @@
+# .htaccess for React App on Hostinger
+# Place this file in: ~/domains/humancatalystbeacon.com/public_html/app/
+
+RewriteEngine On
+RewriteBase /
+
+# Proxy API requests to Node.js server (if you have API endpoints)
+RewriteCond %{REQUEST_URI} ^/api/
+RewriteRule ^api/(.*)$ http://localhost:3001/api/$1 [P,L]
+
+# Serve React app - redirect all requests to build folder
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ build/index.html [L]
+
+# Serve static files from build folder
+RewriteCond %{REQUEST_URI} \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$
+RewriteRule ^(.*)$ build/$1 [L]
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+</IfModule>
+

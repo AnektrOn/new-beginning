@@ -1,188 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabaseClient';
-import NotificationBadge from './NotificationBadge';
-import ColorPaletteDropdown from './common/ColorPaletteDropdown';
-import {
-  Grid3X3,
-  User,
-  Settings,
-  Sun,
+import { 
+  Grid3X3, 
+  Calendar, 
+  Clock, 
+  User, 
+  Settings, 
+  Sun, 
   Moon,
-  Users,
-  Target,
-  Menu,
-  X,
-  Home,
-  LogOut,
-  BookOpen,
-  Bell,
+  Upload,
+  Plus,
+  Square,
   ArrowLeft,
   ArrowRight,
   Type,
-  Sparkles,
-  CreditCard,
-  Award,
-  Zap
+  Users,
+  Target,
+  Home,
+  LogOut,
+  BookOpen,
+  Bell
 } from 'lucide-react';
+import SearchBar from './common/SearchBar';
+import NotificationCenter from './common/NotificationCenter';
+import ColoredIcon from './common/ColoredIcon';
 
 const AppShellMobile = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { profile, signOut, user } = useAuth();
-
-  // Load notification count from Supabase
-  const [notificationCount, setNotificationCount] = useState(0);
-  
-  // XP and achievement state
-  const [totalXP, setTotalXP] = useState(0);
-  const [lastAchievement, setLastAchievement] = useState(null);
-  
-  useEffect(() => {
-    const loadNotifications = async () => {
-      if (!user) {
-        setNotificationCount(0);
-        return;
-      }
-      
-      try {
-        // Check if notifications table exists
-        const { data, error } = await supabase
-          .from('notifications')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('is_read', false);
-        
-        if (error && error.code !== 'PGRST116') {
-          // Table doesn't exist or other error - default to 0
-          console.warn('Notifications table not available:', error.message);
-          setNotificationCount(0);
-        } else {
-          setNotificationCount(data?.length || 0);
-        }
-      } catch (err) {
-        console.warn('Error loading notifications:', err);
-        setNotificationCount(0);
-      }
-    };
-    
-    loadNotifications();
-    
-    // Set up real-time subscription for notifications
-    if (user) {
-      const channel = supabase
-        .channel('notifications-mobile')
-        .on('postgres_changes', 
-          { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
-          () => loadNotifications()
-        )
-        .subscribe();
-      
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
-  }, [user]);
-
-  // Load XP and last achievement
-  useEffect(() => {
-    const loadXPAndAchievement = async () => {
-      if (!user) {
-        setTotalXP(0);
-        setLastAchievement(null);
-        return;
-      }
-
-      try {
-        // Get total XP from profile
-        if (profile?.current_xp !== undefined) {
-          setTotalXP(profile.current_xp);
-        }
-
-        // Get most recent achievement (badge or lesson completion)
-        const achievements = [];
-
-        // Get most recent badge
-        const { data: recentBadge, error: badgeError } = await supabase
-          .from('user_badges')
-          .select(`
-            awarded_at,
-            badges (
-              title,
-              badge_image_url
-            )
-          `)
-          .eq('user_id', user.id)
-          .order('awarded_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (!badgeError && recentBadge) {
-          achievements.push({
-            type: 'badge',
-            title: recentBadge.badges?.title || 'Achievement Unlocked',
-            iconUrl: recentBadge.badges?.badge_image_url,
-            timestamp: recentBadge.awarded_at
-          });
-        }
-
-        // Get most recent lesson completion
-        const { data: recentLesson, error: lessonError } = await supabase
-          .from('user_lesson_progress')
-          .select('completed_at, course_id, chapter_number, lesson_number')
-          .eq('user_id', user.id)
-          .eq('is_completed', true)
-          .not('completed_at', 'is', null)
-          .order('completed_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (!lessonError && recentLesson && recentLesson.completed_at) {
-          // Fetch course title separately
-          let courseTitle = 'Course';
-          if (recentLesson.course_id) {
-            const { data: courseData } = await supabase
-              .from('course_metadata')
-              .select('course_title')
-              .eq('course_id', recentLesson.course_id)
-              .maybeSingle();
-            if (courseData) {
-              courseTitle = courseData.course_title;
-            }
-          }
-
-          achievements.push({
-            type: 'lesson',
-            title: `Lesson Completed`,
-            subtitle: `${courseTitle} • Ch ${recentLesson.chapter_number} L ${recentLesson.lesson_number}`,
-            timestamp: recentLesson.completed_at
-          });
-        }
-
-        // Get the most recent achievement
-        if (achievements.length > 0) {
-          achievements.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-          setLastAchievement(achievements[0]);
-        } else {
-          setLastAchievement(null);
-        }
-      } catch (err) {
-        console.warn('Error loading XP and achievements:', err);
-      }
-    };
-
-    loadXPAndAchievement();
-  }, [user, profile]);
-
-  // Debug: Log profile background image changes
-  useEffect(() => {
-    if (profile?.background_image) {
-      console.log('🎨 AppShellMobile: Background image updated:', profile.background_image);
-    }
-  }, [profile?.background_image]);
+  const { profile, signOut } = useAuth();
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
@@ -192,10 +40,8 @@ const AppShellMobile = () => {
     { icon: Grid3X3, label: 'Dashboard', path: '/dashboard' },
     { icon: Target, label: 'Mastery', path: '/mastery' },
     { icon: BookOpen, label: 'Courses', path: '/courses' },
-    { icon: Sparkles, label: 'Stellar Map', path: '/stellar-map-2d' },
     { icon: User, label: 'Profile', path: '/profile' },
     { icon: Users, label: 'Community', path: '/community' },
-    { icon: CreditCard, label: 'Pricing', path: '/pricing' },
     { icon: Settings, label: 'Settings', path: '/settings' }
   ];
 
@@ -203,13 +49,12 @@ const AppShellMobile = () => {
     { icon: Home, label: 'Home', path: '/dashboard' },
     { icon: Target, label: 'Mastery', path: '/mastery' },
     { icon: BookOpen, label: 'Courses', path: '/courses' },
-    { icon: Sparkles, label: 'Stellar', path: '/stellar-map-2d' },
+    { icon: Users, label: 'Community', path: '/community' },
     { icon: User, label: 'Profile', path: '/profile' }
   ];
 
   const handleNavigation = (path) => {
     navigate(path);
-    setIsMobileMenuOpen(false);
   };
 
   const handleSignOut = async () => {
@@ -217,136 +62,57 @@ const AppShellMobile = () => {
     navigate('/login');
   };
 
-  // Debug: Log current profile state
-  useEffect(() => {
-    console.log('🎨 AppShellMobile: Current profile state:', {
-      hasProfile: !!profile,
-      hasBackgroundImage: !!profile?.background_image,
-      backgroundImageUrl: profile?.background_image
-    });
-  }, [profile]);
-
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`}>
-      {/* Background - User's custom background or earth-tone gradient */}
-      <div
-        key={profile?.background_image || 'default-bg'}
-        className="fixed inset-0 -z-10 transition-all duration-500"
+    <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`} style={{ position: 'relative' }}>
+      {/* Background - User's custom background or default */}
+      <div 
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: profile?.background_image
-            ? `url(${profile.background_image})`
-            : 'none',
-          backgroundSize: profile?.background_image ? 'cover' : 'auto',
-          backgroundPosition: profile?.background_image ? 'center' : 'center',
-          backgroundRepeat: profile?.background_image ? 'no-repeat' : 'repeat'
+          backgroundImage: profile?.background_image 
+            ? `url(${profile.background_image})` 
+            : `url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><filter id="blur"><feGaussianBlur stdDeviation="8"/></filter></defs><rect width="1200" height="800" fill="%23f5f3f0"/><rect x="0" y="0" width="400" height="800" fill="%23e8e4d8"/><rect x="400" y="200" width="200" height="400" fill="%23d4c4a8"/><rect x="600" y="100" width="300" height="600" fill="%23c9b99a"/><rect x="900" y="0" width="300" height="800" fill="%23b8a082"/></svg>')`
         }}
       >
-        {!profile?.background_image && (
-          <div className="absolute inset-0" style={{ background: 'var(--gradient-warm)' }}>
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20 dark:opacity-10">
-              <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full blur-3xl" style={{ backgroundColor: 'var(--color-primary)', opacity: 0.2 }}></div>
-              <div className="absolute top-[40%] right-[10%] w-[40%] h-[40%] rounded-full blur-3xl" style={{ backgroundColor: 'var(--color-secondary)', opacity: 0.2 }}></div>
-            </div>
-          </div>
-        )}
-        <div 
-          className="absolute inset-0 backdrop-blur-sm"
-          style={{
-            backgroundColor: profile?.background_image ? 'rgba(0, 0, 0, 0.1)' : 'transparent'
-          }}
-        ></div>
+        <div className="absolute inset-0 backdrop-blur-sm"></div>
       </div>
 
-      {/* Mobile Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 safe-area-top">
+      {/* Desktop Header - Hidden on mobile, shown on lg+ */}
+      <header className="hidden lg:block fixed top-0 left-0 right-0 z-50 safe-area-top">
         <div className="glass-header-browser flex items-center justify-between">
-          {/* Left side - Menu button */}
-          <button
-            className="glass-icon-btn lg:hidden"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
-            aria-expanded={isMobileMenuOpen}
-          >
-            {isMobileMenuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
-          </button>
-
           {/* Desktop left navigation */}
-          <div className="hidden lg:flex items-center space-x-2">
-            <button className="glass-icon-btn" aria-label="View grid">
+          <div className="flex items-center space-x-2">
+            <button className="glass-icon-btn focus-ring" aria-label="Dashboard">
               <Grid3X3 size={16} aria-hidden="true" />
             </button>
-            <button className="glass-icon-btn" aria-label="Go back">
+            <button className="glass-icon-btn focus-ring" aria-label="Go back">
               <ArrowLeft size={16} aria-hidden="true" />
             </button>
-            <button className="glass-icon-btn" aria-label="Go forward">
+            <button className="glass-icon-btn focus-ring" aria-label="Go forward">
               <ArrowRight size={16} aria-hidden="true" />
             </button>
-            <button className="glass-icon-btn" aria-label="Text options">
+            <button className="glass-icon-btn focus-ring" aria-label="Search">
               <Type size={16} aria-hidden="true" />
             </button>
           </div>
 
-          {/* Center - XP and Last Achievement (compact for mobile) */}
-          {user ? (
-            <div className="flex items-center gap-2 flex-1 justify-center px-2">
-              {/* Total XP */}
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg glass-effect border border-white/10">
-                <Zap size={14} style={{ color: 'var(--color-primary)' }} />
-                <span className="text-xs font-bold text-gray-900 dark:text-white">
-                  {totalXP.toLocaleString()}
-                </span>
-              </div>
-
-              {/* Last Achievement (compact) */}
-              {lastAchievement && (
-                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg glass-effect border border-white/10 max-w-[140px]">
-                  {lastAchievement.iconUrl ? (
-                    <img 
-                      src={lastAchievement.iconUrl} 
-                      alt={lastAchievement.title}
-                      className="w-4 h-4 rounded-full"
-                    />
-                  ) : (
-                    <Award size={14} style={{ color: 'var(--color-primary)' }} />
-                  )}
-                  <span className="text-xs font-medium text-gray-900 dark:text-white truncate">
-                    {lastAchievement.type === 'lesson' ? 'Lesson' : lastAchievement.title}
-                  </span>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center">
-              <h1 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                HC University
-              </h1>
-            </div>
-          )}
+          {/* Center - Search */}
+          <div className="flex-1 flex items-center justify-center px-2 max-w-2xl mx-auto">
+            <SearchBar variant="compact" placeholder="Search courses..." />
+          </div>
 
           {/* Right side actions */}
           <div className="flex items-center space-x-2">
-            {/* Color Palette Dropdown */}
-            <ColorPaletteDropdown />
-            
-            {/* Notification Bell */}
-            <div className="relative">
-              <button 
-                className="glass-icon-btn"
-                aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}
-              >
-                <Bell size={18} aria-hidden="true" />
-              </button>
-              <NotificationBadge count={notificationCount} />
-            </div>
-
-            {/* Theme Toggle */}
-            <button
+            <NotificationCenter />
+            <button 
               onClick={toggleTheme}
-              className="glass-icon-btn"
+              className="glass-icon-btn focus-ring"
               aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
               title={isDarkMode ? 'Light mode' : 'Dark mode'}
             >
               {isDarkMode ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
+            </button>
+            <button className="glass-icon-btn focus-ring" aria-label="Upload">
+              <Upload size={16} aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -359,20 +125,16 @@ const AppShellMobile = () => {
           <div className="flex flex-col items-center pt-6 pb-4">
             {/* Toggle button */}
             <div className="glass-toggle-btn mb-4">
-              <div className="w-4 h-3 rounded-sm" style={{ backgroundColor: 'var(--color-primary)' }}></div>
+              <div className="w-4 h-3 bg-orange-400 rounded-sm"></div>
               <div className="flex space-x-1 mt-1">
-                <div className="w-1 h-1 rounded-full" style={{ backgroundColor: 'var(--color-primary)' }}></div>
-                <div className="w-1 h-1 rounded-full" style={{ backgroundColor: 'var(--color-primary)' }}></div>
+                <div className="w-1 h-1 bg-orange-400 rounded-full"></div>
+                <div className="w-1 h-1 bg-orange-400 rounded-full"></div>
               </div>
             </div>
-
+            
             {/* Active dashboard icon */}
-            <button 
-              className="glass-nav-btn-active mb-6"
-              aria-label="Dashboard"
-              aria-current="page"
-            >
-              <Grid3X3 size={20} aria-hidden="true" />
+            <button className="glass-nav-btn-active mb-6">
+              <Grid3X3 size={20} />
             </button>
           </div>
 
@@ -380,17 +142,17 @@ const AppShellMobile = () => {
           <nav className="flex-1 flex flex-col items-center space-y-4">
             {sidebarItems.slice(1).map((item, index) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.path ||
-                (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
-                (item.path === '/courses' && location.pathname.startsWith('/courses'));
-
+              const isActive = location.pathname === item.path || 
+                               (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
+                               (item.path === '/courses' && location.pathname.startsWith('/courses'));
+              
               return (
                 <button
                   key={index}
                   onClick={() => handleNavigation(item.path)}
-                  className={`glass-nav-btn ${isActive ? 'glass-nav-btn-active' : ''}`}
-                  aria-label={item.label}
+                  aria-label={`Navigate to ${item.label}`}
                   aria-current={isActive ? 'page' : undefined}
+                  className={`glass-nav-btn focus-ring ${isActive ? 'glass-nav-btn-active' : ''}`}
                   title={item.label}
                 >
                   <Icon size={20} aria-hidden="true" />
@@ -402,151 +164,152 @@ const AppShellMobile = () => {
           {/* Theme toggle - Circular switch */}
           <div className="flex flex-col items-center pb-6">
             <div className="glass-theme-toggle">
-              <button
+              <button 
                 onClick={toggleTheme}
                 className={`glass-theme-btn ${!isDarkMode ? 'glass-theme-btn-active' : ''}`}
-                aria-label="Switch to light mode"
                 title="Light mode"
               >
-                <Sun size={14} aria-hidden="true" />
+                <Sun size={14} />
               </button>
-              <button
+              <button 
                 onClick={toggleTheme}
                 className={`glass-theme-btn ${isDarkMode ? 'glass-theme-btn-active' : ''}`}
-                aria-label="Switch to dark mode"
                 title="Dark mode"
               >
-                <Moon size={14} aria-hidden="true" />
+                <Moon size={14} />
               </button>
             </div>
           </div>
         </div>
       </aside>
 
-      {/* Mobile Slide-out Menu */}
-      {isMobileMenuOpen && (
-        <div
-          className="fixed inset-0 z-50 lg:hidden"
-          onClick={() => setIsMobileMenuOpen(false)}
-        >
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          <div
-            className="absolute top-0 left-0 bottom-0 w-80 max-w-[80vw] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Menu Header */}
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Menu</h2>
-                <button
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-                  aria-label="Close menu"
-                >
-                  <X size={20} aria-hidden="true" />
-                </button>
-              </div>
-
-              {/* User info */}
-              {profile && (
-                <div className="flex items-center space-x-3 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                  {profile.avatar_url ? (
-                    <img
-                      src={profile.avatar_url}
-                      alt={profile.full_name}
-                      className="w-10 h-10 rounded-full"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'var(--gradient-primary)' }}>
-                      <User size={20} className="text-white" />
-                    </div>
-                  )}
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white text-sm">
-                      {profile.full_name || 'User'}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Level {profile.level || 1}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Menu Items */}
-            <nav className="p-4 space-y-2">
-              {sidebarItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.path ||
-                  (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
-                  (item.path === '/courses' && location.pathname.startsWith('/courses'));
-
-                return (
-                  <button
-                    key={item.path}
-                    onClick={() => handleNavigation(item.path)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive
-                      ? 'text-white shadow-lg'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                      }`}
-                    style={isActive ? { background: 'var(--gradient-primary)' } : {}}
-                    aria-label={`Navigate to ${item.label}`}
-                    aria-current={isActive ? 'page' : undefined}
-                  >
-                    <Icon size={20} aria-hidden="true" />
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
-
-            {/* Menu Footer */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-slate-900/95">
-              <button
-                onClick={handleSignOut}
-                className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
-                aria-label="Sign out of your account"
-              >
-                <LogOut size={20} aria-hidden="true" />
-                <span>Sign Out</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Main Content Area */}
-      <main className="fixed lg:left-32 left-0 top-[52px] lg:top-20 right-0 bottom-[70px] lg:bottom-4 z-30 lg:right-4"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <main 
+        id="main-content"
+        role="main"
+        className="fixed lg:left-32 left-0 top-0 lg:top-20 right-0 bottom-[72px] lg:bottom-4 z-30 lg:right-4"
+        style={{ 
+          paddingBottom: 'calc(72px + env(safe-area-inset-bottom))',
+          WebkitOverflowScrolling: 'touch'
+        }}
+      >
         <div className="glass-main-panel h-full overflow-auto">
           <Outlet />
         </div>
       </main>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden safe-area-bottom mobile-bottom-nav">
-        <div className="glass-effect mx-4 mb-4 rounded-2xl border border-white/20 shadow-xl backdrop-blur-xl">
-          <div className="flex items-center justify-around px-2 py-3">
+      {/* Mobile Bottom Navigation - Optimized UX/UI */}
+      <nav 
+        id="main-navigation"
+        role="navigation"
+        aria-label="Main navigation"
+        className="fixed bottom-0 left-0 right-0 w-full z-[9999] lg:hidden mobile-bottom-nav"
+        style={{ 
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          width: '100%',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          WebkitTransform: 'translateZ(0)',
+          transform: 'translateZ(0)',
+          pointerEvents: 'auto'
+        }}
+      >
+        <div 
+          className="w-full backdrop-blur-xl border-t mobile-bottom-nav-container"
+          style={{
+            backgroundColor: isDarkMode 
+              ? '#203837'  /* Dark theme: Dark teal - palette-dark-surface */
+              : '#F7F1E1', /* Light theme: Old lace - palette-light-bg */
+            borderColor: isDarkMode
+              ? '#5A8F76'  /* Dark theme: Medium green - palette-dark-primary */
+              : '#81754B',  /* Light theme: Coyote - palette-light-border */
+            borderTopWidth: '1px',
+            boxShadow: isDarkMode
+              ? '0 -4px 20px rgba(8, 24, 24, 0.4)'
+              : '0 -4px 20px rgba(63, 63, 44, 0.15)'
+          }}
+        >
+          <div className="flex items-center justify-around w-full px-2 py-2">
             {bottomNavItems.map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.path ||
-                (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
-                (item.path === '/courses' && location.pathname.startsWith('/courses'));
-
+              const isActive = location.pathname === item.path || 
+                               (item.path === '/mastery' && location.pathname.startsWith('/mastery')) ||
+                               (item.path === '/courses' && location.pathname.startsWith('/courses'));
+              
+              // Color palette mapping - Following palette system
+              // Dark theme: Active = Light green (#96CDB0), Inactive = Medium green (#5A8F76)
+              // Light theme: Active = Dark goldenrod (#B4833D), Inactive = Coyote (#81754B)
+              const activeColor = isDarkMode 
+                ? '#96CDB0'  // Light green - palette-dark-secondary
+                : '#B4833D'; // Dark goldenrod - palette-light-accent
+              const inactiveColor = isDarkMode 
+                ? '#5A8F76'  // Medium green - palette-dark-primary
+                : '#81754B';  // Coyote - palette-light-border
+              const activeBg = isDarkMode 
+                ? 'rgba(90, 143, 118, 0.2)'      // Medium green with opacity (dark) - more visible
+                : 'rgba(180, 131, 61, 0.2)';     // Dark goldenrod with opacity (light) - more visible
+              
               return (
                 <button
                   key={item.path}
                   onClick={() => handleNavigation(item.path)}
-                  className={`mobile-nav-item flex flex-col items-center justify-center px-3 py-2 rounded-xl min-w-[60px] transition-all duration-200 ${isActive
-                    ? 'scale-110'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                    }`}
-                  style={isActive ? { color: 'var(--color-primary)' } : {}}
-                  aria-label={item.label}
+                  aria-label={`Navigate to ${item.label}`}
                   aria-current={isActive ? 'page' : undefined}
-                  >
-                  <Icon size={22} strokeWidth={isActive ? 2.5 : 2} aria-hidden="true" />
-                  {isActive && <div className="w-1 h-1 rounded-full mt-1" style={{ backgroundColor: 'var(--color-primary)' }} aria-hidden="true"></div>}
+                  className="mobile-nav-button relative flex-1 flex flex-col items-center justify-center min-h-[56px] py-2 px-1 rounded-xl transition-all duration-200 focus-ring touch-manipulation"
+                  style={{
+                    color: isActive ? activeColor : inactiveColor,
+                    backgroundColor: isActive ? activeBg : 'transparent',
+                    WebkitTapHighlightColor: 'transparent',
+                    touchAction: 'manipulation'
+                  }}
+                  data-active={isActive}
+                  data-theme={isDarkMode ? 'dark' : 'light'}
+                  onTouchStart={(e) => {
+                    const target = e.currentTarget;
+                    if (target) {
+                      target.style.transform = 'scale(0.95)';
+                      target.style.opacity = '0.8';
+                    }
+                  }}
+                  onTouchEnd={(e) => {
+                    const target = e.currentTarget;
+                    if (target) {
+                      setTimeout(() => {
+                        if (target && target.style) {
+                          target.style.transform = '';
+                          target.style.opacity = '';
+                        }
+                      }, 150);
+                    }
+                  }}
+                >
+                  {/* Solution 5: Custom ColoredIcon Component */}
+                  <ColoredIcon
+                    Icon={Icon}
+                    size={22}
+                    strokeWidth={isActive ? 2.5 : 2}
+                    color={isActive ? activeColor : inactiveColor}
+                    isActive={isActive}
+                    className="transition-all duration-200 mobile-nav-icon"
+                    style={{
+                      transform: isActive ? 'scale(1.1)' : 'scale(1)',
+                      filter: isActive ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' : 'none',
+                    }}
+                  />
+                  {/* Active indicator - Underline bar instead of dot */}
+                  <div 
+                    className="absolute bottom-0 left-1/2 transform -translate-x-1/2 transition-all duration-200"
+                    style={{
+                      width: isActive ? '60%' : '0%',
+                      height: '3px',
+                      backgroundColor: activeColor,
+                      borderRadius: '3px 3px 0 0',
+                      opacity: isActive ? 1 : 0
+                    }}
+                  />
                 </button>
               );
             })}

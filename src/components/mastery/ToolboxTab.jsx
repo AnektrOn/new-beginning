@@ -3,7 +3,8 @@ import { Wrench, Plus, Target, Trash2, CheckCircle, Clock, Star } from 'lucide-r
 import masteryService from '../../services/masteryService';
 import { useAuth } from '../../contexts/AuthContext';
 import { handleError, clearError } from '../../utils/errorHandler';
-import toast from 'react-hot-toast';
+import LoadingSpinner from '../common/LoadingSpinner';
+import ErrorDisplay from '../common/ErrorDisplay';
 
 // Helper function to calculate current streak from completion dates
 const calculateCurrentStreak = (completedDates = []) => {
@@ -271,30 +272,13 @@ const ToolboxTab = () => {
 
   // Remove tool from user toolbox
   const removeTool = async (toolId) => {
-    if (!user) return;
-    
     try {
-      // Find the user toolbox item ID
-      const toolboxItem = userToolbox.find(tool => tool.toolbox_library?.id === toolId || tool.id === toolId);
-      if (!toolboxItem) {
-        console.error('Toolbox item not found:', toolId);
-        return;
-      }
-
-      // Use masteryService to remove the toolbox item
-      const { error } = await masteryService.removeUserToolboxItem(toolboxItem.id);
+      // TODO: Implement API call to remove tool
+      console.log('Removing tool:', toolId);
       
-      if (error) {
-        console.error('Error removing tool:', error);
-        handleError(error);
-        return;
-      }
-      
-      // Update local state
-      setUserToolbox(userToolbox.filter(tool => tool.id !== toolboxItem.id));
+      setUserToolbox(userToolbox.filter(tool => tool.id !== toolId));
     } catch (error) {
       console.error('Error removing tool:', error);
-      handleError(error);
     }
   };
 
@@ -395,41 +379,34 @@ const ToolboxTab = () => {
       const { error } = await masteryService.useToolboxItem(user.id, toolId);
       if (error) throw error;
 
-      // Reload toolbox to get updated data with real usage
+      // Reload toolbox to get updated data
       const { data: userToolboxData } = await masteryService.getUserToolboxItems(user.id);
       if (userToolboxData) {
-        // Transform the updated toolbox items with real usage data
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const today = new Date();
-        
+        // Transform the updated toolbox items
         const transformedUserToolbox = await Promise.all(
           userToolboxData.map(async (item) => {
-            // Get real usage data from Supabase
-            const { data: usageData } = await masteryService.getToolboxUsage(
-              user.id,
-              item.id,
-              thirtyDaysAgo.toISOString().split('T')[0],
-              today.toISOString().split('T')[0]
-            );
+            const mockUsageCount = Math.floor(Math.random() * 20) + 1;
+            const mockCompletedDates = Array.from({ length: mockUsageCount }, (_, i) => {
+              const date = new Date();
+              date.setDate(date.getDate() - Math.floor(Math.random() * 30));
+              return date.toISOString().split('T')[0];
+            }).sort();
 
-            // Get usage dates from real data
-            const usageDates = (usageData || []).map(usage => new Date(usage.used_at).toISOString().split('T')[0]);
+            const today = new Date();
             const todayString = today.toISOString().split('T')[0];
-            const isUsedToday = usageDates.includes(todayString);
-            const totalXPEarned = (usageData || []).reduce((sum, usage) => sum + (usage.xp_earned || 0), 0);
+            const isUsedToday = mockCompletedDates.includes(todayString);
 
             return {
               ...item,
               title: item.toolbox_library?.title || 'Unknown Tool',
               description: item.toolbox_library?.description || 'No description available',
-              usage_count: usageData?.length || 0,
-              last_used: usageDates[usageDates.length - 1] || null,
-              xp_earned: totalXPEarned,
+              usage_count: mockUsageCount,
+              last_used: mockCompletedDates[mockCompletedDates.length - 1] || null,
+              xp_earned: mockUsageCount * (item.toolbox_library?.xp_reward || 15),
               color: getToolboxColor(item.toolbox_library?.title || 'Unknown Tool'),
-              completed_dates: usageDates,
+              completed_dates: mockCompletedDates,
               used_today: isUsedToday,
-              streak: calculateCurrentStreak(usageDates)
+              streak: calculateCurrentStreak(mockCompletedDates)
             };
           })
         );
@@ -445,26 +422,19 @@ const ToolboxTab = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2 text-gray-600">Loading toolbox...</span>
+        <LoadingSpinner size="lg" text="Loading toolbox..." />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="text-red-600 mb-2">Error loading toolbox</div>
-          <div className="text-sm text-gray-600">{error}</div>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
+      <ErrorDisplay
+        title="Error loading toolbox"
+        message={error}
+        variant="card"
+        onRetry={() => window.location.reload()}
+      />
     );
   }
 
@@ -477,14 +447,14 @@ const ToolboxTab = () => {
             onClick={() => setActiveTab('library')}
             className={`glass-tab-btn ${activeTab === 'library' ? 'glass-tab-btn-active' : ''}`}
           >
-            <Wrench size={20} className="mr-2"  aria-hidden="true"/>
+            <Wrench size={20} className="mr-2" />
             Library ({toolboxLibrary.length})
           </button>
           <button
             onClick={() => setActiveTab('my-toolbox')}
             className={`glass-tab-btn ${activeTab === 'my-toolbox' ? 'glass-tab-btn-active' : ''}`}
           >
-            <Target size={20} className="mr-2"  aria-hidden="true"/>
+            <Target size={20} className="mr-2" />
             My Toolbox ({userToolbox.length})
           </button>
         </nav>
@@ -536,7 +506,7 @@ const ToolboxTab = () => {
                         onClick={() => addToolToUser(tool)}
                         className="glass-primary-btn"
                       >
-                        <Plus size={16} className="mr-2"  aria-hidden="true"/>
+                        <Plus size={16} className="mr-2" />
                         Add to Toolbox
                       </button>
                     ) : (
@@ -553,7 +523,7 @@ const ToolboxTab = () => {
                         className={`glass-secondary-btn ${tool.converted_to_habit_id ? 'opacity-50 cursor-not-allowed' : ''}`}
                         disabled={tool.converted_to_habit_id}
                       >
-                        <Target size={16} className="mr-2"  aria-hidden="true"/>
+                        <Target size={16} className="mr-2" />
                         {tool.converted_to_habit_id ? 'Already Converted' : 'Convert to Habit'}
                       </button>
                     )}
@@ -588,13 +558,13 @@ const ToolboxTab = () => {
                   {/* Header with icon and title */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
-                      <Wrench size={20} className="text-white" strokeWidth={1.5}  aria-hidden="true"/>
+                      <Wrench size={20} className="text-white" strokeWidth={1.5} />
                       <h3 className="text-lg font-semibold text-white truncate">
                         {tool.title}
                       </h3>
                     </div>
                     <div className="flex items-center space-x-1">
-                      <Star size={16} className="text-yellow-400"  aria-hidden="true"/>
+                      <Star size={16} className="text-yellow-400" />
                       <span className="text-sm text-yellow-400 font-medium">
                         {tool.xp_earned} XP
                       </span>
@@ -619,7 +589,7 @@ const ToolboxTab = () => {
                           : 'border border-white text-white hover:bg-white hover:text-blue-900'
                       }`}
                     >
-                      <CheckCircle size={16} strokeWidth={1.5}  aria-hidden="true"/>
+                      <CheckCircle size={16} strokeWidth={1.5} />
                       <span>{isUsedToday ? 'Used Today' : 'Use Tool'}</span>
                     </button>
                     
@@ -675,7 +645,7 @@ const ToolboxTab = () => {
                       onClick={() => removeTool(tool.id)}
                       className="text-red-400 hover:text-red-300 transition-colors"
                     >
-                      <Trash2 size={16} strokeWidth={1.5}  aria-hidden="true"/>
+                      <Trash2 size={16} strokeWidth={1.5} />
                     </button>
                   </div>
                 </div>
@@ -685,7 +655,7 @@ const ToolboxTab = () => {
 
           {userToolbox.length === 0 && (
             <div className="glass-card p-8 text-center">
-              <Wrench size={48} className="mx-auto text-gray-400 mb-4"  aria-hidden="true"/>
+              <Wrench size={48} className="mx-auto text-gray-400 mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 Your toolbox is empty
               </h3>
@@ -695,7 +665,7 @@ const ToolboxTab = () => {
               <button
                 onClick={() => setActiveTab('library')}
                 className="glass-primary-btn"
-               role="tab" aria-selected={activeTab === 'library'} aria-label="Toolbox Library" aria-label="Browse toolbox library">
+              >
                 Browse Library
               </button>
             </div>
